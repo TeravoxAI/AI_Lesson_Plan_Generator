@@ -1,7 +1,8 @@
 """
-Database Client - Supabase Operations
+Database Client - Supabase Operations (Updated for simplified schema)
 """
 import os
+import json
 from typing import List, Optional, Dict, Any
 from supabase import create_client, Client
 from dotenv import load_dotenv
@@ -35,9 +36,15 @@ class DatabaseClient:
         grade_level: str, 
         subject: str, 
         book_type: str, 
-        title: str
+        title: str,
+        pages: List[Dict[str, Any]] = None
     ) -> Optional[int]:
-        """Insert a new textbook and return its ID"""
+        """
+        Insert a new textbook with its OCR pages.
+        
+        Args:
+            pages: List of dicts with format [{"book_text": "...", "page_no": 1}, ...]
+        """
         if not self.client:
             return None
         
@@ -45,12 +52,48 @@ class DatabaseClient:
             "grade_level": grade_level,
             "subject": subject,
             "book_type": book_type,
-            "title": title
+            "title": title,
+            "pages": json.dumps(pages or [])
         }).execute()
         
         if result.data:
             return result.data[0]["id"]
         return None
+    
+    def update_textbook_pages(self, book_id: int, pages: List[Dict[str, Any]]) -> bool:
+        """
+        Update the pages of a textbook.
+        
+        Args:
+            pages: List of dicts with format [{"book_text": "...", "page_no": 1}, ...]
+        """
+        if not self.client:
+            return False
+        
+        result = self.client.table("textbooks").update({
+            "pages": json.dumps(pages)
+        }).eq("id", book_id).execute()
+        
+        return bool(result.data)
+    
+    def get_textbook_pages(self, book_id: int, page_start: int, page_end: int) -> List[Dict[str, Any]]:
+        """
+        Get specific pages from a textbook.
+        
+        Returns pages within the specified range.
+        """
+        book = self.get_textbook_by_id(book_id)
+        if not book or not book.get("pages"):
+            return []
+        
+        pages = book["pages"]
+        if isinstance(pages, str):
+            pages = json.loads(pages)
+        
+        return [
+            p for p in pages 
+            if page_start <= p.get("page_no", 0) <= page_end
+        ]
     
     def get_textbook(
         self, 
@@ -74,6 +117,17 @@ class DatabaseClient:
             return result.data[0]
         return None
     
+    def get_textbook_by_id(self, book_id: int) -> Optional[Dict[str, Any]]:
+        """Get textbook by ID"""
+        if not self.client:
+            return None
+        
+        result = self.client.table("textbooks").select("*").eq("id", book_id).execute()
+        
+        if result.data:
+            return result.data[0]
+        return None
+    
     def list_textbooks(self) -> List[Dict[str, Any]]:
         """List all textbooks"""
         if not self.client:
@@ -82,64 +136,13 @@ class DatabaseClient:
         result = self.client.table("textbooks").select("*").execute()
         return result.data or []
     
-    # ============= Page Operations =============
-    
-    def insert_page(
-        self, 
-        book_id: int, 
-        page_number: int, 
-        content_text: str,
-        image_summary: str = "",
-        has_exercises: bool = False,
-        exercise_count: int = 0
-    ) -> Optional[int]:
-        """Insert a page and return its ID"""
+    def delete_textbook(self, book_id: int) -> bool:
+        """Delete a textbook"""
         if not self.client:
-            return None
+            return False
         
-        result = self.client.table("textbook_pages").insert({
-            "book_id": book_id,
-            "page_number": page_number,
-            "content_text": content_text,
-            "image_summary": image_summary,
-            "has_exercises": has_exercises,
-            "exercise_count": exercise_count
-        }).execute()
-        
-        if result.data:
-            return result.data[0]["id"]
-        return None
-    
-    def get_pages_by_range(
-        self, 
-        book_id: int, 
-        page_start: int, 
-        page_end: int
-    ) -> List[Dict[str, Any]]:
-        """Get pages within a range"""
-        if not self.client:
-            return []
-        
-        result = self.client.table("textbook_pages").select("*").eq(
-            "book_id", book_id
-        ).gte(
-            "page_number", page_start
-        ).lte(
-            "page_number", page_end
-        ).order("page_number").execute()
-        
-        return result.data or []
-    
-    def get_pages_by_book(self, book_id: int) -> List[Dict[str, Any]]:
-        """Get all pages for a book"""
-        if not self.client:
-            return []
-        
-        result = self.client.table("textbook_pages").select("*").eq(
-            "book_id", book_id
-        ).order("page_number").execute()
-        
-        return result.data or []
+        result = self.client.table("textbooks").delete().eq("id", book_id).execute()
+        return bool(result.data)
     
     # ============= SOW Operations =============
     
@@ -148,14 +151,10 @@ class DatabaseClient:
         grade_level: str,
         subject: str,
         term: str,
-        topic_name: str,
-        mapped_page_numbers: List[int],
-        teaching_strategy: str,
-        resources_text: str = "",
-        afl_strategy: str = "",
-        activities: str = ""
+        title: str,
+        extraction: Dict[str, Any]
     ) -> Optional[int]:
-        """Insert a SOW entry and return its ID"""
+        """Insert a SOW entry with complete extraction JSON and return its ID"""
         if not self.client:
             return None
         
@@ -163,58 +162,41 @@ class DatabaseClient:
             "grade_level": grade_level,
             "subject": subject,
             "term": term,
-            "topic_name": topic_name,
-            "mapped_page_numbers": mapped_page_numbers,
-            "teaching_strategy": teaching_strategy,
-            "resources_text": resources_text,
-            "afl_strategy": afl_strategy,
-            "activities": activities
+            "title": title,
+            "extraction": extraction
         }).execute()
         
         if result.data:
             return result.data[0]["id"]
         return None
     
-    def get_sow_by_pages(
+    def get_sow_by_subject(
         self, 
         subject: str, 
-        grade_level: str, 
-        page_number: int
+        grade_level: str
     ) -> List[Dict[str, Any]]:
-        """Get SOW entries that contain the given page number (for Maths)"""
+        """Get all SOW entries for a subject/grade"""
         if not self.client:
             return []
         
-        # Use PostgREST 'cs' (contains) filter for array column
         result = self.client.table("sow_entries").select("*").eq(
             "subject", subject
         ).eq(
             "grade_level", grade_level
-        ).contains(
-            "mapped_page_numbers", [page_number]
         ).execute()
         
         return result.data or []
     
-    def get_sow_by_topic(
-        self, 
-        subject: str, 
-        grade_level: str, 
-        topic: str
-    ) -> List[Dict[str, Any]]:
-        """Get SOW entries matching topic name (for English)"""
+    def get_sow_by_id(self, sow_id: int) -> Optional[Dict[str, Any]]:
+        """Get a SOW entry by ID"""
         if not self.client:
-            return []
+            return None
         
-        result = self.client.table("sow_entries").select("*").eq(
-            "subject", subject
-        ).eq(
-            "grade_level", grade_level
-        ).ilike(
-            "topic_name", f"%{topic}%"
-        ).execute()
+        result = self.client.table("sow_entries").select("*").eq("id", sow_id).execute()
         
-        return result.data or []
+        if result.data:
+            return result.data[0]
+        return None
     
     def list_sow_entries(
         self, 
@@ -234,6 +216,79 @@ class DatabaseClient:
         
         result = query.execute()
         return result.data or []
+    
+    # ============= Lesson Plan Operations =============
+    
+    def insert_lesson_plan(
+        self,
+        grade_level: str,
+        subject: str,
+        lesson_type: str,
+        page_start: int,
+        page_end: int,
+        topic: Optional[str],
+        lesson_plan: Dict[str, Any],
+        textbook_id: Optional[int] = None,
+        sow_entry_id: Optional[int] = None
+    ) -> Optional[int]:
+        """Insert a generated lesson plan and return its ID"""
+        if not self.client:
+            return None
+        
+        result = self.client.table("lesson_plans").insert({
+            "grade_level": grade_level,
+            "subject": subject,
+            "lesson_type": lesson_type,
+            "page_start": page_start,
+            "page_end": page_end,
+            "topic": topic,
+            "lesson_plan": json.dumps(lesson_plan) if isinstance(lesson_plan, dict) else lesson_plan,
+            "textbook_id": textbook_id,
+            "sow_entry_id": sow_entry_id
+        }).execute()
+        
+        if result.data:
+            return result.data[0]["id"]
+        return None
+    
+    def get_lesson_plan(self, plan_id: int) -> Optional[Dict[str, Any]]:
+        """Get a lesson plan by ID"""
+        if not self.client:
+            return None
+        
+        result = self.client.table("lesson_plans").select("*").eq("id", plan_id).execute()
+        
+        if result.data:
+            return result.data[0]
+        return None
+    
+    def list_lesson_plans(
+        self,
+        subject: Optional[str] = None,
+        grade_level: Optional[str] = None,
+        lesson_type: Optional[str] = None,
+        limit: int = 50
+    ) -> List[Dict[str, Any]]:
+        """List lesson plans with optional filtering"""
+        if not self.client:
+            return []
+        
+        try:
+            query = self.client.table("lesson_plans").select("*")
+            
+            if subject:
+                query = query.eq("subject", subject)
+            if grade_level:
+                query = query.eq("grade_level", grade_level)
+            if lesson_type:
+                query = query.eq("lesson_type", lesson_type)
+            
+            result = query.order("created_at", desc=True).limit(limit).execute()
+            return result.data or []
+        except Exception as e:
+            # Table may not exist yet
+            print(f"Error listing lesson plans: {e}")
+            return []
 
 
 # Singleton instance

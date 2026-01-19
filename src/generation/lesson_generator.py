@@ -1,5 +1,5 @@
 """
-Lesson Generator - Generate lesson plans using LLM
+Lesson Generator - Generate lesson plans using LLM and save to database
 """
 import os
 import json
@@ -9,6 +9,7 @@ import httpx
 from src.models import LessonType, GenerateResponse, LessonPlan
 from src.prompts.templates import LESSON_ARCHITECT_PROMPT, LESSON_TYPE_PROMPTS
 from src.generation.router import router
+from src.db.client import db
 
 
 class LessonGenerator:
@@ -17,7 +18,7 @@ class LessonGenerator:
     def __init__(self):
         self.api_key = os.getenv("OPENROUTER_API_KEY")
         self.base_url = "https://openrouter.ai/api/v1"
-        self.model = "openai/gpt-5.1"
+        self.model = "openai/gpt-4.1"
     
     def _build_prompt(
         self,
@@ -25,7 +26,9 @@ class LessonGenerator:
         subject: str,
         lesson_type: str,
         book_content: str,
-        sow_strategy: str
+        sow_strategy: str,
+        page_start: int,
+        page_end: int
     ) -> str:
         """Build the complete prompt for lesson generation"""
         # Start with the main prompt
@@ -42,6 +45,22 @@ class LessonGenerator:
         if type_addition:
             prompt += f"\n\n{type_addition}"
         
+        # Add instruction to return JSON
+        prompt += """
+
+IMPORTANT: Return your response as a valid JSON object with this exact structure:
+{
+    "slos": ["SLO 1", "SLO 2", "SLO 3"],
+    "methodology": "Step-by-step methodology text...",
+    "brainstorming_activity": "Warm-up activity description...",
+    "main_teaching_activity": "Main teaching activity description...",
+    "hands_on_activity": "Hands-on activity description...",
+    "afl": "Assessment for learning description...",
+    "resources": ["Resource 1", "Resource 2"]
+}
+
+Return ONLY the JSON object, no markdown code blocks or additional text."""
+        
         return prompt
     
     def _call_llm(self, prompt: str) -> str:
@@ -56,7 +75,7 @@ class LessonGenerator:
             "messages": [
                 {
                     "role": "system",
-                    "content": "You are an expert curriculum designer and academic coordinator. Generate comprehensive, practical lesson plans that teachers can use directly in classrooms."
+                    "content": "You are an expert curriculum designer and academic coordinator. Generate comprehensive, practical lesson plans that teachers can use directly in classrooms. Always respond with valid JSON."
                 },
                 {
                     "role": "user",
@@ -82,6 +101,29 @@ class LessonGenerator:
         except Exception as e:
             raise Exception(f"LLM call failed: {e}")
     
+    def _parse_json_response(self, content: str) -> Dict[str, Any]:
+        """Parse LLM response to JSON, handling potential markdown wrapping"""
+        # Clean up potential markdown code blocks
+        content = content.strip()
+        if content.startswith("```"):
+            lines = content.split("\n")
+            # Remove first line (```json) and last line (```)
+            content = "\n".join(lines[1:-1])
+        
+        try:
+            return json.loads(content)
+        except json.JSONDecodeError:
+            # If JSON parsing fails, create a structured response from the text
+            return {
+                "slos": ["Unable to parse - see raw content"],
+                "methodology": content,
+                "brainstorming_activity": "",
+                "main_teaching_activity": "",
+                "hands_on_activity": "",
+                "afl": "",
+                "resources": []
+            }
+    
     def generate(
         self,
         grade: str,
@@ -89,7 +131,8 @@ class LessonGenerator:
         lesson_type: LessonType,
         page_start: int,
         page_end: Optional[int] = None,
-        topic: Optional[str] = None
+        topic: Optional[str] = None,
+        save_to_db: bool = True
     ) -> GenerateResponse:
         """
         Generate a complete lesson plan.
@@ -101,10 +144,14 @@ class LessonGenerator:
             page_start: Starting page number
             page_end: Ending page number
             topic: Optional topic for English
+            save_to_db: Whether to save the generated plan to database
         
         Returns:
             GenerateResponse with the lesson plan
         """
+        if page_end is None:
+            page_end = page_start
+            
         try:
             # Import Subject enum for router
             from src.models import Subject as SubjectEnum
@@ -130,19 +177,48 @@ class LessonGenerator:
                 subject=subject,
                 lesson_type=lesson_type.value,
                 book_content=book_content_str,
-                sow_strategy=sow_strategy_str
+                sow_strategy=sow_strategy_str,
+                page_start=page_start,
+                page_end=page_end
             )
             
             # Generate lesson plan
             raw_content = self._call_llm(prompt)
             
-            # Parse the response (attempt to structure it)
-            lesson_plan = self._parse_lesson_plan(raw_content)
+            # Parse the JSON response
+            lesson_plan_dict = self._parse_json_response(raw_content)
+            
+            # Create LessonPlan object
+            lesson_plan = LessonPlan(
+                slos=lesson_plan_dict.get("slos", []),
+                methodology=lesson_plan_dict.get("methodology", ""),
+                brainstorming_activity=lesson_plan_dict.get("brainstorming_activity", ""),
+                main_teaching_activity=lesson_plan_dict.get("main_teaching_activity", ""),
+                hands_on_activity=lesson_plan_dict.get("hands_on_activity", ""),
+                afl=lesson_plan_dict.get("afl", ""),
+                resources=lesson_plan_dict.get("resources", [])
+            )
+            
+            # Save to database if enabled
+            plan_id = None
+            if save_to_db:
+                plan_id = db.insert_lesson_plan(
+                    grade_level=grade,
+                    subject=subject,
+                    lesson_type=lesson_type.value,
+                    page_start=page_start,
+                    page_end=page_end,
+                    topic=topic,
+                    lesson_plan=lesson_plan_dict,
+                    textbook_id=context["metadata"].get("textbook_id"),
+                    sow_entry_id=context["metadata"].get("sow_entry_id")
+                )
             
             return GenerateResponse(
                 success=True,
                 lesson_plan=lesson_plan,
-                raw_content=raw_content
+                raw_content=raw_content,
+                plan_id=plan_id
             )
             
         except Exception as e:
@@ -150,62 +226,6 @@ class LessonGenerator:
                 success=False,
                 error=str(e)
             )
-    
-    def _parse_lesson_plan(self, content: str) -> Optional[LessonPlan]:
-        """
-        Attempt to parse the raw content into a structured LessonPlan.
-        Returns None if parsing fails (raw_content is still available).
-        """
-        try:
-            # Extract sections using markdown headers
-            sections = {}
-            current_section = None
-            current_content = []
-            
-            for line in content.split('\n'):
-                if line.startswith('## ') or line.startswith('# '):
-                    if current_section:
-                        sections[current_section] = '\n'.join(current_content).strip()
-                    current_section = line.lstrip('#').strip().lower()
-                    current_content = []
-                else:
-                    current_content.append(line)
-            
-            if current_section:
-                sections[current_section] = '\n'.join(current_content).strip()
-            
-            # Map to LessonPlan fields
-            def find_section(keywords):
-                for key in sections:
-                    for kw in keywords:
-                        if kw in key:
-                            return sections[key]
-                return ""
-            
-            # Extract SLOs (usually a bulleted list)
-            slos_text = find_section(['objective', 'slo', 'learning'])
-            slos = [line.strip().lstrip('- •*').strip() 
-                   for line in slos_text.split('\n') 
-                   if line.strip().startswith(('-', '•', '*', '1', '2', '3'))]
-            
-            # Extract resources
-            resources_text = find_section(['resource'])
-            resources = [line.strip().lstrip('- •*').strip() 
-                        for line in resources_text.split('\n') 
-                        if line.strip().startswith(('-', '•', '*'))]
-            
-            return LessonPlan(
-                slos=slos or ["Objective derived from content"],
-                methodology=find_section(['methodology', 'method']),
-                brainstorming_activity=find_section(['brainstorm', 'warm']),
-                main_teaching_activity=find_section(['main', 'teaching activity']),
-                hands_on_activity=find_section(['hands', 'hands-on', 'activity']),
-                afl=find_section(['afl', 'assessment']),
-                resources=resources or ["Textbook pages as specified"]
-            )
-            
-        except Exception:
-            return None
 
 
 # Singleton instance

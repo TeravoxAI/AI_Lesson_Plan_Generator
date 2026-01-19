@@ -95,3 +95,33 @@ async def get_all_lesson_types():
         ]
     
     return result
+
+
+@router.get("/history")
+async def get_lesson_plan_history(
+    subject: Optional[Subject] = None,
+    lesson_type: Optional[str] = None,
+    limit: int = 50
+):
+    """Get history of generated lesson plans"""
+    from src.db.client import db
+    
+    plans = db.list_lesson_plans(
+        subject=subject.value if subject else None,
+        lesson_type=lesson_type,
+        limit=limit
+    )
+    
+    return {"plans": plans, "count": len(plans)}
+
+
+@router.get("/lesson-plan/{plan_id}")
+async def get_lesson_plan_by_id(plan_id: int):
+    """Get a specific lesson plan by ID"""
+    from src.db.client import db
+    
+    plan = db.get_lesson_plan(plan_id)
+    if not plan:
+        raise HTTPException(status_code=404, detail="Lesson plan not found")
+    
+    return plan

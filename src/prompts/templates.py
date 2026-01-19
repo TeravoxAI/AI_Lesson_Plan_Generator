@@ -19,23 +19,29 @@ INSTRUCTIONS:
 2. For mathematical content:
    - Preserve equation formatting
    - Use standard notation (e.g., 1/2 for fractions, ^ for exponents)
-   - Describe any diagrams (e.g., "Clock showing 3:00")
 
-3. For visual elements:
-   - Describe images: "[IMAGE: Description of what the image shows]"
-   - Describe diagrams: "[DIAGRAM: Description]"
-   - Note colors if pedagogically relevant
+3. For visual elements - EMBED THEM INLINE in the text:
+   - Images: [object: detailed description of what the image shows]
+   - Diagrams: [object: detailed description of the diagram]
+   - Charts/Tables: [object: description of chart/table content]
+   - Illustrations: [object: description of illustration]
+   
+   Example: "Look at the picture below. [object: A colorful cartoon of a boy reading a book under a tree] What is the boy doing?"
+
+4. Maintain reading order and paragraph structure
 
 OUTPUT FORMAT:
-Return the response as valid JSON with this structure:
+Return the response as valid JSON with this exact structure:
 {
-  "page_text": "Full extracted text content...",
-  "image_descriptions": ["Description 1", "Description 2"],
-  "has_exercises": true or false,
-  "exercise_count": number of exercises found
+  "book_text": "Full extracted text with images described inline as [object: description]...",
+  "page_no": 1
 }
 
-IMPORTANT: Return ONLY the JSON object, no markdown code blocks or additional text."""
+CRITICAL RULES:
+- Image descriptions MUST be inline within book_text using [object: description] format
+- Do NOT create separate fields for images
+- The page_no should match the actual page number if visible, otherwise use 1
+- Return ONLY the JSON object, no markdown code blocks or additional text"""
 
 
 # ============= SOW Parser Prompt =============

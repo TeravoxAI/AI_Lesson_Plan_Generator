@@ -1,6 +1,8 @@
 """
 Router - Context retrieval logic for lesson generation
+Updated for JSONB pages storage
 """
+import json
 from typing import Dict, Any, List, Optional
 from src.models import Subject, LessonType, BookType
 from src.db.client import db
@@ -25,20 +27,7 @@ class ContextRouter:
         """
         Retrieve all context needed for lesson generation.
         
-        This implements the "Router" algorithm:
-        - Maths (Page-First): Uses page range to query both books and SOW
-        - English (Topic-First): Can use topic OR pages
-        
-        Args:
-            grade: Grade level (e.g., "Grade 2")
-            subject: Subject enum
-            lesson_type: Type of lesson to generate
-            page_start: Starting page number
-            page_end: Ending page number (defaults to page_start)
-            topic: Optional topic string for English
-        
-        Returns:
-            Dict with book_content, sow_strategy, and metadata
+        Fetches pages from JSONB storage format.
         """
         if page_end is None:
             page_end = page_start
@@ -50,7 +39,10 @@ class ContextRouter:
             "page_range": f"{page_start}-{page_end}",
             "book_content": [],
             "sow_strategy": None,
-            "metadata": {}
+            "metadata": {
+                "textbook_id": None,
+                "sow_entry_id": None
+            }
         }
         
         # Get required books for this lesson type
@@ -58,16 +50,30 @@ class ContextRouter:
         
         # Fetch content from each required book
         all_content = []
+        textbook_id = None
+        
         for book_type in required_books:
-            book_content = self._fetch_book_content(
-                grade, subject.value, book_type.value, page_start, page_end
-            )
-            if book_content:
-                all_content.extend(book_content)
+            book = db.get_textbook(grade, subject.value, book_type.value)
+            if book:
+                textbook_id = book["id"]
+                
+                # Get pages in the requested range
+                pages = db.get_textbook_pages(book["id"], page_start, page_end)
+                
+                for page in pages:
+                    all_content.append({
+                        "book_type": book_type.value,
+                        "title": book.get("title", ""),
+                        "page_no": page.get("page_no"),
+                        "content": page.get("book_text", ""),
+                        "book_id": book["id"]
+                    })
         
         context["book_content"] = all_content
+        context["metadata"]["textbook_id"] = textbook_id
         
         # Fetch SOW based on subject strategy
+        sow_entries = []
         if subject == Subject.MATHEMATICS:
             # Maths: Page-First approach
             sow_entries = db.get_sow_by_pages(subject.value, grade, page_start)
@@ -76,48 +82,17 @@ class ContextRouter:
             if topic:
                 sow_entries = db.get_sow_by_topic(subject.value, grade, topic)
             else:
-                # Fallback to page-based
                 sow_entries = db.get_sow_by_pages(subject.value, grade, page_start)
         
         if sow_entries:
-            # Use the first matching entry (or combine if multiple)
             context["sow_strategy"] = self._format_sow(sow_entries)
+            context["metadata"]["sow_entry_id"] = sow_entries[0].get("id")
         
-        # Add metadata
-        context["metadata"] = {
-            "books_used": [b.value for b in required_books],
-            "pages_found": len(all_content),
-            "sow_entries_found": len(sow_entries) if sow_entries else 0
-        }
+        context["metadata"]["books_used"] = [b.value for b in required_books]
+        context["metadata"]["pages_found"] = len(all_content)
+        context["metadata"]["sow_entries_found"] = len(sow_entries) if sow_entries else 0
         
         return context
-    
-    def _fetch_book_content(
-        self,
-        grade: str,
-        subject: str,
-        book_type: str,
-        page_start: int,
-        page_end: int
-    ) -> List[Dict[str, Any]]:
-        """Fetch content from a specific book"""
-        # First, get the book ID
-        book = db.get_textbook(grade, subject, book_type)
-        if not book:
-            return []
-        
-        # Then fetch pages
-        pages = db.get_pages_by_range(book["id"], page_start, page_end)
-        
-        return [
-            {
-                "book_type": book_type,
-                "page_number": p["page_number"],
-                "content": p["content_text"],
-                "images": p.get("image_summary", "")
-            }
-            for p in pages
-        ]
     
     def _format_sow(self, sow_entries: List[Dict[str, Any]]) -> str:
         """Format SOW entries into a readable string"""
@@ -145,16 +120,20 @@ class ContextRouter:
     def format_book_content(self, book_content: List[Dict[str, Any]]) -> str:
         """Format book content into a readable string for the prompt"""
         if not book_content:
-            return "No textbook content found for the specified pages."
+            return "No textbook content found. Please upload the required textbook first."
         
         formatted_parts = []
         
         for page in book_content:
-            parts = [f"**{page['book_type'].upper()} - Page {page['page_number']}**"]
-            parts.append(page['content'])
+            parts = [f"**{page['book_type'].upper()}** - Page {page.get('page_no', '?')}"]
+            if page.get('title'):
+                parts[0] += f" ({page['title']})"
             
-            if page.get('images'):
-                parts.append(f"\n*Visual elements:* {page['images']}")
+            content = page.get('content', '')
+            if content:
+                parts.append(content)
+            else:
+                parts.append("*No content on this page.*")
             
             formatted_parts.append("\n".join(parts))
         

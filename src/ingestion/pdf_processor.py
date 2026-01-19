@@ -42,7 +42,7 @@ class PDFProcessor:
             print(f"pdfplumber extraction failed: {e}")
         return ""
     
-    def _call_vision_llm(self, image_base64: str) -> Dict[str, Any]:
+    def _call_vision_llm(self, image_base64: str, page_num: int = 1) -> Dict[str, Any]:
         """Call OpenRouter Vision LLM for OCR"""
         headers = {
             "Authorization": f"Bearer {self.api_key}",
@@ -90,15 +90,19 @@ class PDFProcessor:
                     if content.startswith("json"):
                         content = content[4:]
                 
-                return json.loads(content.strip())
+                parsed = json.loads(content.strip())
+                
+                # Ensure correct format {book_text, page_no}
+                return {
+                    "book_text": parsed.get("book_text", ""),
+                    "page_no": parsed.get("page_no", page_num)
+                }
                 
         except Exception as e:
             print(f"Vision LLM call failed: {e}")
             return {
-                "page_text": "",
-                "image_descriptions": [],
-                "has_exercises": False,
-                "exercise_count": 0
+                "book_text": "",
+                "page_no": page_num
             }
     
     def process_pdf(
@@ -114,7 +118,7 @@ class PDFProcessor:
             use_vision: Whether to use Vision LLM (True) or pdfplumber (False)
         
         Returns:
-            List of page data dictionaries
+            List of page data: [{"book_text": "...", "page_no": 1}, ...]
         """
         pages_data = []
         pdf_path = Path(pdf_path)
@@ -135,24 +139,14 @@ class PDFProcessor:
             if use_vision:
                 # Use Vision LLM for OCR
                 image_base64 = self._image_to_base64(image)
-                ocr_result = self._call_vision_llm(image_base64)
-                
-                pages_data.append({
-                    "page_number": page_num,
-                    "content_text": ocr_result.get("page_text", ""),
-                    "image_summary": "; ".join(ocr_result.get("image_descriptions", [])),
-                    "has_exercises": ocr_result.get("has_exercises", False),
-                    "exercise_count": ocr_result.get("exercise_count", 0)
-                })
+                ocr_result = self._call_vision_llm(image_base64, page_num)
+                pages_data.append(ocr_result)
             else:
                 # Fallback to pdfplumber
                 text = self._extract_text_pdfplumber(str(pdf_path), page_num)
                 pages_data.append({
-                    "page_number": page_num,
-                    "content_text": text,
-                    "image_summary": "",
-                    "has_exercises": False,
-                    "exercise_count": 0
+                    "book_text": text,
+                    "page_no": page_num
                 })
         
         print(f"Completed processing {total_pages} pages")
@@ -165,7 +159,12 @@ class PDFProcessor:
         end_page: int,
         use_vision: bool = True
     ) -> List[Dict[str, Any]]:
-        """Process a specific range of pages"""
+        """
+        Process a specific range of pages
+        
+        Returns:
+            List of page data: [{"book_text": "...", "page_no": 1}, ...]
+        """
         pages_data = []
         pdf_path = Path(pdf_path)
         
@@ -186,23 +185,13 @@ class PDFProcessor:
             
             if use_vision:
                 image_base64 = self._image_to_base64(image)
-                ocr_result = self._call_vision_llm(image_base64)
-                
-                pages_data.append({
-                    "page_number": page_num,
-                    "content_text": ocr_result.get("page_text", ""),
-                    "image_summary": "; ".join(ocr_result.get("image_descriptions", [])),
-                    "has_exercises": ocr_result.get("has_exercises", False),
-                    "exercise_count": ocr_result.get("exercise_count", 0)
-                })
+                ocr_result = self._call_vision_llm(image_base64, page_num)
+                pages_data.append(ocr_result)
             else:
                 text = self._extract_text_pdfplumber(str(pdf_path), page_num)
                 pages_data.append({
-                    "page_number": page_num,
-                    "content_text": text,
-                    "image_summary": "",
-                    "has_exercises": False,
-                    "exercise_count": 0
+                    "book_text": text,
+                    "page_no": page_num
                 })
         
         return pages_data
@@ -210,3 +199,4 @@ class PDFProcessor:
 
 # Singleton instance
 pdf_processor = PDFProcessor()
+

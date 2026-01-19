@@ -80,6 +80,7 @@ class GenerateResponse(BaseModel):
     success: bool
     lesson_plan: Optional[LessonPlan] = None
     raw_content: Optional[str] = None
+    plan_id: Optional[int] = None  # ID of saved lesson plan in database
     error: Optional[str] = None
 
 
@@ -87,6 +88,8 @@ class IngestResponse(BaseModel):
     """Response model for ingestion operations"""
     success: bool
     message: str
+    book_id: Optional[int] = None
+    sow_id: Optional[int] = None
     job_id: Optional[str] = None
     pages_processed: Optional[int] = None
     entries_extracted: Optional[int] = None
@@ -100,4 +103,5 @@ class BookInfo(BaseModel):
     subject: str
     book_type: str
     title: str
-    page_count: Optional[int] = None
+    has_content: bool = False  # Whether content_text is populated
+

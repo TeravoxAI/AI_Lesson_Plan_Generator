@@ -1,5 +1,6 @@
 """
 Ingestion Router - API endpoints for uploading and processing documents
+Uses LandingAI ADE ONLY for document extraction (no fallback)
 """
 import os
 import tempfile
@@ -10,8 +11,6 @@ from fastapi.responses import JSONResponse
 
 from src.models import Subject, BookType, IngestResponse
 from src.db.client import db
-from src.ingestion.pdf_processor import pdf_processor
-from src.ingestion.sow_parser import sow_parser
 
 
 router = APIRouter(tags=["Ingestion"])
@@ -23,14 +22,14 @@ async def ingest_textbook(
     grade: str = Form(default="Grade 2"),
     subject: Subject = Form(...),
     book_type: BookType = Form(...),
-    title: str = Form(...),
-    use_vision: bool = Form(default=True)
+    title: str = Form(...)
 ):
     """
-    Upload and process a textbook PDF.
+    Upload and process a textbook PDF using LandingAI ADE.
     
-    - Extracts text from each page using Vision LLM (or pdfplumber fallback)
-    - Stores metadata and content in database
+    - Uses LandingAI ADE for OCR
+    - Stores pages as JSONB array: [{"book_text": "...", "page_no": 1}, ...]
+    - Images are converted to inline: [object: description]
     """
     if not file.filename.lower().endswith('.pdf'):
         raise HTTPException(status_code=400, detail="Only PDF files are accepted")
@@ -40,7 +39,7 @@ async def ingest_textbook(
     if existing:
         raise HTTPException(
             status_code=409, 
-            detail=f"Book already exists: {title}. Delete it first to re-upload."
+            detail=f"Book already exists: {existing['title']}. Delete it first to re-upload."
         )
     
     # Save uploaded file temporarily
@@ -51,34 +50,29 @@ async def ingest_textbook(
         with open(temp_path, "wb") as f:
             shutil.copyfileobj(file.file, f)
         
-        # Create textbook record
+        # Use ADE processor only
+        from src.ingestion.ade_processor import get_ade_processor
+        processor = get_ade_processor()
+        
+        # Process PDF - returns [{"book_text": "...", "page_no": 1}, ...]
+        pages_data = processor.process_pdf(temp_path)
+        
+        # Create textbook record with pages
         book_id = db.insert_textbook(
             grade_level=grade,
             subject=subject.value,
             book_type=book_type.value,
-            title=title
+            title=title,
+            pages=pages_data
         )
         
         if not book_id:
             raise HTTPException(status_code=500, detail="Failed to create textbook record")
         
-        # Process PDF pages
-        pages_data = pdf_processor.process_pdf(temp_path, use_vision=use_vision)
-        
-        # Insert pages into database
-        for page in pages_data:
-            db.insert_page(
-                book_id=book_id,
-                page_number=page["page_number"],
-                content_text=page["content_text"],
-                image_summary=page.get("image_summary", ""),
-                has_exercises=page.get("has_exercises", False),
-                exercise_count=page.get("exercise_count", 0)
-            )
-        
         return IngestResponse(
             success=True,
-            message=f"Successfully processed {title}",
+            message=f"Successfully processed {title} using ADE",
+            book_id=book_id,
             pages_processed=len(pages_data)
         )
         
@@ -101,9 +95,9 @@ async def ingest_sow(
     term: str = Form(default="Term 1")
 ):
     """
-    Upload and process a Scheme of Work (SOW) document.
+    Upload and process a Scheme of Work (SOW) document using LandingAI ADE.
     
-    - Parses SOW tables using Vision LLM
+    - Uses LandingAI ADE for structured extraction
     - Extracts topics, page mappings, strategies, and activities
     """
     filename = file.filename.lower()
@@ -121,34 +115,33 @@ async def ingest_sow(
         with open(temp_path, "wb") as f:
             shutil.copyfileobj(file.file, f)
         
-        # Parse SOW based on file type
-        if filename.endswith('.pdf'):
-            entries = sow_parser.parse_pdf(temp_path)
-        else:
-            entries = sow_parser.parse_image(temp_path)
+        # Use ADE processor to extract SOW
+        from src.ingestion.ade_processor import get_ade_processor
+        processor = get_ade_processor()
+        extraction = processor.extract_sow(temp_path)
         
-        # Insert entries into database
-        inserted_count = 0
-        for entry in entries:
-            entry_id = db.insert_sow_entry(
-                grade_level=grade,
-                subject=subject.value,
-                term=term,
-                topic_name=entry.get("topic_name", ""),
-                mapped_page_numbers=entry.get("mapped_page_numbers", []),
-                teaching_strategy=entry.get("teaching_strategy", ""),
-                resources_text=entry.get("resources", ""),
-                afl_strategy=entry.get("afl_strategy", ""),
-                activities=entry.get("activities", "")
-            )
-            if entry_id:
-                inserted_count += 1
-        
-        return IngestResponse(
-            success=True,
-            message=f"Successfully parsed SOW for {subject.value}",
-            entries_extracted=inserted_count
+        # Store the complete extraction as a single record
+        sow_id = db.insert_sow_entry(
+            grade_level=grade,
+            subject=subject.value,
+            term=term,
+            title=file.filename,
+            extraction=extraction
         )
+        
+        if sow_id:
+            return IngestResponse(
+                success=True,
+                message=f"Successfully extracted SOW for {subject.value}",
+                entries_extracted=1,
+                sow_id=sow_id
+            )
+        else:
+            return IngestResponse(
+                success=False,
+                message="Failed to save SOW extraction to database",
+                error="Database insert failed"
+            )
         
     except Exception as e:
         return IngestResponse(
@@ -166,12 +159,52 @@ async def list_books():
     """List all ingested textbooks"""
     books = db.list_textbooks()
     
-    # Enrich with page count
+    # Add page count, don't send full pages in list
     for book in books:
-        pages = db.get_pages_by_book(book["id"])
+        pages = book.get("pages", [])
+        if isinstance(pages, str):
+            import json
+            pages = json.loads(pages) if pages else []
         book["page_count"] = len(pages)
+        book["has_content"] = len(pages) > 0
+        # Remove pages from list response (too large)
+        if "pages" in book:
+            del book["pages"]
     
     return {"books": books}
+
+
+@router.get("/books/{book_id}/pages")
+async def get_book_pages(
+    book_id: int,
+    page_start: int = 1,
+    page_end: Optional[int] = None
+):
+    """Get specific pages from a textbook"""
+    book = db.get_textbook_by_id(book_id)
+    if not book:
+        raise HTTPException(status_code=404, detail="Book not found")
+    
+    if page_end is None:
+        page_end = page_start
+    
+    pages = db.get_textbook_pages(book_id, page_start, page_end)
+    
+    return {
+        "book_id": book_id,
+        "title": book.get("title"),
+        "page_range": f"{page_start}-{page_end}",
+        "pages": pages
+    }
+
+
+@router.delete("/books/{book_id}")
+async def delete_book(book_id: int):
+    """Delete a textbook"""
+    success = db.delete_textbook(book_id)
+    if success:
+        return {"success": True, "message": f"Deleted book {book_id}"}
+    raise HTTPException(status_code=404, detail="Book not found")
 
 
 @router.get("/sow")

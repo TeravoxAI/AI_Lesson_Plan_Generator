@@ -8,3 +8,4 @@ python-dotenv>=1.0.0
 openai>=1.0.0
 Pillow>=10.0.0
 httpx>=0.26.0
+landingai-ade>=1.4.0
