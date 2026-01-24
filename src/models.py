@@ -78,7 +78,8 @@ class LessonPlan(BaseModel):
 class GenerateResponse(BaseModel):
     """Response model for lesson plan generation"""
     success: bool
-    lesson_plan: Optional[LessonPlan] = None
+    html_content: Optional[str] = None  # HTML formatted lesson plan
+    lesson_plan: Optional[LessonPlan] = None  # Legacy JSON format
     raw_content: Optional[str] = None
     plan_id: Optional[int] = None  # ID of saved lesson plan in database
     error: Optional[str] = None

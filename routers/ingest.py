@@ -159,17 +159,17 @@ async def list_books():
     """List all ingested textbooks"""
     books = db.list_textbooks()
     
-    # Add page count, don't send full pages in list
+    # Add page count, don't send full content in list
     for book in books:
-        pages = book.get("pages", [])
-        if isinstance(pages, str):
+        content = book.get("content_text", [])
+        if isinstance(content, str):
             import json
-            pages = json.loads(pages) if pages else []
-        book["page_count"] = len(pages)
-        book["has_content"] = len(pages) > 0
-        # Remove pages from list response (too large)
-        if "pages" in book:
-            del book["pages"]
+            content = json.loads(content) if content else []
+        book["page_count"] = len(content)
+        book["has_content"] = len(content) > 0
+        # Remove content from list response (too large)
+        if "content_text" in book:
+            del book["content_text"]
     
     return {"books": books}
 

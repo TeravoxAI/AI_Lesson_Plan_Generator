@@ -6,16 +6,18 @@ from src.models import LessonType, Subject, BookType
 
 
 # Book mapping: lesson_type -> list of book_types to use
+# English books: Course, Activity, Reading
+# Maths books: Course, Activity
 BOOK_MAPPING = {
     Subject.ENGLISH: {
         LessonType.READING: [BookType.READING],
         LessonType.COMPREHENSION: [BookType.ACTIVITY],
-        LessonType.GRAMMAR: [BookType.LEARNERS],
-        LessonType.CREATIVE_WRITING: [BookType.LEARNERS, BookType.ACTIVITY],
+        LessonType.GRAMMAR: [BookType.COURSE_BOOK],
+        LessonType.CREATIVE_WRITING: [BookType.COURSE_BOOK, BookType.ACTIVITY],
     },
     Subject.MATHEMATICS: {
         LessonType.CONCEPT: [BookType.COURSE_BOOK],
-        LessonType.PRACTICE: [BookType.COURSE_BOOK, BookType.WORKBOOK],
+        LessonType.PRACTICE: [BookType.COURSE_BOOK, BookType.ACTIVITY],
     }
 }
 
@@ -68,8 +70,8 @@ def get_available_lesson_types(subject: Subject) -> List[LessonType]:
 LESSON_TYPE_DESCRIPTIONS = {
     LessonType.READING: "Reading lesson using the Reading Book",
     LessonType.COMPREHENSION: "Comprehension lesson using the Activity Book",
-    LessonType.GRAMMAR: "Grammar lesson using the Learner's Book",
-    LessonType.CREATIVE_WRITING: "Creative writing using Learner's and Activity Books",
+    LessonType.GRAMMAR: "Grammar lesson using the Course Book",
+    LessonType.CREATIVE_WRITING: "Creative writing using Course and Activity Books",
     LessonType.CONCEPT: "Mathematical concept lesson using the Course Book",
-    LessonType.PRACTICE: "Practice lesson using Course Book and Workbook",
+    LessonType.PRACTICE: "Practice lesson using Course Book and Activity Book",
 }
