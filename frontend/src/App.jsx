@@ -88,7 +88,8 @@ function App() {
             const data = await res.json()
 
             if (data.success) {
-                setLessonPlan(data.raw_content || formatLessonPlan(data.lesson_plan))
+                // Use HTML content directly from LLM
+                setLessonPlan(data.html_content || '')
                 setStatus({ type: 'success', message: 'Lesson plan generated successfully!' })
             } else {
                 setStatus({ type: 'error', message: data.error || 'Generation failed' })
@@ -102,30 +103,46 @@ function App() {
 
     const formatLessonPlan = (plan) => {
         if (!plan) return ''
-        return `
-# Lesson Plan
 
-## Learning Objectives (SLOs)
-${plan.slos?.map(slo => `- ${slo}`).join('\n') || ''}
+        // Each field may contain rich markdown content from LLM
+        const sections = []
 
-## Methodology
-${plan.methodology || ''}
+        // Learning Objectives (SLOs)
+        if (plan.slos && plan.slos.length > 0) {
+            sections.push(`## 📎 Learning Objectives (SLOs)\n${plan.slos.map(slo => `- ${slo}`).join('\n')}`)
+        }
 
-## Brainstorming Activity
-${plan.brainstorming_activity || ''}
+        // Brainstorming/Warm-up Activity
+        if (plan.brainstorming_activity) {
+            sections.push(plan.brainstorming_activity)
+        }
 
-## Main Teaching Activity
-${plan.main_teaching_activity || ''}
+        // Methodology
+        if (plan.methodology) {
+            sections.push(plan.methodology)
+        }
 
-## Hands-On Activity
-${plan.hands_on_activity || ''}
+        // Main Teaching Activity
+        if (plan.main_teaching_activity) {
+            sections.push(plan.main_teaching_activity)
+        }
 
-## Assessment for Learning (AFL)
-${plan.afl || ''}
+        // Hands-On Activity
+        if (plan.hands_on_activity) {
+            sections.push(plan.hands_on_activity)
+        }
 
-## Resources
-${plan.resources?.map(r => `- ${r}`).join('\n') || ''}
-    `.trim()
+        // Assessment for Learning (AFL)
+        if (plan.afl) {
+            sections.push(plan.afl)
+        }
+
+        // Resources
+        if (plan.resources && plan.resources.length > 0) {
+            sections.push(`## 📚 Resources\n${plan.resources.map(r => `- ${r}`).join('\n')}`)
+        }
+
+        return sections.join('\n\n---\n\n')
     }
 
     const handleUpload = async (e) => {
@@ -188,7 +205,7 @@ ${plan.resources?.map(r => `- ${r}`).join('\n') || ''}
     return (
         <div className="app">
             <header className="header">
-                <h1>📚 Lesson Plan Generator</h1>
+                <h1>Lesson Plan Generator</h1>
                 <p>AI-powered curriculum-aware lesson planning for Grade 2</p>
             </header>
 
@@ -303,9 +320,10 @@ ${plan.resources?.map(r => `- ${r}`).join('\n') || ''}
                     )}
 
                     {lessonPlan && (
-                        <div className="lesson-plan">
-                            <ReactMarkdown>{lessonPlan}</ReactMarkdown>
-                        </div>
+                        <div
+                            className="lesson-plan"
+                            dangerouslySetInnerHTML={{ __html: lessonPlan }}
+                        />
                     )}
                 </div>
             )}

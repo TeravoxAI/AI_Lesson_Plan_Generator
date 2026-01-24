@@ -245,35 +245,109 @@ body {
 }
 
 .lesson-plan h1 {
-  font-size: 1.5rem;
+  font-size: 1.75rem;
   margin-bottom: 1rem;
   color: var(--accent-secondary);
 }
 
 .lesson-plan h2 {
-  font-size: 1.2rem;
-  margin: 1.5rem 0 0.75rem;
+  font-size: 1.35rem;
+  margin: 2rem 0 1rem;
   color: var(--text-primary);
-  border-bottom: 1px solid var(--border-color);
+  border-bottom: 2px solid var(--accent-primary);
   padding-bottom: 0.5rem;
+}
+
+.lesson-plan h3 {
+  font-size: 1.1rem;
+  margin: 1.5rem 0 0.75rem;
+  color: var(--accent-secondary);
+}
+
+.lesson-plan h4 {
+  font-size: 1rem;
+  margin: 1rem 0 0.5rem;
+  color: var(--text-primary);
+  font-weight: 600;
 }
 
 .lesson-plan p {
   color: var(--text-secondary);
   margin-bottom: 0.75rem;
+  line-height: 1.7;
 }
 
-.lesson-plan ul, .lesson-plan ol {
+.lesson-plan ul,
+.lesson-plan ol {
   margin-left: 1.5rem;
+  margin-bottom: 1rem;
   color: var(--text-secondary);
 }
 
 .lesson-plan li {
   margin-bottom: 0.5rem;
+  line-height: 1.6;
+}
+
+.lesson-plan li ul,
+.lesson-plan li ol {
+  margin-top: 0.5rem;
+  margin-bottom: 0.5rem;
 }
 
 .lesson-plan strong {
   color: var(--text-primary);
+  font-weight: 600;
+}
+
+.lesson-plan em {
+  color: var(--accent-secondary);
+  font-style: italic;
+}
+
+.lesson-plan hr {
+  border: none;
+  border-top: 1px solid var(--border-color);
+  margin: 2rem 0;
+}
+
+.lesson-plan blockquote {
+  border-left: 3px solid var(--accent-primary);
+  padding-left: 1rem;
+  margin: 1rem 0;
+  color: var(--text-muted);
+  font-style: italic;
+}
+
+.lesson-plan code {
+  background: var(--bg-secondary);
+  padding: 0.15rem 0.4rem;
+  border-radius: 4px;
+  font-family: 'Fira Code', monospace;
+  font-size: 0.9em;
+  color: var(--accent-secondary);
+}
+
+.lesson-plan pre {
+  background: var(--bg-secondary);
+  padding: 1rem;
+  border-radius: 8px;
+  overflow-x: auto;
+  margin: 1rem 0;
+}
+
+.lesson-plan pre code {
+  background: transparent;
+  padding: 0;
+}
+
+.lesson-plan a {
+  color: var(--accent-secondary);
+  text-decoration: underline;
+}
+
+.lesson-plan a:hover {
+  color: var(--accent-primary);
 }
 
 /* Status Messages */
@@ -315,7 +389,9 @@ body {
 }
 
 @keyframes spin {
-  to { transform: rotate(360deg); }
+  to {
+    transform: rotate(360deg);
+  }
 }
 
 /* Books List */
@@ -360,20 +436,20 @@ body {
   .app {
     padding: 1rem;
   }
-  
+
   .header h1 {
     font-size: 1.75rem;
   }
-  
+
   .form-grid {
     grid-template-columns: 1fr;
   }
-  
+
   .tabs {
     width: 100%;
     justify-content: center;
   }
-  
+
   .tab {
     padding: 0.625rem 1rem;
     font-size: 0.875rem;

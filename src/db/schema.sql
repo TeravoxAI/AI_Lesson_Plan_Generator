@@ -9,9 +9,9 @@ CREATE TABLE IF NOT EXISTS textbooks (
     subject VARCHAR(50),          -- e.g., "Mathematics" / "English"
     book_type VARCHAR(50),        -- "course_book" / "workbook" / "learners" / "activity" / "reading"
     title VARCHAR(100),
-    -- OCR content stored as JSONB array: [{"book_text": "...", "page_no": 1}, ...]
-    -- Images in text are formatted as: [object: description...]
-    pages JSONB DEFAULT '[]'::jsonb
+    -- OCR content stored as JSONB array
+    -- Format: [{"content": "...", "pdf_page_no": 1, "book_page_no": 122}, ...]
+    content_text JSONB DEFAULT '[]'::jsonb
 );
 
 -- 2. Stores Complete SOW Extraction as JSON

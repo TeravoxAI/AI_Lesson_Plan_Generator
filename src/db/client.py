@@ -53,7 +53,7 @@ class DatabaseClient:
             "subject": subject,
             "book_type": book_type,
             "title": title,
-            "pages": json.dumps(pages or [])
+            "content_text": json.dumps(pages or [])
         }).execute()
         
         if result.data:
@@ -71,7 +71,7 @@ class DatabaseClient:
             return False
         
         result = self.client.table("textbooks").update({
-            "pages": json.dumps(pages)
+            "content_text": json.dumps(pages)
         }).eq("id", book_id).execute()
         
         return bool(result.data)
@@ -83,16 +83,16 @@ class DatabaseClient:
         Returns pages within the specified range.
         """
         book = self.get_textbook_by_id(book_id)
-        if not book or not book.get("pages"):
+        if not book or not book.get("content_text"):
             return []
         
-        pages = book["pages"]
+        pages = book["content_text"]
         if isinstance(pages, str):
             pages = json.loads(pages)
         
         return [
             p for p in pages 
-            if page_start <= p.get("page_no", 0) <= page_end
+            if page_start <= p.get("page_no", 0) <= page_end or page_start <= p.get("book_page_no", 0) <= page_end
         ]
     
     def get_textbook(

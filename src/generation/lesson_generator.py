@@ -7,18 +7,24 @@ from typing import Dict, Any, Optional
 import httpx
 
 from src.models import LessonType, GenerateResponse, LessonPlan
-from src.prompts.templates import LESSON_ARCHITECT_PROMPT, LESSON_TYPE_PROMPTS
+from src.prompts.templates import (
+    LESSON_ARCHITECT_PROMPT, 
+    LESSON_TYPE_PROMPTS,
+    ENG_SYSTEM_PROMPT,
+    MATHS_SYSTEM_PROMPT
+)
 from src.generation.router import router
 from src.db.client import db
+from src.config import LLM_MODEL, OPENROUTER_API_KEY, OPENROUTER_BASE_URL
 
 
 class LessonGenerator:
     """Generate lesson plans using retrieved context and LLM"""
     
     def __init__(self):
-        self.api_key = os.getenv("OPENROUTER_API_KEY")
-        self.base_url = "https://openrouter.ai/api/v1"
-        self.model = "openai/gpt-4.1"
+        self.api_key = OPENROUTER_API_KEY
+        self.base_url = OPENROUTER_BASE_URL
+        self.model = LLM_MODEL
     
     def _build_prompt(
         self,
@@ -45,48 +51,43 @@ class LessonGenerator:
         if type_addition:
             prompt += f"\n\n{type_addition}"
         
-        # Add instruction to return JSON
-        prompt += """
-
-IMPORTANT: Return your response as a valid JSON object with this exact structure:
-{
-    "slos": ["SLO 1", "SLO 2", "SLO 3"],
-    "methodology": "Step-by-step methodology text...",
-    "brainstorming_activity": "Warm-up activity description...",
-    "main_teaching_activity": "Main teaching activity description...",
-    "hands_on_activity": "Hands-on activity description...",
-    "afl": "Assessment for learning description...",
-    "resources": ["Resource 1", "Resource 2"]
-}
-
-Return ONLY the JSON object, no markdown code blocks or additional text."""
-        
         return prompt
     
-    def _call_llm(self, prompt: str) -> str:
+    def _get_system_prompt(self, subject: str) -> str:
+        """Get the appropriate system prompt based on subject"""
+        if subject.lower() == "mathematics":
+            return MATHS_SYSTEM_PROMPT
+        else:
+            return ENG_SYSTEM_PROMPT  # Default to English
+    
+    def _call_llm(self, prompt: str, subject: str) -> str:
         """Call OpenRouter LLM for generation"""
         headers = {
             "Authorization": f"Bearer {self.api_key}",
             "Content-Type": "application/json"
         }
         
+        # Select subject-specific system prompt
+        system_prompt = self._get_system_prompt(subject)
+        
         payload = {
             "model": self.model,
             "messages": [
                 {
                     "role": "system",
-                    "content": "You are an expert curriculum designer and academic coordinator. Generate comprehensive, practical lesson plans that teachers can use directly in classrooms. Always respond with valid JSON."
+                    "content": system_prompt
                 },
                 {
                     "role": "user",
                     "content": prompt
                 }
             ],
-            "max_tokens": 4000,
+            "max_tokens": 8000,
             "temperature": 0.7
         }
         
         try:
+            print(f"\n🤖 [LLM] Calling {self.model}...")
             with httpx.Client(timeout=120.0) as client:
                 response = client.post(
                     f"{self.base_url}/chat/completions",
@@ -96,7 +97,9 @@ Return ONLY the JSON object, no markdown code blocks or additional text."""
                 response.raise_for_status()
                 
                 result = response.json()
-                return result["choices"][0]["message"]["content"]
+                content = result["choices"][0]["message"]["content"]
+                print(f"   ✓ LLM response received ({len(content)} chars)")
+                return content
                 
         except Exception as e:
             raise Exception(f"LLM call failed: {e}")
@@ -167,6 +170,8 @@ Return ONLY the JSON object, no markdown code blocks or additional text."""
                 topic=topic
             )
             
+            print(f"\n📝 [GENERATE] Building prompt for {subject} lesson plan...")
+            
             # Format content for prompt
             book_content_str = router.format_book_content(context["book_content"])
             sow_strategy_str = context.get("sow_strategy", "")
@@ -182,22 +187,17 @@ Return ONLY the JSON object, no markdown code blocks or additional text."""
                 page_end=page_end
             )
             
-            # Generate lesson plan
-            raw_content = self._call_llm(prompt)
+            # Generate lesson plan (HTML) - use subject-specific system prompt
+            html_content = self._call_llm(prompt, subject)
             
-            # Parse the JSON response
-            lesson_plan_dict = self._parse_json_response(raw_content)
+            # Clean up HTML if wrapped in code blocks
+            html_content = html_content.strip()
+            if html_content.startswith("```"):
+                lines = html_content.split("\n")
+                html_content = "\n".join(lines[1:-1])
             
-            # Create LessonPlan object
-            lesson_plan = LessonPlan(
-                slos=lesson_plan_dict.get("slos", []),
-                methodology=lesson_plan_dict.get("methodology", ""),
-                brainstorming_activity=lesson_plan_dict.get("brainstorming_activity", ""),
-                main_teaching_activity=lesson_plan_dict.get("main_teaching_activity", ""),
-                hands_on_activity=lesson_plan_dict.get("hands_on_activity", ""),
-                afl=lesson_plan_dict.get("afl", ""),
-                resources=lesson_plan_dict.get("resources", [])
-            )
+            print(f"   ✓ Lesson plan generated successfully!")
+            print(f"   HTML length: {len(html_content)} chars")
             
             # Save to database if enabled
             plan_id = None
@@ -209,19 +209,20 @@ Return ONLY the JSON object, no markdown code blocks or additional text."""
                     page_start=page_start,
                     page_end=page_end,
                     topic=topic,
-                    lesson_plan=lesson_plan_dict,
+                    lesson_plan={"html_content": html_content},
                     textbook_id=context["metadata"].get("textbook_id"),
                     sow_entry_id=context["metadata"].get("sow_entry_id")
                 )
             
             return GenerateResponse(
                 success=True,
-                lesson_plan=lesson_plan,
-                raw_content=raw_content,
+                html_content=html_content,
                 plan_id=plan_id
             )
             
         except Exception as e:
+            import traceback
+            traceback.print_exc()
             return GenerateResponse(
                 success=False,
                 error=str(e)
