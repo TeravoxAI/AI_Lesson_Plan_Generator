@@ -3,15 +3,19 @@ Pydantic Models for API Request/Response
 """
 from enum import Enum
 from typing import Optional, List
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 
 class LessonType(str, Enum):
     """Available lesson plan types"""
-    # English types
+    # English types (in order as per design)
+    RECALL = "recall"
+    VOCABULARY = "vocabulary"
+    LISTENING = "listening"
     READING = "reading"
-    COMPREHENSION = "comprehension"
+    READING_COMPREHENSION = "reading_comprehension"
     GRAMMAR = "grammar"
+    ORAL_SPEAKING = "oral_speaking"
     CREATIVE_WRITING = "creative_writing"
     # Maths types
     CONCEPT = "concept"
@@ -105,4 +109,55 @@ class BookInfo(BaseModel):
     book_type: str
     title: str
     has_content: bool = False  # Whether content_text is populated
+
+
+# ============= SOW Models (New Format) =============
+
+class SOWBookReference(BaseModel):
+    """Book reference within a lesson plan type"""
+    book_type: str = Field(..., description="Book type code: LB, AB, TR, ORT")
+    book_name: str = Field(default="", description="Full book name")
+    pages: List[int] = Field(default_factory=list, description="List of page numbers")
+
+
+class SOWExternalResource(BaseModel):
+    """External resource reference"""
+    title: str = Field(..., description="Resource title")
+    type: str = Field(..., description="Resource type: audio, video, document, interactive")
+    reference: str = Field(default="", description="Track number or URL")
+
+
+class SOWLessonPlanType(BaseModel):
+    """A lesson plan type within a lesson"""
+    type: str = Field(..., description="Lesson plan type: recall_review, reading, comprehension, etc.")
+    content: str = Field(default="", description="Extracted SoW content relevant to this LP type")
+    learning_strategies: List[str] = Field(default_factory=list, description="Strategies from SoW")
+    student_learning_outcomes: List[str] = Field(default_factory=list, description="Grade-appropriate SLOs")
+    skills: List[str] = Field(default_factory=list, description="Skills: Listening, Speaking, Reading, Writing, Thinking")
+    book_references: List[SOWBookReference] = Field(default_factory=list, description="Book references with pages")
+    external_resources: List[SOWExternalResource] = Field(default_factory=list, description="External resources")
+
+
+class SOWLesson(BaseModel):
+    """A lesson within a unit"""
+    lesson_number: int = Field(..., description="Lesson number")
+    lesson_title: str = Field(..., description="Lesson title")
+    lesson_plan_types: List[SOWLessonPlanType] = Field(default_factory=list, description="Lesson plan types")
+
+
+class SOWUnit(BaseModel):
+    """A unit within the curriculum"""
+    unit_number: int = Field(..., description="Unit number")
+    unit_title: str = Field(..., description="Unit title")
+    lessons: List[SOWLesson] = Field(default_factory=list, description="Lessons in the unit")
+
+
+class SOWCurriculum(BaseModel):
+    """Root curriculum structure"""
+    units: List[SOWUnit] = Field(default_factory=list, description="Units in the curriculum")
+
+
+class SOWDocument(BaseModel):
+    """Complete SOW document structure"""
+    curriculum: SOWCurriculum = Field(..., description="The curriculum data")
 

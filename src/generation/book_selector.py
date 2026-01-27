@@ -1,23 +1,44 @@
 """
-Book Selector - Smart book selection based on lesson type
+Book Selector - Lesson type definitions and validation
 """
 from typing import List
 from src.models import LessonType, Subject, BookType
 
 
-# Book mapping: lesson_type -> list of book_types to use
-# English books: Course, Activity, Reading
-# Maths books: Course, Activity
+# Define available lesson types per subject (in order as per design)
+LESSON_TYPES_BY_SUBJECT = {
+    Subject.ENGLISH: [
+        LessonType.RECALL,
+        LessonType.VOCABULARY,
+        LessonType.LISTENING,
+        LessonType.READING,
+        LessonType.READING_COMPREHENSION,
+        LessonType.GRAMMAR,
+        LessonType.ORAL_SPEAKING,
+        LessonType.CREATIVE_WRITING,
+    ],
+    Subject.MATHEMATICS: [
+        LessonType.CONCEPT,
+        LessonType.PRACTICE,
+    ]
+}
+
+
+# Default book mapping (used as fallback when SOW doesn't specify books)
 BOOK_MAPPING = {
     Subject.ENGLISH: {
+        LessonType.RECALL: [BookType.LEARNERS],
+        LessonType.VOCABULARY: [BookType.LEARNERS, BookType.ACTIVITY],
+        LessonType.LISTENING: [BookType.LEARNERS],
         LessonType.READING: [BookType.READING],
-        LessonType.COMPREHENSION: [BookType.ACTIVITY],
-        LessonType.GRAMMAR: [BookType.COURSE_BOOK],
-        LessonType.CREATIVE_WRITING: [BookType.COURSE_BOOK, BookType.ACTIVITY],
+        LessonType.READING_COMPREHENSION: [BookType.LEARNERS, BookType.ACTIVITY],
+        LessonType.GRAMMAR: [BookType.LEARNERS, BookType.ACTIVITY],
+        LessonType.ORAL_SPEAKING: [BookType.LEARNERS],
+        LessonType.CREATIVE_WRITING: [BookType.LEARNERS, BookType.ACTIVITY],
     },
     Subject.MATHEMATICS: {
         LessonType.CONCEPT: [BookType.COURSE_BOOK],
-        LessonType.PRACTICE: [BookType.COURSE_BOOK, BookType.ACTIVITY],
+        LessonType.PRACTICE: [BookType.COURSE_BOOK, BookType.WORKBOOK],
     }
 }
 
@@ -25,11 +46,12 @@ BOOK_MAPPING = {
 def get_required_books(subject: Subject, lesson_type: LessonType) -> List[BookType]:
     """
     Get the list of book types required for a given subject and lesson type.
-    
+    This is a fallback when SOW doesn't specify book references.
+
     Args:
         subject: The subject (English or Mathematics)
         lesson_type: The type of lesson to generate
-    
+
     Returns:
         List of BookType values that should be used
     """
@@ -40,38 +62,41 @@ def get_required_books(subject: Subject, lesson_type: LessonType) -> List[BookTy
 def is_valid_lesson_type(subject: Subject, lesson_type: LessonType) -> bool:
     """
     Check if a lesson type is valid for the given subject.
-    
+
     Args:
         subject: The subject
         lesson_type: The lesson type to validate
-    
+
     Returns:
         True if the lesson type is valid for the subject
     """
-    subject_mapping = BOOK_MAPPING.get(subject, {})
-    return lesson_type in subject_mapping
+    valid_types = LESSON_TYPES_BY_SUBJECT.get(subject, [])
+    return lesson_type in valid_types
 
 
 def get_available_lesson_types(subject: Subject) -> List[LessonType]:
     """
-    Get all available lesson types for a subject.
-    
+    Get all available lesson types for a subject (in display order).
+
     Args:
         subject: The subject
-    
+
     Returns:
-        List of available LessonType values
+        List of available LessonType values in order
     """
-    subject_mapping = BOOK_MAPPING.get(subject, {})
-    return list(subject_mapping.keys())
+    return LESSON_TYPES_BY_SUBJECT.get(subject, [])
 
 
 # Lesson type descriptions for UI
 LESSON_TYPE_DESCRIPTIONS = {
-    LessonType.READING: "Reading lesson using the Reading Book",
-    LessonType.COMPREHENSION: "Comprehension lesson using the Activity Book",
-    LessonType.GRAMMAR: "Grammar lesson using the Course Book",
-    LessonType.CREATIVE_WRITING: "Creative writing using Course and Activity Books",
-    LessonType.CONCEPT: "Mathematical concept lesson using the Course Book",
-    LessonType.PRACTICE: "Practice lesson using Course Book and Activity Book",
+    LessonType.RECALL: "Recall and review previous learning",
+    LessonType.VOCABULARY: "Vocabulary building and word study",
+    LessonType.LISTENING: "Listening comprehension activities",
+    LessonType.READING: "Reading fluency and expression",
+    LessonType.READING_COMPREHENSION: "Reading comprehension and analysis",
+    LessonType.GRAMMAR: "Grammar rules and practice",
+    LessonType.ORAL_SPEAKING: "Oral communication and speaking practice",
+    LessonType.CREATIVE_WRITING: "Creative writing and composition",
+    LessonType.CONCEPT: "Mathematical concept introduction",
+    LessonType.PRACTICE: "Mathematical practice and problem solving",
 }
