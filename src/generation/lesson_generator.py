@@ -202,6 +202,10 @@ class LessonGenerator:
             # Save to database if enabled
             plan_id = None
             if save_to_db:
+                # Get first textbook_id from list (for backwards compatibility)
+                textbook_ids = context["metadata"].get("textbook_ids", [])
+                textbook_id = textbook_ids[0] if textbook_ids else None
+
                 plan_id = db.insert_lesson_plan(
                     grade_level=grade,
                     subject=subject,
@@ -210,7 +214,7 @@ class LessonGenerator:
                     page_end=page_end,
                     topic=topic,
                     lesson_plan={"html_content": html_content},
-                    textbook_id=context["metadata"].get("textbook_id"),
+                    textbook_id=textbook_id,
                     sow_entry_id=context["metadata"].get("sow_entry_id")
                 )
             

@@ -156,41 +156,76 @@ Make it practical and ready-to-use for a teacher in the classroom."""
 # ============= Lesson Type Specific Additions =============
 
 LESSON_TYPE_PROMPTS = {
+    # English lesson types (in order as per design)
+    "recall": """
+ADDITIONAL FOCUS FOR RECALL LESSON:
+- Start with quick recall questions from previous lessons
+- Include a brief review of key concepts and vocabulary
+- Design quick check activities to assess retention
+- Use games or interactive activities for engagement
+- Connect previous learning to upcoming content""",
+
+    "vocabulary": """
+ADDITIONAL FOCUS FOR VOCABULARY LESSON:
+- Introduce new words with context and visuals
+- Include word meanings, synonyms, and antonyms
+- Design word games and matching activities
+- Practice using words in sentences
+- Include spelling patterns if relevant""",
+
+    "listening": """
+ADDITIONAL FOCUS FOR LISTENING LESSON:
+- Include pre-listening, while-listening, and post-listening activities
+- Design comprehension questions for audio content
+- Focus on listening for specific information
+- Include note-taking or graphic organizer activities
+- Reference any audio tracks from resources""",
+
     "reading": """
 ADDITIONAL FOCUS FOR READING LESSON:
 - Include pre-reading, during-reading, and post-reading activities
 - Focus on fluency, expression, and comprehension
 - Suggest vocabulary words to highlight
 - Include read-aloud strategies""",
-    
-    "comprehension": """
-ADDITIONAL FOCUS FOR COMPREHENSION LESSON:
+
+    "reading_comprehension": """
+ADDITIONAL FOCUS FOR READING COMPREHENSION LESSON:
 - Include literal, inferential, and evaluative questions
 - Design graphic organizers if applicable
 - Focus on understanding main ideas and details
-- Include strategies for finding evidence in text""",
-    
+- Include strategies for finding evidence in text
+- Practice summarizing and retelling""",
+
     "grammar": """
 ADDITIONAL FOCUS FOR GRAMMAR LESSON:
 - Provide clear rule explanations with examples
 - Include practice sentences
 - Design error correction activities
 - Connect grammar to real-world writing""",
-    
+
+    "oral_speaking": """
+ADDITIONAL FOCUS FOR ORAL/SPEAKING LESSON:
+- Include structured speaking activities (role-play, presentations)
+- Design pair and group discussion activities
+- Focus on pronunciation and fluency practice
+- Include conversation starters and prompts
+- Provide feedback and self-assessment criteria""",
+
     "creative_writing": """
 ADDITIONAL FOCUS FOR CREATIVE WRITING LESSON:
 - Include brainstorming and planning stages
 - Provide writing prompts and sentence starters
 - Include peer review/sharing component
 - Focus on specific writing skills (description, dialogue, etc.)""",
-    
+
+    # Mathematics lesson types
     "concept": """
 ADDITIONAL FOCUS FOR MATHEMATICS CONCEPT LESSON:
 - Use concrete-pictorial-abstract progression
 - Include multiple examples with increasing difficulty
 - Design practice problems for guided and independent work
 - Include real-world application""",
-    
+
     "practice": """
 ADDITIONAL FOCUS FOR MATHEMATICS PRACTICE LESSON:
 - Include a variety of problem types

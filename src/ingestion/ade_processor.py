@@ -31,22 +31,53 @@ class TextbookExtraction(BaseModel):
     )
 
 
-class SOWEntry(BaseModel):
-    """A single entry from a Scheme of Work document."""
-    topic_name: str = Field(..., description="The lesson/unit title")
-    page_references: str = Field(default="", description="All page numbers mentioned (e.g., 'pg 44-46', 'AB pg. 85')")
-    teaching_strategy: str = Field(default="", description="Teaching methodology and activities")
-    activities: str = Field(default="", description="Specific games, videos, or named activities")
-    afl_strategy: str = Field(default="", description="Assessment methods (e.g., Quiz, RSQC2)")
-    resources: str = Field(default="", description="URLs, digital resources, or materials listed")
+class SOWBookReference(BaseModel):
+    """Book reference with type and pages"""
+    book_type: str = Field(..., description="Book type code: LB (Learner's Book), AB (Activity Book), TR (Teacher's Resource), ORT (Oxford Reading Tree)")
+    book_name: str = Field(default="", description="Full book name if mentioned")
+    pages: List[int] = Field(default_factory=list, description="List of page numbers as integers")
+
+
+class SOWExternalResource(BaseModel):
+    """External resource like audio, video, or documents"""
+    title: str = Field(..., description="Resource title or description")
+    type: str = Field(..., description="Resource type: audio, video, document, or interactive")
+    reference: str = Field(default="", description="Track number, URL, or other reference")
+
+
+class SOWLessonPlanType(BaseModel):
+    """A lesson plan type within a lesson"""
+    type: str = Field(..., description="Lesson plan type: recall_review, reading, comprehension, grammar, creative_writing, concept, practice")
+    content: str = Field(default="", description="Extracted SoW content relevant to this lesson plan type")
+    learning_strategies: List[str] = Field(default_factory=list, description="Teaching strategies from SoW")
+    student_learning_outcomes: List[str] = Field(default_factory=list, description="Grade-appropriate SLOs derived from SoW")
+    skills: List[str] = Field(default_factory=list, description="Skills focus: Listening, Speaking, Reading, Writing, Thinking")
+    book_references: List[SOWBookReference] = Field(default_factory=list, description="Book references with pages")
+    external_resources: List[SOWExternalResource] = Field(default_factory=list, description="Audio, video, and other external resources")
+
+
+class SOWLesson(BaseModel):
+    """A lesson within a unit"""
+    lesson_number: int = Field(..., description="The lesson number")
+    lesson_title: str = Field(..., description="The lesson title")
+    lesson_plan_types: List[SOWLessonPlanType] = Field(default_factory=list, description="Different lesson plan types for this lesson")
+
+
+class SOWUnit(BaseModel):
+    """A unit within the curriculum"""
+    unit_number: int = Field(..., description="The unit number")
+    unit_title: str = Field(..., description="The unit title")
+    lessons: List[SOWLesson] = Field(default_factory=list, description="Lessons in this unit")
+
+
+class SOWCurriculum(BaseModel):
+    """The curriculum containing all units"""
+    units: List[SOWUnit] = Field(default_factory=list, description="All units in the curriculum")
 
 
 class SOWExtraction(BaseModel):
-    """Extracted content from a Scheme of Work document."""
-    entries: List[SOWEntry] = Field(
-        ...,
-        description="List of lesson entries from the Scheme of Work table. Each row in the SOW table should be one entry."
-    )
+    """Complete SOW document extraction"""
+    curriculum: SOWCurriculum = Field(..., description="The extracted curriculum data")
 
 
 class SimpleTextExtraction(BaseModel):

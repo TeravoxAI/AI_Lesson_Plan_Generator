@@ -1,164 +1,197 @@
 """
 Router - Context retrieval logic for lesson generation
-Uses SOW matcher for intelligent page-to-lesson mapping
+Uses SOW matcher for lesson-based page retrieval from book references
 """
-import json
 from typing import Dict, Any, List, Optional
-from src.models import Subject, LessonType, BookType
+from src.models import Subject, LessonType
 from src.db.client import db
-from src.generation.book_selector import get_required_books
 from src.generation.sow_matcher import (
-    get_lesson_context_for_llm,
-    format_sow_context_for_prompt,
-    map_book_type_to_db,
-    map_db_to_book_type
+    get_lesson_context_by_number,
+    format_lesson_context_for_prompt,
+    map_book_type_to_db
 )
 
 
 class ContextRouter:
     """Routes requests to appropriate content and retrieves context"""
-    
+
     def __init__(self):
         self.db = db
-    
+
     def retrieve_context(
         self,
         grade: str,
         subject: Subject,
         lesson_type: LessonType,
-        page_start: int,
+        page_start: int,  # This is actually lesson_number now
         page_end: Optional[int] = None,
         topic: Optional[str] = None,
         book_type: Optional[str] = None
     ) -> Dict[str, Any]:
         """
         Retrieve all context needed for lesson generation.
-        
-        Matches textbook pages with SOW lessons using book type awareness.
+
+        Flow:
+        1. Find lesson in SOW by lesson_number
+        2. Get book_references from that lesson
+        3. Fetch textbook pages based on those references
+        4. Format for LLM
         """
-        if page_end is None:
-            page_end = page_start
-        
+        lesson_number = page_start  # Rename for clarity
+
         context = {
             "grade": grade,
             "subject": subject.value,
             "lesson_type": lesson_type.value,
-            "page_range": f"{page_start}-{page_end}",
+            "lesson_number": lesson_number,
             "book_content": [],
             "sow_strategy": None,
             "sow_context": None,
             "metadata": {
-                "textbook_id": None,
-                "sow_entry_id": None
+                "textbook_ids": [],
+                "sow_entry_id": None,
+                "books_fetched": []
             }
         }
-        
-        # Get required books for this lesson type
-        required_books = get_required_books(subject, lesson_type)
-        print(f"\n📚 [CONTEXT] Retrieving content for {subject.value} {grade}, pages {page_start}-{page_end}")
-        print(f"   Required books: {[b.value for b in required_books]}")
-        
-        # Fetch content from each required book
+
+        print(f"\n📚 [CONTEXT] Retrieving content for {subject.value} {grade}, Lesson {lesson_number}")
+
+        # Step 1: Fetch SOW and find the lesson
+        print(f"\n📋 [SOW] Finding lesson {lesson_number} in SOW...")
+        sow_entries = db.get_sow_by_subject(subject.value, grade)
+
+        if not sow_entries:
+            print(f"   ⚠ No SOW entries found for {subject.value} {grade}")
+            return context
+
+        # Use the first SOW entry
+        sow_data = sow_entries[0]
+        context["metadata"]["sow_entry_id"] = sow_data.get("id")
+
+        # Get extraction data
+        extraction = sow_data.get("extraction", {})
+
+        if not extraction:
+            print(f"   ⚠ SOW entry has no extraction data")
+            return context
+
+        # Step 2: Get lesson context by lesson number
+        sow_context = get_lesson_context_by_number(
+            sow_data=extraction,
+            lesson_number=lesson_number,
+            lesson_type=lesson_type.value
+        )
+
+        context["sow_context"] = sow_context
+
+        if not sow_context.get("found"):
+            print(f"   ⚠ No lesson {lesson_number} found in SOW")
+            context["sow_strategy"] = "No SOW lesson found. Generate based on general guidelines."
+            return context
+
+        print(f"   ✓ Found: {sow_context.get('unit')} - {sow_context.get('lesson_title')}")
+
+        # Step 3: Get book references from the lesson
+        book_refs = sow_context.get("book_references", [])
+        print(f"   📖 Book references found: {len(book_refs)}")
+
+        # Step 4: Fetch textbook pages for each book reference
         all_content = []
-        textbook_id = None
-        primary_book_type = book_type or "LB"  # Default to Learner's Book
-        
-        for bt in required_books:
-            book = db.get_textbook(grade, subject.value, bt.value)
-            if book:
-                textbook_id = book["id"]
-                
-                # Get pages in the requested range
-                pages = db.get_textbook_pages(book["id"], page_start, page_end)
-                
-                for page in pages:
+
+        for ref in book_refs:
+            book_type_code = ref.get("book_type", "").upper()
+            pages = ref.get("pages", [])
+            book_name = ref.get("book_name", "")
+
+            if not book_type_code or not pages:
+                continue
+
+            print(f"     - {book_type_code}: pages {pages}")
+
+            # Try to find the book by book_tag first, then by book_type
+            book = db.get_textbook_by_tag(grade, subject.value, book_type_code)
+
+            if not book:
+                # Fallback: map short code to db book_type
+                db_book_type = map_book_type_to_db(book_type_code)
+                book = db.get_textbook(grade, subject.value, db_book_type)
+
+            if not book:
+                print(f"       ⚠ Book not found for {book_type_code}")
+                continue
+
+            # Fetch specific pages
+            fetched_pages = db.get_pages_by_numbers(book["id"], pages)
+
+            if fetched_pages:
+                context["metadata"]["textbook_ids"].append(book["id"])
+                context["metadata"]["books_fetched"].append({
+                    "book_type": book_type_code,
+                    "book_id": book["id"],
+                    "title": book.get("title", ""),
+                    "pages_requested": pages,
+                    "pages_found": len(fetched_pages)
+                })
+
+                for page in fetched_pages:
                     all_content.append({
-                        "book_type": bt.value,
-                        "book_type_short": map_db_to_book_type(bt.value),
+                        "book_type": book.get("book_type", ""),
+                        "book_type_short": book_type_code,
                         "title": book.get("title", ""),
                         "page_no": page.get("page_no") or page.get("book_page_no"),
                         "content": page.get("book_text") or page.get("content", ""),
                         "book_id": book["id"]
                     })
-                
-                # Use first book type found as primary
-                if not book_type and all_content:
-                    primary_book_type = map_db_to_book_type(bt.value)
-        
+
+                print(f"       ✓ Fetched {len(fetched_pages)} pages from '{book.get('title', 'Unknown')}'")
+            else:
+                print(f"       ⚠ No pages found for {book_type_code} pages {pages}")
+
         context["book_content"] = all_content
-        context["metadata"]["textbook_id"] = textbook_id
-        print(f"   ✓ Book content extracted: {len(all_content)} pages found")
-        if all_content:
-            page_nums = [p.get('page_no') for p in all_content]
-            print(f"   Page numbers: {page_nums}")
-        
-        # Fetch SOW and match by page/book type
-        print(f"\n📋 [SOW] Matching SOW entries for {subject.value} {grade}...")
-        sow_entries = db.get_sow_by_subject(subject.value, grade)
-        
-        if sow_entries:
-            # Use the first SOW entry (or could combine multiple)
-            sow_data = sow_entries[0]
-            context["metadata"]["sow_entry_id"] = sow_data.get("id")
-            
-            # Get extraction data
-            extraction = sow_data.get("extraction", {})
-            
-            if extraction:
-                # Use the new matcher to find relevant lessons
-                sow_context = get_lesson_context_for_llm(
-                    sow_data={"extraction": extraction},
-                    grade=grade,
-                    subject=subject.value,
-                    book_type=primary_book_type,
-                    page_start=page_start,
-                    page_end=page_end
-                )
-                
-                context["sow_context"] = sow_context
-                context["sow_strategy"] = format_sow_context_for_prompt(sow_context)
-                
-                if sow_context.get("found"):
-                    matched_lessons = sow_context.get("matching_lessons", [])
-                    print(f"   ✓ SOW matched: {len(matched_lessons)} lesson(s) found")
-                    for ml in matched_lessons:
-                        print(f"     - Lesson {ml.get('lesson_number')}: {ml.get('lesson_title')[:50]}...")
-                else:
-                    print(f"   ⚠ No matching SOW lessons found for pages {page_start}-{page_end}")
-        
-        context["metadata"]["books_used"] = [b.value for b in required_books]
-        context["metadata"]["pages_found"] = len(all_content)
-        context["metadata"]["sow_found"] = context["sow_context"].get("found") if context["sow_context"] else False
-        
+        context["sow_strategy"] = format_lesson_context_for_prompt(sow_context)
+
+        # Summary
+        print(f"\n   📝 Context Summary:")
+        print(f"      - Lesson: {sow_context.get('lesson_title')}")
+        print(f"      - Book pages loaded: {len(all_content)}")
+        print(f"      - SLOs: {len(sow_context.get('student_learning_outcomes', []))}")
+        print(f"      - Skills: {sow_context.get('skills', [])}")
+
         return context
-    
+
     def format_book_content(self, book_content: List[Dict[str, Any]]) -> str:
         """Format book content into a readable string for the prompt"""
         if not book_content:
             return "No textbook content found. Please upload the required textbook first."
-        
+
         formatted_parts = []
-        
+
+        # Group by book type
+        by_book = {}
         for page in book_content:
-            book_type = page.get('book_type_short') or page.get('book_type', '').upper()
-            page_no = page.get('page_no', '?')
-            title = page.get('title', '')
-            
-            header = f"**{book_type}** - Page {page_no}"
-            if title:
-                header += f" ({title})"
-            
-            content = page.get('content', '')
-            if content:
-                parts = [header, content]
-            else:
-                parts = [header, "*No content on this page.*"]
-            
-            formatted_parts.append("\n".join(parts))
-        
+            bt = page.get('book_type_short') or page.get('book_type', '').upper()
+            if bt not in by_book:
+                by_book[bt] = []
+            by_book[bt].append(page)
+
+        for book_type, pages in by_book.items():
+            # Sort pages by page number
+            pages.sort(key=lambda p: p.get('page_no', 0))
+
+            title = pages[0].get('title', '') if pages else ''
+            formatted_parts.append(f"### {book_type} - {title}")
+
+            for page in pages:
+                page_no = page.get('page_no', '?')
+                content = page.get('content', '')
+
+                if content:
+                    formatted_parts.append(f"\n**Page {page_no}:**\n{content}")
+                else:
+                    formatted_parts.append(f"\n**Page {page_no}:** *No content on this page.*")
+
         return "\n\n---\n\n".join(formatted_parts)
 
 
 # Singleton instance
 router = ContextRouter()
-

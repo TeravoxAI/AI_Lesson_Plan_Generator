@@ -96,15 +96,15 @@ class DatabaseClient:
         ]
     
     def get_textbook(
-        self, 
-        grade_level: str, 
-        subject: str, 
+        self,
+        grade_level: str,
+        subject: str,
         book_type: str
     ) -> Optional[Dict[str, Any]]:
         """Get textbook by criteria"""
         if not self.client:
             return None
-        
+
         result = self.client.table("textbooks").select("*").eq(
             "grade_level", grade_level
         ).eq(
@@ -112,10 +112,62 @@ class DatabaseClient:
         ).eq(
             "book_type", book_type
         ).execute()
-        
+
         if result.data:
             return result.data[0]
         return None
+
+    def get_textbook_by_tag(
+        self,
+        grade_level: str,
+        subject: str,
+        book_tag: str
+    ) -> Optional[Dict[str, Any]]:
+        """Get textbook by book_tag (short code like LB, AB, ORT)"""
+        if not self.client:
+            return None
+
+        result = self.client.table("textbooks").select("*").eq(
+            "grade_level", grade_level
+        ).eq(
+            "subject", subject
+        ).eq(
+            "book_tag", book_tag
+        ).execute()
+
+        if result.data:
+            return result.data[0]
+        return None
+
+    def get_pages_by_numbers(
+        self,
+        book_id: int,
+        page_numbers: List[int]
+    ) -> List[Dict[str, Any]]:
+        """
+        Get specific pages by their page numbers.
+
+        Args:
+            book_id: The textbook ID
+            page_numbers: List of specific page numbers to fetch
+
+        Returns:
+            List of page dicts with book_text and page_no
+        """
+        book = self.get_textbook_by_id(book_id)
+        if not book or not book.get("content_text"):
+            return []
+
+        pages = book["content_text"]
+        if isinstance(pages, str):
+            import json
+            pages = json.loads(pages)
+
+        page_set = set(page_numbers)
+        return [
+            p for p in pages
+            if p.get("page_no") in page_set or p.get("book_page_no") in page_set
+        ]
     
     def get_textbook_by_id(self, book_id: int) -> Optional[Dict[str, Any]]:
         """Get textbook by ID"""
