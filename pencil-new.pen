@@ -1,0 +1,1805 @@
+{
+  "version": "2.6",
+  "children": [
+    {
+      "type": "frame",
+      "id": "4BC5N",
+      "x": -1113,
+      "y": -503,
+      "name": "Desktop - Lesson Plan Generator",
+      "width": 1440,
+      "fill": "$--background",
+      "layout": "vertical",
+      "children": [
+        {
+          "type": "frame",
+          "id": "AFiz6",
+          "name": "Header",
+          "width": "fill_container",
+          "height": 72,
+          "fill": "$--primary",
+          "padding": [
+            0,
+            48
+          ],
+          "justifyContent": "space_between",
+          "alignItems": "center",
+          "children": [
+            {
+              "type": "frame",
+              "id": "aeBUY",
+              "name": "logo",
+              "gap": 12,
+              "alignItems": "center",
+              "children": [
+                {
+                  "type": "icon_font",
+                  "id": "c7zfA",
+                  "name": "logoIcon",
+                  "width": 28,
+                  "height": 28,
+                  "iconFontName": "book-open",
+                  "iconFontFamily": "lucide",
+                  "fill": "#FFFFFF"
+                },
+                {
+                  "type": "text",
+                  "id": "KQvr7",
+                  "name": "logoText",
+                  "fill": "#FFFFFF",
+                  "content": "Lesson Plan Generator",
+                  "fontFamily": "Inter",
+                  "fontSize": 22,
+                  "fontWeight": "600"
+                }
+              ]
+            },
+            {
+              "type": "frame",
+              "id": "zgnP9",
+              "name": "userArea",
+              "gap": 12,
+              "alignItems": "center",
+              "children": [
+                {
+                  "type": "icon_font",
+                  "id": "ZAI1W",
+                  "name": "userIcon",
+                  "width": 32,
+                  "height": 32,
+                  "iconFontName": "user",
+                  "iconFontFamily": "lucide",
+                  "fill": "#FFFFFF"
+                },
+                {
+                  "type": "text",
+                  "id": "JrLUV",
+                  "name": "userName",
+                  "fill": "#FFFFFF",
+                  "content": "Teacher Portal",
+                  "fontFamily": "Inter",
+                  "fontSize": 14,
+                  "fontWeight": "500"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "type": "frame",
+          "id": "6FhYo",
+          "name": "Main Content",
+          "width": "fill_container",
+          "gap": 32,
+          "padding": 48,
+          "children": [
+            {
+              "type": "frame",
+              "id": "hoIxt",
+              "name": "Form Panel",
+              "width": 420,
+              "fill": "$--surface",
+              "cornerRadius": 16,
+              "effect": {
+                "type": "shadow",
+                "shadowType": "outer",
+                "color": "#00000010",
+                "offset": {
+                  "x": 0,
+                  "y": 4
+                },
+                "blur": 20
+              },
+              "layout": "vertical",
+              "gap": 24,
+              "padding": 32,
+              "children": [
+                {
+                  "type": "text",
+                  "id": "YnAsr",
+                  "name": "formTitle",
+                  "fill": "$--text-primary",
+                  "content": "Create Your Lesson Plan",
+                  "fontFamily": "Inter",
+                  "fontSize": 24,
+                  "fontWeight": "600"
+                },
+                {
+                  "type": "text",
+                  "id": "AiiZj",
+                  "name": "formSubtitle",
+                  "fill": "$--text-secondary",
+                  "textGrowth": "fixed-width",
+                  "width": "fill_container",
+                  "content": "Fill in the details below to generate a customized lesson plan for your class.",
+                  "lineHeight": 1.5,
+                  "fontFamily": "Inter",
+                  "fontSize": 14,
+                  "fontWeight": "normal"
+                },
+                {
+                  "type": "frame",
+                  "id": "yRoh9",
+                  "name": "Grade Field",
+                  "width": "fill_container",
+                  "layout": "vertical",
+                  "gap": 8,
+                  "children": [
+                    {
+                      "type": "text",
+                      "id": "EBYT7",
+                      "name": "gradeLabel",
+                      "fill": "$--text-primary",
+                      "content": "Grade Level",
+                      "fontFamily": "Inter",
+                      "fontSize": 14,
+                      "fontWeight": "500"
+                    },
+                    {
+                      "type": "frame",
+                      "id": "aEvMk",
+                      "name": "Dropdown",
+                      "width": "fill_container",
+                      "height": 48,
+                      "fill": "$--background-light",
+                      "cornerRadius": 10,
+                      "stroke": {
+                        "align": "inside",
+                        "thickness": 1,
+                        "fill": "$--border"
+                      },
+                      "padding": [
+                        0,
+                        16
+                      ],
+                      "justifyContent": "space_between",
+                      "alignItems": "center",
+                      "children": [
+                        {
+                          "type": "text",
+                          "id": "Oyn7o",
+                          "name": "gradeValue",
+                          "fill": "$--text-primary",
+                          "content": "Grade 2",
+                          "fontFamily": "Inter",
+                          "fontSize": 15,
+                          "fontWeight": "normal"
+                        },
+                        {
+                          "type": "icon_font",
+                          "id": "PE0ur",
+                          "name": "gradeChevron",
+                          "width": 20,
+                          "height": 20,
+                          "iconFontName": "chevron-down",
+                          "iconFontFamily": "lucide",
+                          "fill": "$--text-muted"
+                        }
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "type": "frame",
+                  "id": "tYO8e",
+                  "name": "Subject Field",
+                  "width": "fill_container",
+                  "layout": "vertical",
+                  "gap": 8,
+                  "children": [
+                    {
+                      "type": "text",
+                      "id": "dezam",
+                      "name": "subjectLabel",
+                      "fill": "$--text-primary",
+                      "content": "Subject",
+                      "fontFamily": "Inter",
+                      "fontSize": 14,
+                      "fontWeight": "500"
+                    },
+                    {
+                      "type": "frame",
+                      "id": "SoEiw",
+                      "name": "Dropdown",
+                      "width": "fill_container",
+                      "height": 48,
+                      "fill": "$--background-light",
+                      "cornerRadius": 10,
+                      "stroke": {
+                        "align": "inside",
+                        "thickness": 1,
+                        "fill": "$--border"
+                      },
+                      "padding": [
+                        0,
+                        16
+                      ],
+                      "justifyContent": "space_between",
+                      "alignItems": "center",
+                      "children": [
+                        {
+                          "type": "text",
+                          "id": "3n8SD",
+                          "name": "subjectValue",
+                          "fill": "$--text-primary",
+                          "content": "English",
+                          "fontFamily": "Inter",
+                          "fontSize": 15,
+                          "fontWeight": "normal"
+                        },
+                        {
+                          "type": "icon_font",
+                          "id": "BGSrO",
+                          "name": "subjectChevron",
+                          "width": 20,
+                          "height": 20,
+                          "iconFontName": "chevron-down",
+                          "iconFontFamily": "lucide",
+                          "fill": "$--text-muted"
+                        }
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "type": "frame",
+                  "id": "g07qJ",
+                  "name": "Lesson Number Field",
+                  "width": "fill_container",
+                  "layout": "vertical",
+                  "gap": 8,
+                  "children": [
+                    {
+                      "type": "text",
+                      "id": "FJ4bs",
+                      "name": "lessonLabel",
+                      "fill": "$--text-primary",
+                      "content": "Lesson Number",
+                      "fontFamily": "Inter",
+                      "fontSize": 14,
+                      "fontWeight": "500"
+                    },
+                    {
+                      "type": "frame",
+                      "id": "brA9k",
+                      "name": "Input",
+                      "width": "fill_container",
+                      "height": 48,
+                      "fill": "$--background-light",
+                      "cornerRadius": 10,
+                      "stroke": {
+                        "align": "inside",
+                        "thickness": 1,
+                        "fill": "$--border"
+                      },
+                      "padding": [
+                        0,
+                        16
+                      ],
+                      "alignItems": "center",
+                      "children": [
+                        {
+                          "type": "text",
+                          "id": "jEHeS",
+                          "name": "lessonPlaceholder",
+                          "fill": "$--text-muted",
+                          "content": "Enter lesson number (e.g., 1, 2, 3...)",
+                          "fontFamily": "Inter",
+                          "fontSize": 15,
+                          "fontWeight": "normal"
+                        }
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "type": "frame",
+                  "id": "cxriB",
+                  "name": "Plan Type Field",
+                  "width": "fill_container",
+                  "layout": "vertical",
+                  "gap": 12,
+                  "children": [
+                    {
+                      "type": "text",
+                      "id": "F4hcB",
+                      "name": "typeLabel",
+                      "fill": "$--text-primary",
+                      "content": "Lesson Plan Type",
+                      "fontFamily": "Inter",
+                      "fontSize": 14,
+                      "fontWeight": "500"
+                    },
+                    {
+                      "type": "text",
+                      "id": "w3azr",
+                      "name": "typeHint",
+                      "fill": "$--text-muted",
+                      "content": "Select one or more plan types",
+                      "fontFamily": "Inter",
+                      "fontSize": 12,
+                      "fontWeight": "normal"
+                    },
+                    {
+                      "type": "frame",
+                      "id": "jxe4h",
+                      "name": "Options",
+                      "width": "fill_container",
+                      "layout": "vertical",
+                      "gap": 10,
+                      "children": [
+                        {
+                          "type": "frame",
+                          "id": "G1UwH",
+                          "name": "Recall Option",
+                          "width": "fill_container",
+                          "height": 44,
+                          "fill": "$--primary",
+                          "cornerRadius": 8,
+                          "gap": 12,
+                          "padding": [
+                            0,
+                            14
+                          ],
+                          "alignItems": "center",
+                          "children": [
+                            {
+                              "type": "frame",
+                              "id": "cbEVM",
+                              "name": "recallCheck",
+                              "width": 20,
+                              "height": 20,
+                              "fill": "#FFFFFF",
+                              "cornerRadius": 4,
+                              "justifyContent": "center",
+                              "alignItems": "center",
+                              "children": [
+                                {
+                                  "type": "icon_font",
+                                  "id": "H9kWS",
+                                  "name": "recallIcon",
+                                  "width": 14,
+                                  "height": 14,
+                                  "iconFontName": "check",
+                                  "iconFontFamily": "lucide",
+                                  "fill": "$--primary"
+                                }
+                              ]
+                            },
+                            {
+                              "type": "text",
+                              "id": "8YS8H",
+                              "name": "recallText",
+                              "fill": "#FFFFFF",
+                              "content": "Recall",
+                              "fontFamily": "Inter",
+                              "fontSize": 15,
+                              "fontWeight": "500"
+                            },
+                            {
+                              "type": "text",
+                              "id": "W6Uih",
+                              "name": "recallDesc",
+                              "fill": "#FFFFFFAA",
+                              "content": "Memory and retention activities",
+                              "fontFamily": "Inter",
+                              "fontSize": 12,
+                              "fontWeight": "normal"
+                            }
+                          ]
+                        },
+                        {
+                          "type": "frame",
+                          "id": "85D3q",
+                          "name": "Vocabulary Option",
+                          "width": "fill_container",
+                          "height": 44,
+                          "fill": "$--primary",
+                          "cornerRadius": 8,
+                          "gap": 12,
+                          "padding": [
+                            0,
+                            14
+                          ],
+                          "alignItems": "center",
+                          "children": [
+                            {
+                              "type": "frame",
+                              "id": "cTZjA",
+                              "name": "vocabCheck",
+                              "width": 20,
+                              "height": 20,
+                              "fill": "#FFFFFF",
+                              "cornerRadius": 4,
+                              "justifyContent": "center",
+                              "alignItems": "center",
+                              "children": [
+                                {
+                                  "type": "icon_font",
+                                  "id": "1QBFf",
+                                  "name": "vocabIcon",
+                                  "width": 14,
+                                  "height": 14,
+                                  "iconFontName": "check",
+                                  "iconFontFamily": "lucide",
+                                  "fill": "$--primary"
+                                }
+                              ]
+                            },
+                            {
+                              "type": "text",
+                              "id": "w36fb",
+                              "name": "vocabText",
+                              "fill": "#FFFFFF",
+                              "content": "Vocabulary",
+                              "fontFamily": "Inter",
+                              "fontSize": 15,
+                              "fontWeight": "500"
+                            },
+                            {
+                              "type": "text",
+                              "id": "4tuLJ",
+                              "name": "vocabDesc",
+                              "fill": "#FFFFFFAA",
+                              "content": "Word building exercises",
+                              "fontFamily": "Inter",
+                              "fontSize": 12,
+                              "fontWeight": "normal"
+                            }
+                          ]
+                        },
+                        {
+                          "type": "frame",
+                          "id": "CL4i8",
+                          "name": "Grammar Option",
+                          "width": "fill_container",
+                          "height": 44,
+                          "fill": "$--background-light",
+                          "cornerRadius": 8,
+                          "stroke": {
+                            "align": "inside",
+                            "thickness": 1,
+                            "fill": "$--border"
+                          },
+                          "gap": 12,
+                          "padding": [
+                            0,
+                            14
+                          ],
+                          "alignItems": "center",
+                          "children": [
+                            {
+                              "type": "frame",
+                              "id": "5cbHH",
+                              "name": "grammarCheck",
+                              "width": 20,
+                              "height": 20,
+                              "cornerRadius": 4,
+                              "stroke": {
+                                "align": "inside",
+                                "thickness": 2,
+                                "fill": "$--border"
+                              }
+                            },
+                            {
+                              "type": "text",
+                              "id": "vwBmf",
+                              "name": "grammarText",
+                              "fill": "$--text-primary",
+                              "content": "Grammar",
+                              "fontFamily": "Inter",
+                              "fontSize": 15,
+                              "fontWeight": "500"
+                            },
+                            {
+                              "type": "text",
+                              "id": "9V499",
+                              "name": "grammarDesc",
+                              "fill": "$--text-muted",
+                              "content": "Language structure lessons",
+                              "fontFamily": "Inter",
+                              "fontSize": 12,
+                              "fontWeight": "normal"
+                            }
+                          ]
+                        }
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "type": "frame",
+                  "id": "L1Px9",
+                  "name": "Generate Button",
+                  "width": "fill_container",
+                  "height": 52,
+                  "fill": "$--primary",
+                  "cornerRadius": 10,
+                  "gap": 10,
+                  "justifyContent": "center",
+                  "alignItems": "center",
+                  "children": [
+                    {
+                      "type": "icon_font",
+                      "id": "N5iVN",
+                      "name": "btnIcon",
+                      "width": 20,
+                      "height": 20,
+                      "iconFontName": "sparkles",
+                      "iconFontFamily": "lucide",
+                      "fill": "#FFFFFF"
+                    },
+                    {
+                      "type": "text",
+                      "id": "TZrcP",
+                      "name": "btnText",
+                      "fill": "#FFFFFF",
+                      "content": "Generate Lesson Plan",
+                      "fontFamily": "Inter",
+                      "fontSize": 16,
+                      "fontWeight": "600"
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "type": "frame",
+              "id": "iItgb",
+              "name": "Output Panel",
+              "width": "fill_container",
+              "fill": "$--surface",
+              "cornerRadius": 16,
+              "effect": {
+                "type": "shadow",
+                "shadowType": "outer",
+                "color": "#00000010",
+                "offset": {
+                  "x": 0,
+                  "y": 4
+                },
+                "blur": 20
+              },
+              "layout": "vertical",
+              "gap": 24,
+              "padding": 32,
+              "children": [
+                {
+                  "type": "frame",
+                  "id": "XN387",
+                  "name": "Output Header",
+                  "width": "fill_container",
+                  "justifyContent": "space_between",
+                  "alignItems": "center",
+                  "children": [
+                    {
+                      "type": "text",
+                      "id": "slYFI",
+                      "name": "outputTitle",
+                      "fill": "$--text-primary",
+                      "content": "Generated Lesson Plan",
+                      "fontFamily": "Inter",
+                      "fontSize": 24,
+                      "fontWeight": "600"
+                    },
+                    {
+                      "type": "frame",
+                      "id": "BGbHW",
+                      "name": "outputActions",
+                      "gap": 12,
+                      "children": [
+                        {
+                          "type": "frame",
+                          "id": "Vk66C",
+                          "name": "copyBtn",
+                          "height": 40,
+                          "fill": "$--background-light",
+                          "cornerRadius": 8,
+                          "stroke": {
+                            "align": "inside",
+                            "thickness": 1,
+                            "fill": "$--border"
+                          },
+                          "gap": 8,
+                          "padding": [
+                            0,
+                            16
+                          ],
+                          "alignItems": "center",
+                          "children": [
+                            {
+                              "type": "icon_font",
+                              "id": "2NldR",
+                              "name": "copyIcon",
+                              "width": 16,
+                              "height": 16,
+                              "iconFontName": "copy",
+                              "iconFontFamily": "lucide",
+                              "fill": "$--text-secondary"
+                            },
+                            {
+                              "type": "text",
+                              "id": "i6E2h",
+                              "name": "copyText",
+                              "fill": "$--text-secondary",
+                              "content": "Copy",
+                              "fontFamily": "Inter",
+                              "fontSize": 14,
+                              "fontWeight": "500"
+                            }
+                          ]
+                        },
+                        {
+                          "type": "frame",
+                          "id": "V3aa5",
+                          "name": "downloadBtn",
+                          "height": 40,
+                          "fill": "$--primary",
+                          "cornerRadius": 8,
+                          "gap": 8,
+                          "padding": [
+                            0,
+                            16
+                          ],
+                          "alignItems": "center",
+                          "children": [
+                            {
+                              "type": "icon_font",
+                              "id": "14Vxb",
+                              "name": "downloadIcon",
+                              "width": 16,
+                              "height": 16,
+                              "iconFontName": "download",
+                              "iconFontFamily": "lucide",
+                              "fill": "#FFFFFF"
+                            },
+                            {
+                              "type": "text",
+                              "id": "WiJXi",
+                              "name": "downloadText",
+                              "fill": "#FFFFFF",
+                              "content": "Download",
+                              "fontFamily": "Inter",
+                              "fontSize": 14,
+                              "fontWeight": "500"
+                            }
+                          ]
+                        }
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "type": "frame",
+                  "id": "cNi7u",
+                  "name": "divider",
+                  "width": "fill_container",
+                  "height": 1,
+                  "fill": "$--border-light"
+                },
+                {
+                  "type": "frame",
+                  "id": "n8pAI",
+                  "name": "Lesson Meta",
+                  "width": "fill_container",
+                  "gap": 24,
+                  "children": [
+                    {
+                      "type": "frame",
+                      "id": "M7mMx",
+                      "name": "metaItem1",
+                      "gap": 8,
+                      "alignItems": "center",
+                      "children": [
+                        {
+                          "type": "icon_font",
+                          "id": "xt8cL",
+                          "name": "metaIcon1",
+                          "width": 18,
+                          "height": 18,
+                          "iconFontName": "graduation-cap",
+                          "iconFontFamily": "lucide",
+                          "fill": "$--primary"
+                        },
+                        {
+                          "type": "text",
+                          "id": "sthz1",
+                          "name": "metaText1",
+                          "fill": "$--text-secondary",
+                          "content": "Grade 2",
+                          "fontFamily": "Inter",
+                          "fontSize": 14,
+                          "fontWeight": "normal"
+                        }
+                      ]
+                    },
+                    {
+                      "type": "frame",
+                      "id": "kndBv",
+                      "name": "metaItem2",
+                      "gap": 8,
+                      "alignItems": "center",
+                      "children": [
+                        {
+                          "type": "icon_font",
+                          "id": "SxtM9",
+                          "name": "metaIcon2",
+                          "width": 18,
+                          "height": 18,
+                          "iconFontName": "book",
+                          "iconFontFamily": "lucide",
+                          "fill": "$--primary"
+                        },
+                        {
+                          "type": "text",
+                          "id": "gp8Tb",
+                          "name": "metaText2",
+                          "fill": "$--text-secondary",
+                          "content": "English",
+                          "fontFamily": "Inter",
+                          "fontSize": 14,
+                          "fontWeight": "normal"
+                        }
+                      ]
+                    },
+                    {
+                      "type": "frame",
+                      "id": "oYJQh",
+                      "name": "metaItem3",
+                      "gap": 8,
+                      "alignItems": "center",
+                      "children": [
+                        {
+                          "type": "icon_font",
+                          "id": "PiRjK",
+                          "name": "metaIcon3",
+                          "width": 18,
+                          "height": 18,
+                          "iconFontName": "hash",
+                          "iconFontFamily": "lucide",
+                          "fill": "$--primary"
+                        },
+                        {
+                          "type": "text",
+                          "id": "H2H3M",
+                          "name": "metaText3",
+                          "fill": "$--text-secondary",
+                          "content": "Lesson 5",
+                          "fontFamily": "Inter",
+                          "fontSize": 14,
+                          "fontWeight": "normal"
+                        }
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "type": "frame",
+                  "id": "KuJIs",
+                  "name": "Content Area",
+                  "width": "fill_container",
+                  "layout": "vertical",
+                  "gap": 24,
+                  "children": [
+                    {
+                      "type": "frame",
+                      "id": "D7iq1",
+                      "name": "Recall Section",
+                      "width": "fill_container",
+                      "fill": "$--background-light",
+                      "cornerRadius": 12,
+                      "layout": "vertical",
+                      "gap": 12,
+                      "padding": 20,
+                      "children": [
+                        {
+                          "type": "frame",
+                          "id": "vLKL9",
+                          "name": "recallHeader",
+                          "gap": 10,
+                          "alignItems": "center",
+                          "children": [
+                            {
+                              "type": "frame",
+                              "id": "rfbcb",
+                              "name": "recallBadge",
+                              "fill": "$--primary",
+                              "cornerRadius": 6,
+                              "padding": [
+                                4,
+                                10
+                              ],
+                              "alignItems": "center",
+                              "children": [
+                                {
+                                  "type": "text",
+                                  "id": "FCpsf",
+                                  "name": "recallBadgeText",
+                                  "fill": "#FFFFFF",
+                                  "content": "RECALL",
+                                  "fontFamily": "Inter",
+                                  "fontSize": 11,
+                                  "fontWeight": "600"
+                                }
+                              ]
+                            },
+                            {
+                              "type": "text",
+                              "id": "Bs7pF",
+                              "name": "recallTitle",
+                              "fill": "$--text-primary",
+                              "content": "Memory & Retention Activities",
+                              "fontFamily": "Inter",
+                              "fontSize": 16,
+                              "fontWeight": "600"
+                            }
+                          ]
+                        },
+                        {
+                          "type": "text",
+                          "id": "0YHYE",
+                          "name": "recallContent",
+                          "fill": "$--text-secondary",
+                          "textGrowth": "fixed-width",
+                          "width": "fill_container",
+                          "content": "1. Quick Review: Ask students to recall key vocabulary from the previous lesson.\n\n2. Word Association: Display a word and have students share related words.\n\n3. Picture Recall: Show images from past lessons and have students describe them.",
+                          "lineHeight": 1.6,
+                          "fontFamily": "Inter",
+                          "fontSize": 14,
+                          "fontWeight": "normal"
+                        }
+                      ]
+                    },
+                    {
+                      "type": "frame",
+                      "id": "rAx2J",
+                      "name": "Vocabulary Section",
+                      "width": "fill_container",
+                      "fill": "$--background-light",
+                      "cornerRadius": 12,
+                      "layout": "vertical",
+                      "gap": 12,
+                      "padding": 20,
+                      "children": [
+                        {
+                          "type": "frame",
+                          "id": "qENsD",
+                          "name": "vocabHeader",
+                          "gap": 10,
+                          "alignItems": "center",
+                          "children": [
+                            {
+                              "type": "frame",
+                              "id": "owvDr",
+                              "name": "vocabBadge",
+                              "fill": "$--primary",
+                              "cornerRadius": 6,
+                              "padding": [
+                                4,
+                                10
+                              ],
+                              "alignItems": "center",
+                              "children": [
+                                {
+                                  "type": "text",
+                                  "id": "uS8IP",
+                                  "name": "vocabBadgeText",
+                                  "fill": "#FFFFFF",
+                                  "content": "VOCABULARY",
+                                  "fontFamily": "Inter",
+                                  "fontSize": 11,
+                                  "fontWeight": "600"
+                                }
+                              ]
+                            },
+                            {
+                              "type": "text",
+                              "id": "xMcIw",
+                              "name": "vocabTitle",
+                              "fill": "$--text-primary",
+                              "content": "Word Building Exercises",
+                              "fontFamily": "Inter",
+                              "fontSize": 16,
+                              "fontWeight": "600"
+                            }
+                          ]
+                        },
+                        {
+                          "type": "text",
+                          "id": "eRX3q",
+                          "name": "vocabContent",
+                          "fill": "$--text-secondary",
+                          "textGrowth": "fixed-width",
+                          "width": "fill_container",
+                          "content": "New Words to Learn:\n• Wonderful - meaning something very good\n• Beautiful - meaning pleasing to look at\n• Exciting - meaning causing great enthusiasm\n\nActivities:\n1. Word Cards: Create flashcards with new vocabulary words.\n2. Sentence Building: Use each word in a complete sentence.\n3. Word Hunt: Find the words in a reading passage.",
+                          "lineHeight": 1.6,
+                          "fontFamily": "Inter",
+                          "fontSize": 14,
+                          "fontWeight": "normal"
+                        }
+                      ]
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "type": "frame",
+      "id": "dbrHI",
+      "x": 383,
+      "y": -503,
+      "name": "Mobile - Lesson Plan Generator",
+      "clip": true,
+      "width": 390,
+      "fill": "$--background",
+      "layout": "vertical",
+      "children": [
+        {
+          "type": "frame",
+          "id": "nx9Z4",
+          "name": "Header",
+          "width": "fill_container",
+          "height": 60,
+          "fill": "$--primary",
+          "padding": [
+            0,
+            20
+          ],
+          "justifyContent": "space_between",
+          "alignItems": "center",
+          "children": [
+            {
+              "type": "frame",
+              "id": "9jxxs",
+              "name": "mLogo",
+              "gap": 10,
+              "alignItems": "center",
+              "children": [
+                {
+                  "type": "icon_font",
+                  "id": "aJtbn",
+                  "name": "mLogoIcon",
+                  "width": 22,
+                  "height": 22,
+                  "iconFontName": "book-open",
+                  "iconFontFamily": "lucide",
+                  "fill": "#FFFFFF"
+                },
+                {
+                  "type": "text",
+                  "id": "7UWbI",
+                  "name": "mLogoText",
+                  "fill": "#FFFFFF",
+                  "content": "Lesson Plan",
+                  "fontFamily": "Inter",
+                  "fontSize": 18,
+                  "fontWeight": "600"
+                }
+              ]
+            },
+            {
+              "type": "icon_font",
+              "id": "zHBQC",
+              "name": "mMenu",
+              "width": 24,
+              "height": 24,
+              "iconFontName": "menu",
+              "iconFontFamily": "lucide",
+              "fill": "#FFFFFF"
+            }
+          ]
+        },
+        {
+          "type": "frame",
+          "id": "V9Uho",
+          "name": "Content",
+          "width": "fill_container",
+          "layout": "vertical",
+          "gap": 20,
+          "padding": 20,
+          "children": [
+            {
+              "type": "frame",
+              "id": "LlE87",
+              "name": "Form Card",
+              "width": "fill_container",
+              "fill": "$--surface",
+              "cornerRadius": 16,
+              "effect": {
+                "type": "shadow",
+                "shadowType": "outer",
+                "color": "#00000010",
+                "offset": {
+                  "x": 0,
+                  "y": 2
+                },
+                "blur": 12
+              },
+              "layout": "vertical",
+              "gap": 20,
+              "padding": 20,
+              "children": [
+                {
+                  "type": "text",
+                  "id": "QgeSg",
+                  "name": "mFormTitle",
+                  "fill": "$--text-primary",
+                  "content": "Create Lesson Plan",
+                  "fontFamily": "Inter",
+                  "fontSize": 20,
+                  "fontWeight": "600"
+                },
+                {
+                  "type": "text",
+                  "id": "f8fCf",
+                  "name": "mFormSubtitle",
+                  "fill": "$--text-secondary",
+                  "textGrowth": "fixed-width",
+                  "width": "fill_container",
+                  "content": "Fill in the details to generate your lesson plan.",
+                  "lineHeight": 1.4,
+                  "fontFamily": "Inter",
+                  "fontSize": 13,
+                  "fontWeight": "normal"
+                },
+                {
+                  "type": "frame",
+                  "id": "y73xj",
+                  "name": "Grade Field",
+                  "width": "fill_container",
+                  "layout": "vertical",
+                  "gap": 6,
+                  "children": [
+                    {
+                      "type": "text",
+                      "id": "Pidv0",
+                      "name": "mGradeLabel",
+                      "fill": "$--text-primary",
+                      "content": "Grade Level",
+                      "fontFamily": "Inter",
+                      "fontSize": 13,
+                      "fontWeight": "500"
+                    },
+                    {
+                      "type": "frame",
+                      "id": "sKBAD",
+                      "name": "mGradeDropdown",
+                      "width": "fill_container",
+                      "height": 44,
+                      "fill": "$--background-light",
+                      "cornerRadius": 10,
+                      "stroke": {
+                        "align": "inside",
+                        "thickness": 1,
+                        "fill": "$--border"
+                      },
+                      "padding": [
+                        0,
+                        14
+                      ],
+                      "justifyContent": "space_between",
+                      "alignItems": "center",
+                      "children": [
+                        {
+                          "type": "text",
+                          "id": "Kbgu8",
+                          "name": "mGradeValue",
+                          "fill": "$--text-primary",
+                          "content": "Grade 2",
+                          "fontFamily": "Inter",
+                          "fontSize": 14,
+                          "fontWeight": "normal"
+                        },
+                        {
+                          "type": "icon_font",
+                          "id": "MxWvh",
+                          "name": "mGradeChevron",
+                          "width": 18,
+                          "height": 18,
+                          "iconFontName": "chevron-down",
+                          "iconFontFamily": "lucide",
+                          "fill": "$--text-muted"
+                        }
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "type": "frame",
+                  "id": "3Bifa",
+                  "name": "Subject Field",
+                  "width": "fill_container",
+                  "layout": "vertical",
+                  "gap": 6,
+                  "children": [
+                    {
+                      "type": "text",
+                      "id": "sDTkP",
+                      "name": "mSubjectLabel",
+                      "fill": "$--text-primary",
+                      "content": "Subject",
+                      "fontFamily": "Inter",
+                      "fontSize": 13,
+                      "fontWeight": "500"
+                    },
+                    {
+                      "type": "frame",
+                      "id": "hw5We",
+                      "name": "mSubjectDropdown",
+                      "width": "fill_container",
+                      "height": 44,
+                      "fill": "$--background-light",
+                      "cornerRadius": 10,
+                      "stroke": {
+                        "align": "inside",
+                        "thickness": 1,
+                        "fill": "$--border"
+                      },
+                      "padding": [
+                        0,
+                        14
+                      ],
+                      "justifyContent": "space_between",
+                      "alignItems": "center",
+                      "children": [
+                        {
+                          "type": "text",
+                          "id": "Ablgo",
+                          "name": "mSubjectValue",
+                          "fill": "$--text-primary",
+                          "content": "Mathematics",
+                          "fontFamily": "Inter",
+                          "fontSize": 14,
+                          "fontWeight": "normal"
+                        },
+                        {
+                          "type": "icon_font",
+                          "id": "tAK3a",
+                          "name": "mSubjectChevron",
+                          "width": 18,
+                          "height": 18,
+                          "iconFontName": "chevron-down",
+                          "iconFontFamily": "lucide",
+                          "fill": "$--text-muted"
+                        }
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "type": "frame",
+                  "id": "wih4v",
+                  "name": "Lesson Field",
+                  "width": "fill_container",
+                  "layout": "vertical",
+                  "gap": 6,
+                  "children": [
+                    {
+                      "type": "text",
+                      "id": "pbf2F",
+                      "name": "mLessonLabel",
+                      "fill": "$--text-primary",
+                      "content": "Lesson Number",
+                      "fontFamily": "Inter",
+                      "fontSize": 13,
+                      "fontWeight": "500"
+                    },
+                    {
+                      "type": "frame",
+                      "id": "ksAHH",
+                      "name": "mLessonInput",
+                      "width": "fill_container",
+                      "height": 44,
+                      "fill": "$--background-light",
+                      "cornerRadius": 10,
+                      "stroke": {
+                        "align": "inside",
+                        "thickness": 1,
+                        "fill": "$--border"
+                      },
+                      "padding": [
+                        0,
+                        14
+                      ],
+                      "alignItems": "center",
+                      "children": [
+                        {
+                          "type": "text",
+                          "id": "kntPC",
+                          "name": "mLessonPlaceholder",
+                          "fill": "$--text-muted",
+                          "content": "Enter lesson number...",
+                          "fontFamily": "Inter",
+                          "fontSize": 14,
+                          "fontWeight": "normal"
+                        }
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "type": "frame",
+                  "id": "TD4tN",
+                  "name": "Plan Type Field",
+                  "width": "fill_container",
+                  "layout": "vertical",
+                  "gap": 10,
+                  "children": [
+                    {
+                      "type": "text",
+                      "id": "JfjEq",
+                      "name": "mTypeLabel",
+                      "fill": "$--text-primary",
+                      "content": "Lesson Plan Type",
+                      "fontFamily": "Inter",
+                      "fontSize": 13,
+                      "fontWeight": "500"
+                    },
+                    {
+                      "type": "frame",
+                      "id": "gmIP4",
+                      "name": "mTypeOptions",
+                      "width": "fill_container",
+                      "layout": "vertical",
+                      "gap": 8,
+                      "children": [
+                        {
+                          "type": "frame",
+                          "id": "NLebV",
+                          "name": "mRecall",
+                          "width": "fill_container",
+                          "height": 40,
+                          "fill": "$--primary",
+                          "cornerRadius": 8,
+                          "gap": 10,
+                          "padding": [
+                            0,
+                            12
+                          ],
+                          "alignItems": "center",
+                          "children": [
+                            {
+                              "type": "frame",
+                              "id": "Wfy4U",
+                              "name": "mRecallCheck",
+                              "width": 18,
+                              "height": 18,
+                              "fill": "#FFFFFF",
+                              "cornerRadius": 4,
+                              "justifyContent": "center",
+                              "alignItems": "center",
+                              "children": [
+                                {
+                                  "type": "icon_font",
+                                  "id": "Vy9Zv",
+                                  "name": "mRecallIcon",
+                                  "width": 12,
+                                  "height": 12,
+                                  "iconFontName": "check",
+                                  "iconFontFamily": "lucide",
+                                  "fill": "$--primary"
+                                }
+                              ]
+                            },
+                            {
+                              "type": "text",
+                              "id": "GXOrb",
+                              "name": "mRecallText",
+                              "fill": "#FFFFFF",
+                              "content": "Recall",
+                              "fontFamily": "Inter",
+                              "fontSize": 14,
+                              "fontWeight": "500"
+                            }
+                          ]
+                        },
+                        {
+                          "type": "frame",
+                          "id": "QdsDJ",
+                          "name": "mVocab",
+                          "width": "fill_container",
+                          "height": 40,
+                          "fill": "$--background-light",
+                          "cornerRadius": 8,
+                          "stroke": {
+                            "align": "inside",
+                            "thickness": 1,
+                            "fill": "$--border"
+                          },
+                          "gap": 10,
+                          "padding": [
+                            0,
+                            12
+                          ],
+                          "alignItems": "center",
+                          "children": [
+                            {
+                              "type": "frame",
+                              "id": "rdp9n",
+                              "name": "mVocabCheck",
+                              "width": 18,
+                              "height": 18,
+                              "cornerRadius": 4,
+                              "stroke": {
+                                "align": "inside",
+                                "thickness": 2,
+                                "fill": "$--border"
+                              }
+                            },
+                            {
+                              "type": "text",
+                              "id": "FvCos",
+                              "name": "mVocabText",
+                              "fill": "$--text-primary",
+                              "content": "Vocabulary",
+                              "fontFamily": "Inter",
+                              "fontSize": 14,
+                              "fontWeight": "500"
+                            }
+                          ]
+                        },
+                        {
+                          "type": "frame",
+                          "id": "cfgCg",
+                          "name": "mGrammar",
+                          "width": "fill_container",
+                          "height": 40,
+                          "fill": "$--background-light",
+                          "cornerRadius": 8,
+                          "stroke": {
+                            "align": "inside",
+                            "thickness": 1,
+                            "fill": "$--border"
+                          },
+                          "gap": 10,
+                          "padding": [
+                            0,
+                            12
+                          ],
+                          "alignItems": "center",
+                          "children": [
+                            {
+                              "type": "frame",
+                              "id": "1hTQv",
+                              "name": "mGrammarCheck",
+                              "width": 18,
+                              "height": 18,
+                              "cornerRadius": 4,
+                              "stroke": {
+                                "align": "inside",
+                                "thickness": 2,
+                                "fill": "$--border"
+                              }
+                            },
+                            {
+                              "type": "text",
+                              "id": "U5xO0",
+                              "name": "mGrammarText",
+                              "fill": "$--text-primary",
+                              "content": "Grammar",
+                              "fontFamily": "Inter",
+                              "fontSize": 14,
+                              "fontWeight": "500"
+                            }
+                          ]
+                        }
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "type": "frame",
+                  "id": "jXIw1",
+                  "name": "Generate Button",
+                  "width": "fill_container",
+                  "height": 48,
+                  "fill": "$--primary",
+                  "cornerRadius": 10,
+                  "gap": 8,
+                  "justifyContent": "center",
+                  "alignItems": "center",
+                  "children": [
+                    {
+                      "type": "icon_font",
+                      "id": "UQcS4",
+                      "name": "mBtnIcon",
+                      "width": 18,
+                      "height": 18,
+                      "iconFontName": "sparkles",
+                      "iconFontFamily": "lucide",
+                      "fill": "#FFFFFF"
+                    },
+                    {
+                      "type": "text",
+                      "id": "CIzxe",
+                      "name": "mBtnText",
+                      "fill": "#FFFFFF",
+                      "content": "Generate Lesson Plan",
+                      "fontFamily": "Inter",
+                      "fontSize": 15,
+                      "fontWeight": "600"
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "type": "frame",
+              "id": "UlYY1",
+              "name": "Output Card",
+              "width": "fill_container",
+              "fill": "$--surface",
+              "cornerRadius": 16,
+              "effect": {
+                "type": "shadow",
+                "shadowType": "outer",
+                "color": "#00000010",
+                "offset": {
+                  "x": 0,
+                  "y": 2
+                },
+                "blur": 12
+              },
+              "layout": "vertical",
+              "gap": 16,
+              "padding": 20,
+              "children": [
+                {
+                  "type": "frame",
+                  "id": "5xPNO",
+                  "name": "mOutputHeader",
+                  "width": "fill_container",
+                  "justifyContent": "space_between",
+                  "alignItems": "center",
+                  "children": [
+                    {
+                      "type": "text",
+                      "id": "aFyY6",
+                      "name": "mOutputTitle",
+                      "fill": "$--text-primary",
+                      "content": "Generated Plan",
+                      "fontFamily": "Inter",
+                      "fontSize": 18,
+                      "fontWeight": "600"
+                    },
+                    {
+                      "type": "frame",
+                      "id": "3h5mh",
+                      "name": "mOutputActions",
+                      "gap": 8,
+                      "children": [
+                        {
+                          "type": "frame",
+                          "id": "SWYOq",
+                          "name": "mCopyBtn",
+                          "width": 36,
+                          "height": 36,
+                          "fill": "$--background-light",
+                          "cornerRadius": 8,
+                          "stroke": {
+                            "align": "inside",
+                            "thickness": 1,
+                            "fill": "$--border"
+                          },
+                          "justifyContent": "center",
+                          "alignItems": "center",
+                          "children": [
+                            {
+                              "type": "icon_font",
+                              "id": "XJuyr",
+                              "name": "mCopyIcon",
+                              "width": 16,
+                              "height": 16,
+                              "iconFontName": "copy",
+                              "iconFontFamily": "lucide",
+                              "fill": "$--text-secondary"
+                            }
+                          ]
+                        },
+                        {
+                          "type": "frame",
+                          "id": "LMqGx",
+                          "name": "mDownloadBtn",
+                          "width": 36,
+                          "height": 36,
+                          "fill": "$--primary",
+                          "cornerRadius": 8,
+                          "justifyContent": "center",
+                          "alignItems": "center",
+                          "children": [
+                            {
+                              "type": "icon_font",
+                              "id": "zTXDw",
+                              "name": "mDownloadIcon",
+                              "width": 16,
+                              "height": 16,
+                              "iconFontName": "download",
+                              "iconFontFamily": "lucide",
+                              "fill": "#FFFFFF"
+                            }
+                          ]
+                        }
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "type": "frame",
+                  "id": "s3Z7o",
+                  "name": "mDivider",
+                  "width": "fill_container",
+                  "height": 1,
+                  "fill": "$--border-light"
+                },
+                {
+                  "type": "frame",
+                  "id": "h4JC8",
+                  "name": "mMeta",
+                  "width": "fill_container",
+                  "gap": 16,
+                  "children": [
+                    {
+                      "type": "frame",
+                      "id": "uSZxD",
+                      "name": "mMetaItem1",
+                      "gap": 6,
+                      "alignItems": "center",
+                      "children": [
+                        {
+                          "type": "icon_font",
+                          "id": "DI78u",
+                          "name": "mMetaIcon1",
+                          "width": 14,
+                          "height": 14,
+                          "iconFontName": "graduation-cap",
+                          "iconFontFamily": "lucide",
+                          "fill": "$--primary"
+                        },
+                        {
+                          "type": "text",
+                          "id": "0Sixy",
+                          "name": "mMetaText1",
+                          "fill": "$--text-secondary",
+                          "content": "Grade 2",
+                          "fontFamily": "Inter",
+                          "fontSize": 12,
+                          "fontWeight": "normal"
+                        }
+                      ]
+                    },
+                    {
+                      "type": "frame",
+                      "id": "Imotb",
+                      "name": "mMetaItem2",
+                      "gap": 6,
+                      "alignItems": "center",
+                      "children": [
+                        {
+                          "type": "icon_font",
+                          "id": "52ciu",
+                          "name": "mMetaIcon2",
+                          "width": 14,
+                          "height": 14,
+                          "iconFontName": "book",
+                          "iconFontFamily": "lucide",
+                          "fill": "$--primary"
+                        },
+                        {
+                          "type": "text",
+                          "id": "SGAr8",
+                          "name": "mMetaText2",
+                          "fill": "$--text-secondary",
+                          "content": "Math",
+                          "fontFamily": "Inter",
+                          "fontSize": 12,
+                          "fontWeight": "normal"
+                        }
+                      ]
+                    },
+                    {
+                      "type": "frame",
+                      "id": "iAfZj",
+                      "name": "mMetaItem3",
+                      "gap": 6,
+                      "alignItems": "center",
+                      "children": [
+                        {
+                          "type": "icon_font",
+                          "id": "45d4W",
+                          "name": "mMetaIcon3",
+                          "width": 14,
+                          "height": 14,
+                          "iconFontName": "hash",
+                          "iconFontFamily": "lucide",
+                          "fill": "$--primary"
+                        },
+                        {
+                          "type": "text",
+                          "id": "q282X",
+                          "name": "mMetaText3",
+                          "fill": "$--text-secondary",
+                          "content": "Lesson 3",
+                          "fontFamily": "Inter",
+                          "fontSize": 12,
+                          "fontWeight": "normal"
+                        }
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "type": "frame",
+                  "id": "2J0hV",
+                  "name": "Content Area",
+                  "width": "fill_container",
+                  "layout": "vertical",
+                  "gap": 16,
+                  "children": [
+                    {
+                      "type": "frame",
+                      "id": "lgTpL",
+                      "name": "Recall Section",
+                      "width": "fill_container",
+                      "fill": "$--background-light",
+                      "cornerRadius": 10,
+                      "layout": "vertical",
+                      "gap": 10,
+                      "padding": 16,
+                      "children": [
+                        {
+                          "type": "frame",
+                          "id": "fVnhz",
+                          "name": "mRecallHeader",
+                          "gap": 8,
+                          "alignItems": "center",
+                          "children": [
+                            {
+                              "type": "frame",
+                              "id": "agjqA",
+                              "name": "mRecallBadge",
+                              "fill": "$--primary",
+                              "cornerRadius": 4,
+                              "padding": [
+                                3,
+                                8
+                              ],
+                              "children": [
+                                {
+                                  "type": "text",
+                                  "id": "R70IT",
+                                  "name": "mRecallBadgeText",
+                                  "fill": "#FFFFFF",
+                                  "content": "RECALL",
+                                  "fontFamily": "Inter",
+                                  "fontSize": 10,
+                                  "fontWeight": "600"
+                                }
+                              ]
+                            },
+                            {
+                              "type": "text",
+                              "id": "nr5ul",
+                              "name": "mRecallTitle",
+                              "fill": "$--text-primary",
+                              "content": "Memory Activities",
+                              "fontFamily": "Inter",
+                              "fontSize": 14,
+                              "fontWeight": "600"
+                            }
+                          ]
+                        },
+                        {
+                          "type": "text",
+                          "id": "mh2Nu",
+                          "name": "mRecallContent",
+                          "fill": "$--text-secondary",
+                          "textGrowth": "fixed-width",
+                          "width": "fill_container",
+                          "content": "1. Quick Review: Recall key concepts from the previous lesson.\n\n2. Number Recognition: Identify numbers 1-20.\n\n3. Pattern Practice: Complete number patterns.",
+                          "lineHeight": 1.5,
+                          "fontFamily": "Inter",
+                          "fontSize": 13,
+                          "fontWeight": "normal"
+                        }
+                      ]
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "variables": {
+    "--background": {
+      "type": "color",
+      "value": "#ded9d5"
+    },
+    "--background-light": {
+      "type": "color",
+      "value": "#f5f3f1"
+    },
+    "--border": {
+      "type": "color",
+      "value": "#c5c0bc"
+    },
+    "--border-light": {
+      "type": "color",
+      "value": "#e5e2df"
+    },
+    "--font-primary": {
+      "type": "string",
+      "value": "Inter"
+    },
+    "--primary": {
+      "type": "color",
+      "value": "#275441"
+    },
+    "--primary-dark": {
+      "type": "color",
+      "value": "#1a3a2d"
+    },
+    "--primary-light": {
+      "type": "color",
+      "value": "#3d7a5e"
+    },
+    "--radius-lg": {
+      "type": "number",
+      "value": 16
+    },
+    "--radius-md": {
+      "type": "number",
+      "value": 10
+    },
+    "--radius-sm": {
+      "type": "number",
+      "value": 6
+    },
+    "--success": {
+      "type": "color",
+      "value": "#3d8a5a"
+    },
+    "--surface": {
+      "type": "color",
+      "value": "#FFFFFF"
+    },
+    "--text-muted": {
+      "type": "color",
+      "value": "#8a8a8a"
+    },
+    "--text-primary": {
+      "type": "color",
+      "value": "#1a1a1a"
+    },
+    "--text-secondary": {
+      "type": "color",
+      "value": "#5a5a5a"
+    }
+  }
+}
