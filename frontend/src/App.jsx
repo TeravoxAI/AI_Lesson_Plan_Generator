@@ -62,6 +62,29 @@ const ClockIcon = () => (
     </svg>
 )
 
+const TimerIcon = () => (
+    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+        <line x1="10" y1="2" x2="14" y2="2" />
+        <line x1="12" y1="14" x2="15" y2="11" />
+        <circle cx="12" cy="14" r="8" />
+    </svg>
+)
+
+const DollarIcon = () => (
+    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+        <line x1="12" y1="1" x2="12" y2="23" />
+        <path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6" />
+    </svg>
+)
+
+const TokenIcon = () => (
+    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+        <polygon points="12 2 2 7 12 12 22 7 12 2" />
+        <polyline points="2 17 12 22 22 17" />
+        <polyline points="2 12 12 17 22 12" />
+    </svg>
+)
+
 const GraduationIcon = () => (
     <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
         <path d="M22 10v6M2 10l10-5 10 5-10 5z" />
@@ -193,7 +216,13 @@ function App() {
                     grade: generateForm.grade,
                     subject: generateForm.subject,
                     lessonNumber: generateForm.lesson_number,
-                    types: generateForm.selected_types
+                    types: generateForm.selected_types,
+                    // Usage metrics
+                    generationTime: data.generation_time,
+                    cost: data.cost,
+                    inputTokens: data.input_tokens,
+                    outputTokens: data.output_tokens,
+                    totalTokens: data.total_tokens
                 })
                 setStatus({ type: 'success', message: 'Lesson plan generated successfully!' })
             } else {
@@ -442,20 +471,45 @@ function App() {
                         <div className="output-divider"></div>
 
                         {lessonMeta && (
-                            <div className="lesson-meta">
-                                <div className="meta-item">
-                                    <GraduationIcon />
-                                    <span>{lessonMeta.grade}</span>
+                            <>
+                                <div className="lesson-meta">
+                                    <div className="meta-item">
+                                        <GraduationIcon />
+                                        <span>{lessonMeta.grade}</span>
+                                    </div>
+                                    <div className="meta-item">
+                                        <BookOpenIcon />
+                                        <span>{lessonMeta.subject}</span>
+                                    </div>
+                                    <div className="meta-item">
+                                        <ClockIcon />
+                                        <span>Lesson {lessonMeta.lessonNumber}</span>
+                                    </div>
                                 </div>
-                                <div className="meta-item">
-                                    <BookOpenIcon />
-                                    <span>{lessonMeta.subject}</span>
-                                </div>
-                                <div className="meta-item">
-                                    <ClockIcon />
-                                    <span>Lesson {lessonMeta.lessonNumber}</span>
-                                </div>
-                            </div>
+                                {/* Usage metrics */}
+                                {(lessonMeta.generationTime || lessonMeta.cost) && (
+                                    <div className="usage-metrics">
+                                        {lessonMeta.generationTime && (
+                                            <div className="metric-item">
+                                                <TimerIcon />
+                                                <span>{lessonMeta.generationTime}s</span>
+                                            </div>
+                                        )}
+                                        {lessonMeta.cost !== undefined && lessonMeta.cost !== null && (
+                                            <div className="metric-item">
+                                                <DollarIcon />
+                                                <span>${lessonMeta.cost.toFixed(6)}</span>
+                                            </div>
+                                        )}
+                                        {lessonMeta.totalTokens && (
+                                            <div className="metric-item">
+                                                <TokenIcon />
+                                                <span>{lessonMeta.totalTokens.toLocaleString()} tokens</span>
+                                            </div>
+                                        )}
+                                    </div>
+                                )}
+                            </>
                         )}
 
                         {lessonPlan ? (

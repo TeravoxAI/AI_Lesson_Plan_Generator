@@ -12,6 +12,30 @@ from src.generation.sow_matcher import (
 )
 
 
+def normalize_grade(grade: str) -> str:
+    """
+    Normalize grade format to match database format.
+    Converts "Grade 2" -> "2", "grade 3" -> "3", etc.
+    If already a number, returns as-is.
+    """
+    grade_str = str(grade).strip()
+
+    # If it starts with "Grade" or "grade", extract the number
+    if grade_str.lower().startswith("grade"):
+        # Remove "Grade" or "grade" and extract number
+        import re
+        match = re.search(r'\d+', grade_str)
+        if match:
+            return match.group(0)
+
+    # If it's already just a number, return as-is
+    if grade_str.isdigit():
+        return grade_str
+
+    # Otherwise return as-is (fallback)
+    return grade_str
+
+
 class ContextRouter:
     """Routes requests to appropriate content and retrieves context"""
 
@@ -39,6 +63,11 @@ class ContextRouter:
         """
         lesson_number = page_start  # Rename for clarity
 
+        # Normalize grade format for textbook lookups only
+        # SOW uses "Grade 2", textbooks use "2"
+        db_grade_textbooks = normalize_grade(grade)
+        print(f"\n📚 [CONTEXT] Retrieving content for {subject.value} {grade}, Lesson {lesson_number}")
+
         context = {
             "grade": grade,
             "subject": subject.value,
@@ -54,9 +83,7 @@ class ContextRouter:
             }
         }
 
-        print(f"\n📚 [CONTEXT] Retrieving content for {subject.value} {grade}, Lesson {lesson_number}")
-
-        # Step 1: Fetch SOW and find the lesson
+        # Step 1: Fetch SOW and find the lesson (SOW uses original grade format "Grade 2")
         print(f"\n📋 [SOW] Finding lesson {lesson_number} in SOW...")
         sow_entries = db.get_sow_by_subject(subject.value, grade)
 
@@ -75,12 +102,46 @@ class ContextRouter:
             print(f"   ⚠ SOW entry has no extraction data")
             return context
 
+        # Debug: Print SOW structure
+        print(f"   🔍 SOW extraction keys: {list(extraction.keys())}")
+        if "curriculum" in extraction:
+            curriculum = extraction["curriculum"]
+            print(f"   🔍 Curriculum has {len(curriculum.get('units', []))} units")
+            if curriculum.get("units"):
+                first_unit = curriculum["units"][0]
+                print(f"   🔍 First unit has {len(first_unit.get('lessons', []))} lessons")
+                if first_unit.get("lessons"):
+                    first_lesson = first_unit["lessons"][0]
+                    print(f"   🔍 First lesson has {len(first_lesson.get('lesson_plan_types', []))} lesson_plan_types")
+                    if first_lesson.get("lesson_plan_types"):
+                        types = [lpt.get("type") for lpt in first_lesson["lesson_plan_types"]]
+                        print(f"   🔍 First lesson types: {types}")
+
         # Step 2: Get lesson context by lesson number
+        print(f"   🔍 Looking for lesson_type: '{lesson_type.value}'")
+
+        # First, get the lesson without filtering to see what types are available
+        lesson_debug = get_lesson_context_by_number(
+            sow_data=extraction,
+            lesson_number=lesson_number,
+            lesson_type=None  # No filter to see all types
+        )
+
+        if lesson_debug.get("found"):
+            available_types = [lpt.get("type") for lpt in lesson_debug.get("lesson_plan_types", [])]
+            print(f"   📋 Available lesson_plan_types in SOW: {available_types}")
+
+        # Now get with the filter (uses partial matching)
         sow_context = get_lesson_context_by_number(
             sow_data=extraction,
             lesson_number=lesson_number,
             lesson_type=lesson_type.value
         )
+
+        # Show what was matched after filtering
+        if sow_context.get("found"):
+            matched_types = [lpt.get("type") for lpt in sow_context.get("lesson_plan_types", [])]
+            print(f"   ✓ Matched lesson_plan_types: {matched_types}")
 
         context["sow_context"] = sow_context
 
@@ -94,6 +155,12 @@ class ContextRouter:
         # Step 3: Get book references from the lesson
         book_refs = sow_context.get("book_references", [])
         print(f"   📖 Book references found: {len(book_refs)}")
+        if book_refs:
+            for ref in book_refs:
+                print(f"      - {ref.get('book_type')}: pages {ref.get('pages')}")
+        else:
+            print(f"      ⚠ No book references extracted (likely lesson_type mismatch)")
+            print(f"      💡 Hint: Check if SOW lesson_plan_types match the requested type '{lesson_type.value}'")
 
         # Step 4: Fetch textbook pages for each book reference
         all_content = []
@@ -101,20 +168,20 @@ class ContextRouter:
         for ref in book_refs:
             book_type_code = ref.get("book_type", "").upper()
             pages = ref.get("pages", [])
-            book_name = ref.get("book_name", "")
 
             if not book_type_code or not pages:
                 continue
 
             print(f"     - {book_type_code}: pages {pages}")
+            print(f"       🔍 Searching DB: grade='{db_grade_textbooks}', subject='{subject.value}', book_tag='{book_type_code}'")
 
-            # Try to find the book by book_tag first, then by book_type
-            book = db.get_textbook_by_tag(grade, subject.value, book_type_code)
+            # Try to find the book by book_tag first, then by book_type (use normalized grade for textbooks)
+            book = db.get_textbook_by_tag(db_grade_textbooks, subject.value, book_type_code)
 
             if not book:
                 # Fallback: map short code to db book_type
                 db_book_type = map_book_type_to_db(book_type_code)
-                book = db.get_textbook(grade, subject.value, db_book_type)
+                book = db.get_textbook(db_grade_textbooks, subject.value, db_book_type)
 
             if not book:
                 print(f"       ⚠ Book not found for {book_type_code}")
@@ -134,14 +201,21 @@ class ContextRouter:
                 })
 
                 for page in fetched_pages:
+                    page_no = page.get("page_no") or page.get("book_page_no")
+                    content_text = page.get("book_text") or page.get("content", "")
+
                     all_content.append({
                         "book_type": book.get("book_type", ""),
                         "book_type_short": book_type_code,
                         "title": book.get("title", ""),
-                        "page_no": page.get("page_no") or page.get("book_page_no"),
-                        "content": page.get("book_text") or page.get("content", ""),
+                        "page_no": page_no,
+                        "content": content_text,
                         "book_id": book["id"]
                     })
+
+                    # Show preview of fetched content
+                    content_preview = content_text[:150].replace('\n', ' ') if content_text else '[No content]'
+                    print(f"         Page {page_no}: {content_preview}...")
 
                 print(f"       ✓ Fetched {len(fetched_pages)} pages from '{book.get('title', 'Unknown')}'")
             else:
@@ -154,8 +228,32 @@ class ContextRouter:
         print(f"\n   📝 Context Summary:")
         print(f"      - Lesson: {sow_context.get('lesson_title')}")
         print(f"      - Book pages loaded: {len(all_content)}")
+        if all_content:
+            # Show which books were used
+            books_used = {}
+            for item in all_content:
+                book_key = item.get('book_type_short', 'Unknown')
+                if book_key not in books_used:
+                    books_used[book_key] = []
+                books_used[book_key].append(item.get('page_no', '?'))
+            print(f"      - Books used: {', '.join([f'{k} (pages {books_used[k]})' for k in books_used])}")
         print(f"      - SLOs: {len(sow_context.get('student_learning_outcomes', []))}")
         print(f"      - Skills: {sow_context.get('skills', [])}")
+
+        # Print complete SOW extraction being used
+        print("\n" + "="*80)
+        print("📋 COMPLETE SOW EXTRACTION USED IN PROMPT:")
+        print("="*80)
+        print(context["sow_strategy"])
+        print("="*80)
+
+        # Print complete book OCR content being used
+        print("\n" + "="*80)
+        print("📖 COMPLETE BOOK OCR CONTENT USED IN PROMPT:")
+        print("="*80)
+        formatted_book_content = self.format_book_content(all_content)
+        print(formatted_book_content)
+        print("="*80 + "\n")
 
         return context
 

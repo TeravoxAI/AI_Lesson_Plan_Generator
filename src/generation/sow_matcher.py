@@ -331,7 +331,7 @@ def get_book_references_from_lesson(
 
     Args:
         lesson: The lesson dict (output from find_lesson_by_number)
-        lesson_type: Optional filter for specific lesson plan type
+        lesson_type: Optional filter for specific lesson plan type (uses partial matching)
 
     Returns:
         List of book references with book_type, book_name, pages
@@ -340,8 +340,8 @@ def get_book_references_from_lesson(
     seen = set()  # Avoid duplicates
 
     for lpt in lesson.get("lesson_plan_types", []):
-        # Filter by lesson_type if specified
-        if lesson_type and lpt.get("type") != lesson_type:
+        # Use flexible matching instead of exact comparison
+        if lesson_type and not matches_lesson_type(lpt.get("type", ""), lesson_type):
             continue
 
         for ref in lpt.get("book_references", []):
@@ -360,6 +360,39 @@ def get_book_references_from_lesson(
     return all_refs
 
 
+def matches_lesson_type(sow_type: str, requested_type: Optional[str]) -> bool:
+    """
+    Check if a SOW lesson_plan_type matches the requested lesson type.
+    Uses partial matching to handle variations in naming.
+
+    Examples:
+        - "recall_review" matches "recall"
+        - "vocabulary_word_meaning" matches "vocabulary"
+        - "listening_audio_video" matches "listening"
+        - "speaking_oral_language" matches "oral_speaking" (also checks reverse)
+    """
+    if not requested_type:
+        return True
+
+    sow_lower = sow_type.lower()
+    req_lower = requested_type.lower()
+
+    # Direct substring match (most common case)
+    if req_lower in sow_lower or sow_lower in req_lower:
+        return True
+
+    # Handle special cases where naming differs
+    # "oral_speaking" <-> "speaking_oral_language"
+    if "oral" in req_lower and "speaking" in req_lower:
+        return "oral" in sow_lower and "speaking" in sow_lower
+
+    # "creative_writing" <-> "writing_guided_creative"
+    if "creative" in req_lower and "writing" in req_lower:
+        return "creative" in sow_lower and "writing" in sow_lower
+
+    return False
+
+
 def get_lesson_context_by_number(
     sow_data: Dict[str, Any],
     lesson_number: int,
@@ -371,7 +404,7 @@ def get_lesson_context_by_number(
     Args:
         sow_data: The full SOW JSON
         lesson_number: The lesson number to find
-        lesson_type: Optional filter for specific lesson plan type
+        lesson_type: Optional filter for specific lesson plan type (uses partial matching)
 
     Returns:
         Dict with lesson info, book references, SLOs, strategies, etc.
@@ -387,8 +420,9 @@ def get_lesson_context_by_number(
             "lesson_plan_types": []
         }
 
-    # Get book references
-    book_refs = get_book_references_from_lesson(lesson, lesson_type)
+    # Get book references with flexible matching
+    book_refs = []
+    seen = set()
 
     # Collect SLOs, strategies, skills from relevant lesson plan types
     all_slos = []
@@ -398,8 +432,23 @@ def get_lesson_context_by_number(
     filtered_lpts = []
 
     for lpt in lesson.get("lesson_plan_types", []):
-        if lesson_type and lpt.get("type") != lesson_type:
+        # Use flexible matching instead of exact comparison
+        if lesson_type and not matches_lesson_type(lpt.get("type", ""), lesson_type):
             continue
+
+        # Extract book references from this lesson plan type
+        for ref in lpt.get("book_references", []):
+            book_type = ref.get("book_type", "")
+            pages = tuple(ref.get("pages", []))
+            key = (book_type, pages)
+
+            if key not in seen and book_type and pages:
+                seen.add(key)
+                book_refs.append({
+                    "book_type": book_type,
+                    "book_name": ref.get("book_name", ""),
+                    "pages": list(pages)
+                })
 
         all_slos.extend(lpt.get("student_learning_outcomes", []))
         all_strategies.extend(lpt.get("learning_strategies", []))
