@@ -206,6 +206,27 @@ class LessonGenerator:
 
             print(f"\n📝 [GENERATE] Building prompt for {subject} lesson plan...")
 
+            # Extract teacher resources (videos) from SOW context
+            teacher_resources = []
+            sow_context = context.get("sow_context")
+            if sow_context and sow_context.get("found"):
+                external_resources = sow_context.get("external_resources", [])
+                # Filter for video resources with valid URLs
+                teacher_resources = [
+                    {
+                        "title": res.get("title", "Video Resource"),
+                        "type": res.get("type", "video"),
+                        "reference": res.get("reference", "")
+                    }
+                    for res in external_resources
+                    if res.get("type") == "video" and res.get("reference")
+                ]
+
+                if teacher_resources:
+                    print(f"\n📹 [RESOURCES] Found {len(teacher_resources)} video resources")
+                    for res in teacher_resources:
+                        print(f"   - {res['title']}: {res['reference'][:60]}...")
+
             # Format content for prompt
             book_content_str = router.format_book_content(context["book_content"])
             sow_strategy_str = context.get("sow_strategy", "")
@@ -266,6 +287,7 @@ class LessonGenerator:
                 success=True,
                 html_content=html_content,
                 plan_id=plan_id,
+                teacher_resources=teacher_resources,
                 generation_time=generation_time,
                 cost=usage_data["cost"],
                 input_tokens=usage_data["input_tokens"],

@@ -79,6 +79,13 @@ class LessonPlan(BaseModel):
     resources: List[str]
 
 
+class TeacherResource(BaseModel):
+    """External resource for teachers (videos, audio, documents)"""
+    title: str
+    type: str  # "video", "audio", "document", "interactive"
+    reference: str  # URL or reference identifier
+
+
 class GenerateResponse(BaseModel):
     """Response model for lesson plan generation"""
     success: bool
@@ -87,6 +94,7 @@ class GenerateResponse(BaseModel):
     raw_content: Optional[str] = None
     plan_id: Optional[int] = None  # ID of saved lesson plan in database
     error: Optional[str] = None
+    teacher_resources: Optional[List[TeacherResource]] = None  # External resources from SOW
     # Usage metrics
     generation_time: Optional[float] = None  # Time in seconds
     cost: Optional[float] = None  # Cost in USD

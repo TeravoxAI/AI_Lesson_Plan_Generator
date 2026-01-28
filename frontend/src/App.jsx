@@ -99,6 +99,26 @@ const BookOpenIcon = () => (
     </svg>
 )
 
+// Extract YouTube video ID from various URL formats
+const getYouTubeVideoId = (url) => {
+    if (!url) return null
+
+    const patterns = [
+        /(?:youtube\.com\/watch\?v=|youtu\.be\/)([^&\s]+)/,  // Standard and short URLs
+        /youtube\.com\/embed\/([^?&\s]+)/,                    // Embed URLs
+        /youtube\.com\/v\/([^?&\s]+)/                         // Old embed format
+    ]
+
+    for (const pattern of patterns) {
+        const match = url.match(pattern)
+        if (match && match[1]) {
+            return match[1]
+        }
+    }
+
+    return null
+}
+
 function App() {
     const [activeView, setActiveView] = useState('generate')
     const [loading, setLoading] = useState(false)
@@ -217,6 +237,7 @@ function App() {
                     subject: generateForm.subject,
                     lessonNumber: generateForm.lesson_number,
                     types: generateForm.selected_types,
+                    teacherResources: data.teacher_resources || [],  // NEW: External resources from SOW
                     // Usage metrics
                     generationTime: data.generation_time,
                     cost: data.cost,
@@ -510,6 +531,50 @@ function App() {
                                     </div>
                                 )}
                             </>
+                        )}
+
+                        {/* Teacher Resources Section */}
+                        {lessonMeta?.teacherResources?.length > 0 && (
+                            <div className="teacher-resources-section">
+                                <div className="resource-badge">
+                                    <span>Teacher Resources</span>
+                                </div>
+                                <div className="video-list">
+                                    {lessonMeta.teacherResources.map((resource, index) => {
+                                        const videoId = getYouTubeVideoId(resource.reference)
+
+                                        if (!videoId) {
+                                            return (
+                                                <div key={index} className="video-error">
+                                                    <p>{resource.title}</p>
+                                                    <span>Invalid video URL</span>
+                                                </div>
+                                            )
+                                        }
+
+                                        return (
+                                            <div key={index} className="video-item">
+                                                <div className="video-title-row">
+                                                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                                        <circle cx="12" cy="12" r="10" />
+                                                        <polygon points="10 8 16 12 10 16 10 8" />
+                                                    </svg>
+                                                    <span>{resource.title}</span>
+                                                </div>
+                                                <div className="video-container">
+                                                    <iframe
+                                                        src={`https://www.youtube.com/embed/${videoId}`}
+                                                        title={resource.title}
+                                                        frameBorder="0"
+                                                        allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                                                        allowFullScreen
+                                                    />
+                                                </div>
+                                            </div>
+                                        )
+                                    })}
+                                </div>
+                            </div>
                         )}
 
                         {lessonPlan ? (
