@@ -3,12 +3,13 @@ Lesson Generator - Generate lesson plans using LLM and save to database
 """
 import os
 import json
-from typing import Dict, Any, Optional
+import time
+from typing import Dict, Any, Optional, Tuple
 import httpx
 
 from src.models import LessonType, GenerateResponse, LessonPlan
 from src.prompts.templates import (
-    LESSON_ARCHITECT_PROMPT, 
+    LESSON_ARCHITECT_PROMPT,
     LESSON_TYPE_PROMPTS,
     ENG_SYSTEM_PROMPT,
     MATHS_SYSTEM_PROMPT
@@ -60,16 +61,25 @@ class LessonGenerator:
         else:
             return ENG_SYSTEM_PROMPT  # Default to English
     
-    def _call_llm(self, prompt: str, subject: str) -> str:
-        """Call OpenRouter LLM for generation"""
+    def _call_llm(self, prompt: str, subject: str) -> Tuple[str, Dict[str, Any]]:
+        """
+        Call OpenRouter LLM for generation.
+
+        Returns:
+            Tuple of (content, usage_data) where usage_data contains:
+                - input_tokens: int
+                - output_tokens: int
+                - total_tokens: int
+                - cost: float (from OpenRouter)
+        """
         headers = {
             "Authorization": f"Bearer {self.api_key}",
             "Content-Type": "application/json"
         }
-        
+
         # Select subject-specific system prompt
         system_prompt = self._get_system_prompt(subject)
-        
+
         payload = {
             "model": self.model,
             "messages": [
@@ -85,7 +95,7 @@ class LessonGenerator:
             "max_tokens": 8000,
             "temperature": 0.7
         }
-        
+
         try:
             print(f"\n🤖 [LLM] Calling {self.model}...")
             with httpx.Client(timeout=120.0) as client:
@@ -95,12 +105,33 @@ class LessonGenerator:
                     json=payload
                 )
                 response.raise_for_status()
-                
+
                 result = response.json()
                 content = result["choices"][0]["message"]["content"]
+
+                # Extract usage data from OpenRouter response
+                usage = result.get("usage", {})
+                input_tokens = usage.get("prompt_tokens", 0)
+                output_tokens = usage.get("completion_tokens", 0)
+                total_tokens = usage.get("total_tokens", input_tokens + output_tokens)
+
+                # Get cost from OpenRouter (they provide it!)
+                # OpenRouter returns cost in the usage object
+                cost = usage.get("cost", 0.0)
+
+                usage_data = {
+                    "input_tokens": input_tokens,
+                    "output_tokens": output_tokens,
+                    "total_tokens": total_tokens,
+                    "cost": cost
+                }
+
                 print(f"   ✓ LLM response received ({len(content)} chars)")
-                return content
-                
+                print(f"   📊 Tokens: {input_tokens} in / {output_tokens} out = {total_tokens} total")
+                print(f"   💰 Cost: ${cost:.6f}" if cost > 0 else "   💰 Cost: Not reported")
+
+                return content, usage_data
+
         except Exception as e:
             raise Exception(f"LLM call failed: {e}")
     
@@ -139,7 +170,7 @@ class LessonGenerator:
     ) -> GenerateResponse:
         """
         Generate a complete lesson plan.
-        
+
         Args:
             grade: Grade level (e.g., "Grade 2")
             subject: Subject name
@@ -148,18 +179,21 @@ class LessonGenerator:
             page_end: Ending page number
             topic: Optional topic for English
             save_to_db: Whether to save the generated plan to database
-        
+
         Returns:
-            GenerateResponse with the lesson plan
+            GenerateResponse with the lesson plan, cost, and time taken
         """
         if page_end is None:
             page_end = page_start
-            
+
+        # Start timing
+        start_time = time.time()
+
         try:
             # Import Subject enum for router
             from src.models import Subject as SubjectEnum
             subject_enum = SubjectEnum(subject)
-            
+
             # Retrieve context using router
             context = router.retrieve_context(
                 grade=grade,
@@ -169,13 +203,13 @@ class LessonGenerator:
                 page_end=page_end,
                 topic=topic
             )
-            
+
             print(f"\n📝 [GENERATE] Building prompt for {subject} lesson plan...")
-            
+
             # Format content for prompt
             book_content_str = router.format_book_content(context["book_content"])
             sow_strategy_str = context.get("sow_strategy", "")
-            
+
             # Build prompt
             prompt = self._build_prompt(
                 grade=grade,
@@ -186,19 +220,24 @@ class LessonGenerator:
                 page_start=page_start,
                 page_end=page_end
             )
-            
+
             # Generate lesson plan (HTML) - use subject-specific system prompt
-            html_content = self._call_llm(prompt, subject)
+            html_content, usage_data = self._call_llm(prompt, subject)
             
             # Clean up HTML if wrapped in code blocks
             html_content = html_content.strip()
             if html_content.startswith("```"):
                 lines = html_content.split("\n")
                 html_content = "\n".join(lines[1:-1])
-            
+
+            # Calculate time taken
+            end_time = time.time()
+            generation_time = round(end_time - start_time, 2)
+
             print(f"   ✓ Lesson plan generated successfully!")
             print(f"   HTML length: {len(html_content)} chars")
-            
+            print(f"   ⏱️  Time: {generation_time}s")
+
             # Save to database if enabled
             plan_id = None
             if save_to_db:
@@ -215,13 +254,23 @@ class LessonGenerator:
                     topic=topic,
                     lesson_plan={"html_content": html_content},
                     textbook_id=textbook_id,
-                    sow_entry_id=context["metadata"].get("sow_entry_id")
+                    sow_entry_id=context["metadata"].get("sow_entry_id"),
+                    generation_time=generation_time,
+                    cost=usage_data["cost"],
+                    input_tokens=usage_data["input_tokens"],
+                    output_tokens=usage_data["output_tokens"],
+                    total_tokens=usage_data["total_tokens"]
                 )
-            
+
             return GenerateResponse(
                 success=True,
                 html_content=html_content,
-                plan_id=plan_id
+                plan_id=plan_id,
+                generation_time=generation_time,
+                cost=usage_data["cost"],
+                input_tokens=usage_data["input_tokens"],
+                output_tokens=usage_data["output_tokens"],
+                total_tokens=usage_data["total_tokens"]
             )
             
         except Exception as e:

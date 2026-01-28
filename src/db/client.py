@@ -281,13 +281,31 @@ class DatabaseClient:
         topic: Optional[str],
         lesson_plan: Dict[str, Any],
         textbook_id: Optional[int] = None,
-        sow_entry_id: Optional[int] = None
+        sow_entry_id: Optional[int] = None,
+        generation_time: Optional[float] = None,
+        cost: Optional[float] = None,
+        input_tokens: Optional[int] = None,
+        output_tokens: Optional[int] = None,
+        total_tokens: Optional[int] = None
     ) -> Optional[int]:
-        """Insert a generated lesson plan and return its ID"""
+        """Insert a generated lesson plan with usage metrics stored in metadata and return its ID"""
         if not self.client:
             return None
-        
-        result = self.client.table("lesson_plans").insert({
+
+        # Build metadata object with usage metrics
+        metadata = {}
+        if generation_time is not None:
+            metadata["generation_time"] = generation_time
+        if cost is not None:
+            metadata["cost"] = cost
+        if input_tokens is not None:
+            metadata["input_tokens"] = input_tokens
+        if output_tokens is not None:
+            metadata["output_tokens"] = output_tokens
+        if total_tokens is not None:
+            metadata["total_tokens"] = total_tokens
+
+        data = {
             "grade_level": grade_level,
             "subject": subject,
             "lesson_type": lesson_type,
@@ -296,9 +314,12 @@ class DatabaseClient:
             "topic": topic,
             "lesson_plan": json.dumps(lesson_plan) if isinstance(lesson_plan, dict) else lesson_plan,
             "textbook_id": textbook_id,
-            "sow_entry_id": sow_entry_id
-        }).execute()
-        
+            "sow_entry_id": sow_entry_id,
+            "metadata": json.dumps(metadata) if metadata else json.dumps({})
+        }
+
+        result = self.client.table("lesson_plans").insert(data).execute()
+
         if result.data:
             return result.data[0]["id"]
         return None

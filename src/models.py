@@ -87,6 +87,12 @@ class GenerateResponse(BaseModel):
     raw_content: Optional[str] = None
     plan_id: Optional[int] = None  # ID of saved lesson plan in database
     error: Optional[str] = None
+    # Usage metrics
+    generation_time: Optional[float] = None  # Time in seconds
+    cost: Optional[float] = None  # Cost in USD
+    input_tokens: Optional[int] = None
+    output_tokens: Optional[int] = None
+    total_tokens: Optional[int] = None
 
 
 class IngestResponse(BaseModel):
