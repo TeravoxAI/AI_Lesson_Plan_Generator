@@ -206,26 +206,46 @@ class LessonGenerator:
 
             print(f"\n📝 [GENERATE] Building prompt for {subject} lesson plan...")
 
-            # Extract teacher resources (videos) from SOW context
+            # Extract teacher resources (videos and audio) from SOW context
             teacher_resources = []
             sow_context = context.get("sow_context")
             if sow_context and sow_context.get("found"):
                 external_resources = sow_context.get("external_resources", [])
-                # Filter for video resources with valid URLs
-                teacher_resources = [
-                    {
-                        "title": res.get("title", "Video Resource"),
-                        "type": res.get("type", "video"),
-                        "reference": res.get("reference", "")
-                    }
-                    for res in external_resources
-                    if res.get("type") == "video" and res.get("reference")
-                ]
+
+                for res in external_resources:
+                    res_type = res.get("type")
+                    if res_type not in ["video", "audio"] or not res.get("reference"):
+                        continue
+
+                    reference = res.get("reference", "")
+                    title = res.get("title", f"{res_type.title()} Resource")
+
+                    # For audio tracks, construct API endpoint URL
+                    if res_type == "audio":
+                        # Extract track number from reference (e.g., "Track 70" -> 70)
+                        import re
+                        track_match = re.search(r'Track\s+(\d+)', reference, re.IGNORECASE)
+                        if track_match:
+                            track_num = track_match.group(1)
+                            # Normalize grade for URL (e.g., "Grade 2" -> "2")
+                            grade_num = grade.replace("Grade ", "").replace("grade ", "").strip()
+                            # Construct API endpoint: /audio/2/English/70
+                            reference = f"/audio/{grade_num}/{subject}/{track_num}"
+
+                    teacher_resources.append({
+                        "title": title,
+                        "type": res_type,
+                        "reference": reference
+                    })
 
                 if teacher_resources:
-                    print(f"\n📹 [RESOURCES] Found {len(teacher_resources)} video resources")
+                    video_count = sum(1 for r in teacher_resources if r["type"] == "video")
+                    audio_count = sum(1 for r in teacher_resources if r["type"] == "audio")
+                    print(f"\n📹 [RESOURCES] Found {video_count} video(s) and {audio_count} audio track(s)")
                     for res in teacher_resources:
-                        print(f"   - {res['title']}: {res['reference'][:60]}...")
+                        icon = "📹" if res["type"] == "video" else "🔊"
+                        ref_preview = res['reference'][:60] if len(res['reference']) > 60 else res['reference']
+                        print(f"   {icon} {res['title']}: {ref_preview}...")
 
             # Format content for prompt
             book_content_str = router.format_book_content(context["book_content"])

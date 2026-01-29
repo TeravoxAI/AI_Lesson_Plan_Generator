@@ -127,6 +127,8 @@ function App() {
     const [lessonPlan, setLessonPlan] = useState(null)
     const [lessonTypes, setLessonTypes] = useState({})
     const [lessonMeta, setLessonMeta] = useState(null)
+    const [resourcesExpanded, setResourcesExpanded] = useState(true)
+    const [resourceItemsExpanded, setResourceItemsExpanded] = useState({})
 
     // Form states
     const [generateForm, setGenerateForm] = useState({
@@ -533,47 +535,140 @@ function App() {
                             </>
                         )}
 
-                        {/* Teacher Resources Section */}
+                        {/* Teacher Resources Section - Collapsible */}
                         {lessonMeta?.teacherResources?.length > 0 && (
-                            <div className="teacher-resources-section">
-                                <div className="resource-badge">
-                                    <span>Teacher Resources</span>
+                            <div className="teacher-resources-card">
+                                <div
+                                    className="teacher-resources-header"
+                                    onClick={() => setResourcesExpanded(!resourcesExpanded)}
+                                >
+                                    <div className="resource-badge">
+                                        <span>TEACHER RESOURCES</span>
+                                    </div>
+                                    <svg
+                                        className={`chevron-icon ${resourcesExpanded ? 'expanded' : ''}`}
+                                        xmlns="http://www.w3.org/2000/svg"
+                                        width="20"
+                                        height="20"
+                                        viewBox="0 0 24 24"
+                                        fill="none"
+                                        stroke="currentColor"
+                                        strokeWidth="2"
+                                    >
+                                        <polyline points="6 9 12 15 18 9" />
+                                    </svg>
                                 </div>
-                                <div className="video-list">
-                                    {lessonMeta.teacherResources.map((resource, index) => {
-                                        const videoId = getYouTubeVideoId(resource.reference)
 
-                                        if (!videoId) {
-                                            return (
-                                                <div key={index} className="video-error">
-                                                    <p>{resource.title}</p>
-                                                    <span>Invalid video URL</span>
-                                                </div>
-                                            )
-                                        }
+                                {resourcesExpanded && (
+                                    <div className="teacher-resources-content">
+                                        {lessonMeta.teacherResources.map((resource, index) => {
+                                            const isExpanded = resourceItemsExpanded[index] !== false // Default to expanded
 
-                                        return (
-                                            <div key={index} className="video-item">
-                                                <div className="video-title-row">
-                                                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                                                        <circle cx="12" cy="12" r="10" />
-                                                        <polygon points="10 8 16 12 10 16 10 8" />
-                                                    </svg>
-                                                    <span>{resource.title}</span>
-                                                </div>
-                                                <div className="video-container">
-                                                    <iframe
-                                                        src={`https://www.youtube.com/embed/${videoId}`}
-                                                        title={resource.title}
-                                                        frameBorder="0"
-                                                        allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                                                        allowFullScreen
-                                                    />
-                                                </div>
-                                            </div>
-                                        )
-                                    })}
-                                </div>
+                                            if (resource.type === 'video') {
+                                                const videoId = getYouTubeVideoId(resource.reference)
+
+                                                if (!videoId) {
+                                                    return (
+                                                        <div key={index} className="resource-error">
+                                                            <p>{resource.title}</p>
+                                                            <span>Invalid video URL</span>
+                                                        </div>
+                                                    )
+                                                }
+
+                                                return (
+                                                    <div key={index} className="resource-item-card">
+                                                        <div
+                                                            className="resource-item-header"
+                                                            onClick={() => setResourceItemsExpanded(prev => ({
+                                                                ...prev,
+                                                                [index]: !isExpanded
+                                                            }))}
+                                                        >
+                                                            <div className="resource-item-header-left">
+                                                                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                                                                    <circle cx="12" cy="12" r="10" />
+                                                                    <polygon points="10 8 16 12 10 16 10 8" />
+                                                                </svg>
+                                                                <span>{resource.title}</span>
+                                                            </div>
+                                                            <svg
+                                                                className={`resource-chevron ${isExpanded ? 'expanded' : ''}`}
+                                                                xmlns="http://www.w3.org/2000/svg"
+                                                                width="16"
+                                                                height="16"
+                                                                viewBox="0 0 24 24"
+                                                                fill="none"
+                                                                stroke="currentColor"
+                                                                strokeWidth="2"
+                                                            >
+                                                                <polyline points="6 9 12 15 18 9" />
+                                                            </svg>
+                                                        </div>
+                                                        {isExpanded && (
+                                                            <div className="video-container">
+                                                                <iframe
+                                                                    src={`https://www.youtube.com/embed/${videoId}`}
+                                                                    title={resource.title}
+                                                                    frameBorder="0"
+                                                                    allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                                                                    allowFullScreen
+                                                                />
+                                                            </div>
+                                                        )}
+                                                    </div>
+                                                )
+                                            } else if (resource.type === 'audio') {
+                                                // Extract track number from reference if present
+                                                const trackMatch = resource.reference.match(/Track\s+(\d+)/i)
+                                                const trackNumber = trackMatch ? trackMatch[1] : (index + 1).toString()
+
+                                                return (
+                                                    <div key={index} className="resource-item-card">
+                                                        <div
+                                                            className="resource-item-header"
+                                                            onClick={() => setResourceItemsExpanded(prev => ({
+                                                                ...prev,
+                                                                [index]: !isExpanded
+                                                            }))}
+                                                        >
+                                                            <div className="resource-item-header-left">
+                                                                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                                                                    <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5" />
+                                                                    <path d="M15.54 8.46a5 5 0 0 1 0 7.07" />
+                                                                </svg>
+                                                                <span>{resource.title}</span>
+                                                                <div className="track-badge">Track {trackNumber}</div>
+                                                            </div>
+                                                            <svg
+                                                                className={`resource-chevron ${isExpanded ? 'expanded' : ''}`}
+                                                                xmlns="http://www.w3.org/2000/svg"
+                                                                width="16"
+                                                                height="16"
+                                                                viewBox="0 0 24 24"
+                                                                fill="none"
+                                                                stroke="currentColor"
+                                                                strokeWidth="2"
+                                                            >
+                                                                <polyline points="6 9 12 15 18 9" />
+                                                            </svg>
+                                                        </div>
+                                                        {isExpanded && (
+                                                            <div className="audio-player-container">
+                                                                <audio controls className="audio-player">
+                                                                    <source src={resource.reference} type="audio/mpeg" />
+                                                                    Your browser does not support the audio element.
+                                                                </audio>
+                                                            </div>
+                                                        )}
+                                                    </div>
+                                                )
+                                            }
+
+                                            return null
+                                        })}
+                                    </div>
+                                )}
                             </div>
                         )}
 

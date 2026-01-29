@@ -464,12 +464,25 @@ body {
   font-weight: 600;
 }
 
-/* Teacher Resources Section */
-.teacher-resources-section {
+/* Teacher Resources Section - Collapsible Card */
+.teacher-resources-card {
   background: var(--background-light);
   border-radius: 12px;
-  padding: 20px;
   margin-bottom: 24px;
+  overflow: hidden;
+}
+
+.teacher-resources-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 20px;
+  cursor: pointer;
+  user-select: none;
+}
+
+.teacher-resources-header:hover {
+  background: rgba(39, 84, 65, 0.05);
 }
 
 .resource-badge {
@@ -477,7 +490,6 @@ body {
   padding: 6px 12px;
   background: rgba(39, 84, 65, 0.1);
   border-radius: 6px;
-  margin-bottom: 16px;
 }
 
 .resource-badge span {
@@ -486,42 +498,90 @@ body {
   color: var(--primary);
 }
 
-.video-list {
+.chevron-icon {
+  transition: transform 0.3s ease;
+  color: var(--primary);
+  flex-shrink: 0;
+}
+
+.chevron-icon.expanded {
+  transform: rotate(180deg);
+}
+
+.teacher-resources-content {
   display: flex;
   flex-direction: column;
   gap: 16px;
+  padding: 0 20px 20px 20px;
 }
 
-.video-item {
+/* Individual Resource Item Cards (Video/Audio) */
+.resource-item-card {
+  background: #ffffff;
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+.resource-item-header {
   display: flex;
-  flex-direction: column;
-  gap: 8px;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px;
+  cursor: pointer;
+  user-select: none;
 }
 
-.video-title-row {
+.resource-item-header:hover {
+  background: rgba(39, 84, 65, 0.05);
+}
+
+.resource-item-header-left {
   display: flex;
   align-items: center;
   gap: 8px;
   font-size: 14px;
   font-weight: 500;
   color: var(--text-primary);
+  flex: 1;
 }
 
-.video-title-row svg {
+.resource-item-header-left svg {
   width: 16px;
   height: 16px;
   color: var(--primary);
   flex-shrink: 0;
 }
 
+.resource-chevron {
+  transition: transform 0.3s ease;
+  color: var(--primary);
+  flex-shrink: 0;
+}
+
+.resource-chevron.expanded {
+  transform: rotate(180deg);
+}
+
+.track-badge {
+  display: inline-block;
+  padding: 4px 8px;
+  background: rgba(39, 84, 65, 0.1);
+  border-radius: 4px;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--primary);
+  margin-left: auto;
+}
+
+/* Video Container */
 .video-container {
   position: relative;
   width: 100%;
   padding-bottom: 56.25%; /* 16:9 aspect ratio */
   background: #000000;
-  border-radius: 8px;
+  border-radius: 0 0 8px 8px;
   overflow: hidden;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  border-top: 1px solid #e5e5e5;
 }
 
 .video-container iframe {
@@ -533,20 +593,34 @@ body {
   border: none;
 }
 
-.video-error {
+/* Audio Player */
+.audio-player-container {
+  padding: 12px;
+  border-top: 1px solid #e5e5e5;
+  border-radius: 0 0 8px 8px;
+  background: #ffffff;
+}
+
+.audio-player {
+  width: 100%;
+  height: 48px;
+}
+
+/* Error State */
+.resource-error {
   padding: 16px;
   background: rgba(217, 69, 69, 0.05);
   border: 1px solid #d94545;
   border-radius: 8px;
 }
 
-.video-error p {
+.resource-error p {
   font-size: 14px;
   font-weight: 500;
   margin-bottom: 4px;
 }
 
-.video-error span {
+.resource-error span {
   font-size: 12px;
   color: #d94545;
 }
@@ -789,11 +863,15 @@ body {
     gap: 16px;
   }
 
-  .teacher-resources-section {
+  .teacher-resources-header {
     padding: 16px;
   }
 
+  .teacher-resources-content {
+    padding: 0 16px 16px 16px;
+  }
+
   .video-container {
-    border-radius: 6px;
+    border-radius: 0 0 6px 6px;
   }
 }

@@ -8,7 +8,8 @@ export default defineConfig({
         proxy: {
             '/ingest': 'http://localhost:8000',
             '/generate': 'http://localhost:8000',
-            '/health': 'http://localhost:8000'
+            '/health': 'http://localhost:8000',
+            '/audio': 'http://localhost:8000'
         }
     }
 })
