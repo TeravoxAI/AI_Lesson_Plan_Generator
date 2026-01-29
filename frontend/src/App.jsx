@@ -48,6 +48,28 @@ const CopyIcon = () => (
     </svg>
 )
 
+const EditIcon = () => (
+    <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+        <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" />
+        <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z" />
+    </svg>
+)
+
+const SaveIcon = () => (
+    <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+        <path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z" />
+        <polyline points="17 21 17 13 7 13 7 21" />
+        <polyline points="7 3 7 8 15 8" />
+    </svg>
+)
+
+const CancelIcon = () => (
+    <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+        <line x1="18" y1="6" x2="6" y2="18" />
+        <line x1="6" y1="6" x2="18" y2="18" />
+    </svg>
+)
+
 const FileIcon = () => (
     <svg xmlns="http://www.w3.org/2000/svg" width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
         <path d="M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2z" />
@@ -99,6 +121,26 @@ const BookOpenIcon = () => (
     </svg>
 )
 
+// Extract YouTube video ID from various URL formats
+const getYouTubeVideoId = (url) => {
+    if (!url) return null
+
+    const patterns = [
+        /(?:youtube\.com\/watch\?v=|youtu\.be\/)([^&\s]+)/,  // Standard and short URLs
+        /youtube\.com\/embed\/([^?&\s]+)/,                    // Embed URLs
+        /youtube\.com\/v\/([^?&\s]+)/                         // Old embed format
+    ]
+
+    for (const pattern of patterns) {
+        const match = url.match(pattern)
+        if (match && match[1]) {
+            return match[1]
+        }
+    }
+
+    return null
+}
+
 function App() {
     const [activeView, setActiveView] = useState('generate')
     const [loading, setLoading] = useState(false)
@@ -107,6 +149,11 @@ function App() {
     const [lessonPlan, setLessonPlan] = useState(null)
     const [lessonTypes, setLessonTypes] = useState({})
     const [lessonMeta, setLessonMeta] = useState(null)
+    const [resourcesExpanded, setResourcesExpanded] = useState(true)
+    const [resourceItemsExpanded, setResourceItemsExpanded] = useState({})
+    const [isEditing, setIsEditing] = useState(false)
+    const [editedContent, setEditedContent] = useState('')
+    const lessonPlanRef = useRef(null)
 
     // Form states
     const [generateForm, setGenerateForm] = useState({
@@ -213,10 +260,12 @@ function App() {
             if (data.success) {
                 setLessonPlan(data.html_content || '')
                 setLessonMeta({
+                    planId: data.plan_id,
                     grade: generateForm.grade,
                     subject: generateForm.subject,
                     lessonNumber: generateForm.lesson_number,
                     types: generateForm.selected_types,
+                    teacherResources: data.teacher_resources || [],
                     // Usage metrics
                     generationTime: data.generation_time,
                     cost: data.cost,
@@ -312,6 +361,51 @@ function App() {
             a.click()
             document.body.removeChild(a)
             URL.revokeObjectURL(url)
+        }
+    }
+
+    const handleEdit = () => {
+        if (lessonPlan) {
+            setEditedContent(lessonPlan)
+            setIsEditing(true)
+        }
+    }
+
+    const handleSave = async () => {
+        if (!lessonMeta?.planId) {
+            setStatus({ type: 'error', message: 'No lesson plan ID found' })
+            return
+        }
+
+        try {
+            // Get the edited content from the contentEditable div
+            const content = lessonPlanRef.current?.innerHTML || editedContent
+
+            const response = await fetch(`${API_BASE}/generate/lesson-plan/${lessonMeta.planId}`, {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ html_content: content })
+            })
+
+            if (!response.ok) throw new Error('Failed to update lesson plan')
+
+            // Update the lesson plan state with new content
+            setLessonPlan(content)
+            setIsEditing(false)
+            setStatus({ type: 'success', message: 'Lesson plan updated successfully!' })
+            setTimeout(() => setStatus(null), 3000)
+        } catch (error) {
+            setStatus({ type: 'error', message: error.message })
+            setTimeout(() => setStatus(null), 3000)
+        }
+    }
+
+    const handleCancel = () => {
+        setIsEditing(false)
+        setEditedContent('')
+        // Reset the content to original
+        if (lessonPlanRef.current) {
+            lessonPlanRef.current.innerHTML = lessonPlan
         }
     }
 
@@ -459,12 +553,25 @@ function App() {
                             <h2 className="output-title">Generated Lesson Plan</h2>
                             {lessonPlan && (
                                 <div className="output-actions">
-                                    <button className="action-btn" onClick={handleCopy} title="Copy to clipboard">
-                                        <CopyIcon />
-                                    </button>
-                                    <button className="action-btn" onClick={handleDownload} title="Download HTML">
-                                        <DownloadIcon />
-                                    </button>
+                                    {isEditing ? (
+                                        <>
+                                            <button className="action-btn save-btn" onClick={handleSave} title="Save changes">
+                                                <SaveIcon />
+                                            </button>
+                                            <button className="action-btn cancel-btn" onClick={handleCancel} title="Cancel editing">
+                                                <CancelIcon />
+                                            </button>
+                                        </>
+                                    ) : (
+                                        <>
+                                            <button className="action-btn" onClick={handleEdit} title="Edit lesson plan">
+                                                <EditIcon />
+                                            </button>
+                                            <button className="action-btn" onClick={handleCopy} title="Copy to clipboard">
+                                                <CopyIcon />
+                                            </button>
+                                        </>
+                                    )}
                                 </div>
                             )}
                         </div>
@@ -512,9 +619,149 @@ function App() {
                             </>
                         )}
 
+                        {/* Teacher Resources Section - Collapsible */}
+                        {lessonMeta?.teacherResources?.length > 0 && (
+                            <div className="teacher-resources-card">
+                                <div
+                                    className="teacher-resources-header"
+                                    onClick={() => setResourcesExpanded(!resourcesExpanded)}
+                                >
+                                    <div className="resource-badge">
+                                        <span>TEACHER RESOURCES</span>
+                                    </div>
+                                    <svg
+                                        className={`chevron-icon ${resourcesExpanded ? 'expanded' : ''}`}
+                                        xmlns="http://www.w3.org/2000/svg"
+                                        width="20"
+                                        height="20"
+                                        viewBox="0 0 24 24"
+                                        fill="none"
+                                        stroke="currentColor"
+                                        strokeWidth="2"
+                                    >
+                                        <polyline points="6 9 12 15 18 9" />
+                                    </svg>
+                                </div>
+
+                                {resourcesExpanded && (
+                                    <div className="teacher-resources-content">
+                                        {lessonMeta.teacherResources.map((resource, index) => {
+                                            const isExpanded = resourceItemsExpanded[index] !== false // Default to expanded
+
+                                            if (resource.type === 'video') {
+                                                const videoId = getYouTubeVideoId(resource.reference)
+
+                                                if (!videoId) {
+                                                    return (
+                                                        <div key={index} className="resource-error">
+                                                            <p>{resource.title}</p>
+                                                            <span>Invalid video URL</span>
+                                                        </div>
+                                                    )
+                                                }
+
+                                                return (
+                                                    <div key={index} className="resource-item-card">
+                                                        <div
+                                                            className="resource-item-header"
+                                                            onClick={() => setResourceItemsExpanded(prev => ({
+                                                                ...prev,
+                                                                [index]: !isExpanded
+                                                            }))}
+                                                        >
+                                                            <div className="resource-item-header-left">
+                                                                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                                                                    <circle cx="12" cy="12" r="10" />
+                                                                    <polygon points="10 8 16 12 10 16 10 8" />
+                                                                </svg>
+                                                                <span>{resource.title}</span>
+                                                            </div>
+                                                            <svg
+                                                                className={`resource-chevron ${isExpanded ? 'expanded' : ''}`}
+                                                                xmlns="http://www.w3.org/2000/svg"
+                                                                width="16"
+                                                                height="16"
+                                                                viewBox="0 0 24 24"
+                                                                fill="none"
+                                                                stroke="currentColor"
+                                                                strokeWidth="2"
+                                                            >
+                                                                <polyline points="6 9 12 15 18 9" />
+                                                            </svg>
+                                                        </div>
+                                                        {isExpanded && (
+                                                            <div className="video-container">
+                                                                <iframe
+                                                                    src={`https://www.youtube.com/embed/${videoId}`}
+                                                                    title={resource.title}
+                                                                    frameBorder="0"
+                                                                    allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                                                                    allowFullScreen
+                                                                />
+                                                            </div>
+                                                        )}
+                                                    </div>
+                                                )
+                                            } else if (resource.type === 'audio') {
+                                                // Extract track number from API URL: /audio/2/English/70 -> 70
+                                                const urlParts = resource.reference.split('/')
+                                                const trackNumber = urlParts[urlParts.length - 1] || (index + 1).toString()
+
+                                                return (
+                                                    <div key={index} className="resource-item-card">
+                                                        <div
+                                                            className="resource-item-header"
+                                                            onClick={() => setResourceItemsExpanded(prev => ({
+                                                                ...prev,
+                                                                [index]: !isExpanded
+                                                            }))}
+                                                        >
+                                                            <div className="resource-item-header-left">
+                                                                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                                                                    <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5" />
+                                                                    <path d="M15.54 8.46a5 5 0 0 1 0 7.07" />
+                                                                </svg>
+                                                                <span>{resource.title}</span>
+                                                                <div className="track-badge">Track {trackNumber}</div>
+                                                            </div>
+                                                            <svg
+                                                                className={`resource-chevron ${isExpanded ? 'expanded' : ''}`}
+                                                                xmlns="http://www.w3.org/2000/svg"
+                                                                width="16"
+                                                                height="16"
+                                                                viewBox="0 0 24 24"
+                                                                fill="none"
+                                                                stroke="currentColor"
+                                                                strokeWidth="2"
+                                                            >
+                                                                <polyline points="6 9 12 15 18 9" />
+                                                            </svg>
+                                                        </div>
+                                                        {isExpanded && (
+                                                            <div className="audio-player-container">
+                                                                <audio controls className="audio-player">
+                                                                    <source src={resource.reference} type="audio/mpeg" />
+                                                                    Your browser does not support the audio element.
+                                                                </audio>
+                                                            </div>
+                                                        )}
+                                                    </div>
+                                                )
+                                            }
+
+                                            return null
+                                        })}
+                                    </div>
+                                )}
+                            </div>
+                        )}
+
                         {lessonPlan ? (
                             <div
-                                className="lesson-plan"
+                                ref={lessonPlanRef}
+                                className={`lesson-plan ${isEditing ? 'editing' : ''}`}
+                                contentEditable={isEditing}
+                                suppressContentEditableWarning={true}
                                 dangerouslySetInnerHTML={{ __html: lessonPlan }}
                             />
                         ) : (

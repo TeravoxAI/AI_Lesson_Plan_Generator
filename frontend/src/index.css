@@ -317,6 +317,30 @@ body {
   color: var(--primary);
 }
 
+.action-btn.save-btn {
+  background: var(--primary);
+  color: white;
+  border-color: var(--primary);
+}
+
+.action-btn.save-btn:hover {
+  background: #1e3d2f;
+  border-color: #1e3d2f;
+  color: white;
+}
+
+.action-btn.cancel-btn {
+  background: #d94545;
+  color: white;
+  border-color: #d94545;
+}
+
+.action-btn.cancel-btn:hover {
+  background: #b83939;
+  border-color: #b83939;
+  color: white;
+}
+
 .output-divider {
   height: 1px;
   background: var(--border-light);
@@ -423,6 +447,21 @@ body {
   font-size: 14px;
   color: var(--text-secondary);
   line-height: 1.7;
+  transition: all 0.3s ease;
+}
+
+/* Editing mode */
+.lesson-plan.editing {
+  border: 2px solid var(--primary);
+  border-radius: 8px;
+  padding: 16px;
+  background: #fafafa;
+  outline: none;
+}
+
+.lesson-plan.editing:focus {
+  border-color: var(--primary);
+  box-shadow: 0 0 0 3px rgba(39, 84, 65, 0.1);
 }
 
 .lesson-plan h2 {
@@ -462,6 +501,167 @@ body {
 .lesson-plan strong {
   color: var(--text-primary);
   font-weight: 600;
+}
+
+/* Teacher Resources Section - Collapsible Card */
+.teacher-resources-card {
+  background: var(--background-light);
+  border-radius: 12px;
+  margin-bottom: 24px;
+  overflow: hidden;
+}
+
+.teacher-resources-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 20px;
+  cursor: pointer;
+  user-select: none;
+}
+
+.teacher-resources-header:hover {
+  background: rgba(39, 84, 65, 0.05);
+}
+
+.resource-badge {
+  display: inline-block;
+  padding: 6px 12px;
+  background: rgba(39, 84, 65, 0.1);
+  border-radius: 6px;
+}
+
+.resource-badge span {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--primary);
+}
+
+.chevron-icon {
+  transition: transform 0.3s ease;
+  color: var(--primary);
+  flex-shrink: 0;
+}
+
+.chevron-icon.expanded {
+  transform: rotate(180deg);
+}
+
+.teacher-resources-content {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  padding: 0 20px 20px 20px;
+}
+
+/* Individual Resource Item Cards (Video/Audio) */
+.resource-item-card {
+  background: #ffffff;
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+.resource-item-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px;
+  cursor: pointer;
+  user-select: none;
+}
+
+.resource-item-header:hover {
+  background: rgba(39, 84, 65, 0.05);
+}
+
+.resource-item-header-left {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--text-primary);
+  flex: 1;
+}
+
+.resource-item-header-left svg {
+  width: 16px;
+  height: 16px;
+  color: var(--primary);
+  flex-shrink: 0;
+}
+
+.resource-chevron {
+  transition: transform 0.3s ease;
+  color: var(--primary);
+  flex-shrink: 0;
+}
+
+.resource-chevron.expanded {
+  transform: rotate(180deg);
+}
+
+.track-badge {
+  display: inline-block;
+  padding: 4px 8px;
+  background: rgba(39, 84, 65, 0.1);
+  border-radius: 4px;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--primary);
+  margin-left: auto;
+}
+
+/* Video Container */
+.video-container {
+  position: relative;
+  width: 100%;
+  padding-bottom: 56.25%; /* 16:9 aspect ratio */
+  background: #000000;
+  border-radius: 0 0 8px 8px;
+  overflow: hidden;
+  border-top: 1px solid #e5e5e5;
+}
+
+.video-container iframe {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  border: none;
+}
+
+/* Audio Player */
+.audio-player-container {
+  padding: 12px;
+  border-top: 1px solid #e5e5e5;
+  border-radius: 0 0 8px 8px;
+  background: #ffffff;
+}
+
+.audio-player {
+  width: 100%;
+  height: 48px;
+}
+
+/* Error State */
+.resource-error {
+  padding: 16px;
+  background: rgba(217, 69, 69, 0.05);
+  border: 1px solid #d94545;
+  border-radius: 8px;
+}
+
+.resource-error p {
+  font-size: 14px;
+  font-weight: 500;
+  margin-bottom: 4px;
+}
+
+.resource-error span {
+  font-size: 12px;
+  color: #d94545;
 }
 
 /* Empty State */
@@ -700,5 +900,17 @@ body {
   .lesson-meta {
     flex-wrap: wrap;
     gap: 16px;
+  }
+
+  .teacher-resources-header {
+    padding: 16px;
+  }
+
+  .teacher-resources-content {
+    padding: 0 16px 16px 16px;
+  }
+
+  .video-container {
+    border-radius: 0 0 6px 6px;
   }
 }

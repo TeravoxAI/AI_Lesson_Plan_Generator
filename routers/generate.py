@@ -119,9 +119,37 @@ async def get_lesson_plan_history(
 async def get_lesson_plan_by_id(plan_id: int):
     """Get a specific lesson plan by ID"""
     from src.db.client import db
-    
+
     plan = db.get_lesson_plan(plan_id)
     if not plan:
         raise HTTPException(status_code=404, detail="Lesson plan not found")
-    
+
     return plan
+
+
+class UpdateLessonPlanRequest(BaseModel):
+    """Request to update lesson plan content"""
+    html_content: str
+
+
+@router.put("/lesson-plan/{plan_id}")
+async def update_lesson_plan(plan_id: int, request: UpdateLessonPlanRequest):
+    """Update the HTML content of a lesson plan"""
+    from src.db.client import db
+
+    # Check if plan exists
+    plan = db.get_lesson_plan(plan_id)
+    if not plan:
+        raise HTTPException(status_code=404, detail="Lesson plan not found")
+
+    # Update the lesson plan
+    success = db.update_lesson_plan(plan_id, request.html_content)
+
+    if not success:
+        raise HTTPException(status_code=500, detail="Failed to update lesson plan")
+
+    return {
+        "success": True,
+        "message": "Lesson plan updated successfully",
+        "plan_id": plan_id
+    }

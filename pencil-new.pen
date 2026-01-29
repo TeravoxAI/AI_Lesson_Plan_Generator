@@ -998,6 +998,263 @@
                   "children": [
                     {
                       "type": "frame",
+                      "id": "IzJWg",
+                      "name": "Teacher Resources Card",
+                      "width": "fill_container",
+                      "fill": "#f5f3f1",
+                      "cornerRadius": 12,
+                      "layout": "vertical",
+                      "children": [
+                        {
+                          "type": "frame",
+                          "id": "T0jU9",
+                          "name": "Card Header",
+                          "width": "fill_container",
+                          "padding": 20,
+                          "alignItems": "center",
+                          "children": [
+                            {
+                              "type": "frame",
+                              "id": "zolko",
+                              "name": "headerLeft",
+                              "gap": 12,
+                              "alignItems": "center",
+                              "children": [
+                                {
+                                  "type": "frame",
+                                  "id": "bVQms",
+                                  "name": "badge",
+                                  "fill": "rgba(39, 84, 65, 0.1)",
+                                  "cornerRadius": 6,
+                                  "padding": [
+                                    6,
+                                    12
+                                  ],
+                                  "children": [
+                                    {
+                                      "type": "text",
+                                      "id": "fnQsT",
+                                      "name": "badgeText",
+                                      "fill": "#275441",
+                                      "content": "TEACHER RESOURCES",
+                                      "fontFamily": "Inter",
+                                      "fontSize": 14,
+                                      "fontWeight": "600"
+                                    }
+                                  ]
+                                }
+                              ]
+                            },
+                            {
+                              "type": "icon_font",
+                              "id": "SBjyA",
+                              "name": "chevronIcon",
+                              "width": 20,
+                              "height": 20,
+                              "iconFontName": "chevron-down",
+                              "iconFontFamily": "lucide",
+                              "fill": "#275441"
+                            }
+                          ]
+                        },
+                        {
+                          "type": "frame",
+                          "id": "FtFna",
+                          "name": "Card Content",
+                          "width": "fill_container",
+                          "layout": "vertical",
+                          "gap": 16,
+                          "padding": [
+                            0,
+                            20,
+                            20,
+                            20
+                          ],
+                          "children": [
+                            {
+                              "type": "frame",
+                              "id": "HDeXg",
+                              "name": "Video Item",
+                              "width": "fill_container",
+                              "fill": "#ffffff",
+                              "cornerRadius": 8,
+                              "layout": "vertical",
+                              "gap": 8,
+                              "children": [
+                                {
+                                  "type": "frame",
+                                  "id": "8pguY",
+                                  "name": "videoContainer",
+                                  "width": "fill_container",
+                                  "height": 300,
+                                  "fill": "#000000",
+                                  "cornerRadius": [
+                                    0,
+                                    0,
+                                    8,
+                                    8
+                                  ]
+                                },
+                                {
+                                  "type": "frame",
+                                  "id": "dwTRh",
+                                  "name": "Video Header",
+                                  "width": "fill_container",
+                                  "fill": "#ffffff",
+                                  "cornerRadius": 8,
+                                  "padding": 12,
+                                  "alignItems": "center",
+                                  "children": [
+                                    {
+                                      "type": "frame",
+                                      "id": "oke42",
+                                      "name": "videoHeaderLeft",
+                                      "gap": 8,
+                                      "alignItems": "center",
+                                      "children": [
+                                        {
+                                          "type": "icon_font",
+                                          "id": "29OwW",
+                                          "name": "playIcon",
+                                          "width": 16,
+                                          "height": 16,
+                                          "iconFontName": "play-circle",
+                                          "iconFontFamily": "lucide",
+                                          "fill": "#275441"
+                                        },
+                                        {
+                                          "type": "text",
+                                          "id": "3ZfVH",
+                                          "name": "videoTitle",
+                                          "fill": "#1a1a1a",
+                                          "content": "Animal homes video",
+                                          "fontFamily": "Inter",
+                                          "fontSize": 14,
+                                          "fontWeight": "500"
+                                        }
+                                      ]
+                                    },
+                                    {
+                                      "type": "icon_font",
+                                      "id": "pdTTH",
+                                      "name": "videoChevron",
+                                      "width": 16,
+                                      "height": 16,
+                                      "iconFontName": "chevron-down",
+                                      "iconFontFamily": "lucide",
+                                      "fill": "#275441"
+                                    }
+                                  ]
+                                }
+                              ]
+                            },
+                            {
+                              "type": "frame",
+                              "id": "Od60f",
+                              "name": "Audio Item",
+                              "width": "fill_container",
+                              "fill": "#ffffff",
+                              "cornerRadius": 8,
+                              "layout": "vertical",
+                              "gap": 8,
+                              "children": [
+                                {
+                                  "type": "frame",
+                                  "id": "o44Ki",
+                                  "name": "Audio Player",
+                                  "width": "fill_container",
+                                  "height": 48,
+                                  "fill": "#ffffff",
+                                  "cornerRadius": [
+                                    0,
+                                    0,
+                                    8,
+                                    8
+                                  ],
+                                  "padding": 12
+                                },
+                                {
+                                  "type": "frame",
+                                  "id": "wBOaA",
+                                  "name": "Audio Header",
+                                  "width": "fill_container",
+                                  "fill": "#ffffff",
+                                  "cornerRadius": 8,
+                                  "padding": 12,
+                                  "alignItems": "center",
+                                  "children": [
+                                    {
+                                      "type": "frame",
+                                      "id": "S9GON",
+                                      "name": "audioHeaderLeft",
+                                      "gap": 8,
+                                      "alignItems": "center",
+                                      "children": [
+                                        {
+                                          "type": "icon_font",
+                                          "id": "JHKLK",
+                                          "name": "volumeIcon",
+                                          "width": 16,
+                                          "height": 16,
+                                          "iconFontName": "volume-2",
+                                          "iconFontFamily": "lucide",
+                                          "fill": "#275441"
+                                        },
+                                        {
+                                          "type": "text",
+                                          "id": "7qwSL",
+                                          "name": "audioTitle",
+                                          "fill": "#1a1a1a",
+                                          "content": "Classroom sounds",
+                                          "fontFamily": "Inter",
+                                          "fontSize": 14,
+                                          "fontWeight": "500"
+                                        },
+                                        {
+                                          "type": "frame",
+                                          "id": "PfIcx",
+                                          "name": "trackBadge",
+                                          "fill": "rgba(39, 84, 65, 0.1)",
+                                          "cornerRadius": 4,
+                                          "padding": [
+                                            4,
+                                            8
+                                          ],
+                                          "children": [
+                                            {
+                                              "type": "text",
+                                              "id": "2T5XE",
+                                              "name": "trackText",
+                                              "fill": "#275441",
+                                              "content": "Track 70",
+                                              "fontFamily": "Inter",
+                                              "fontSize": 12,
+                                              "fontWeight": "600"
+                                            }
+                                          ]
+                                        }
+                                      ]
+                                    },
+                                    {
+                                      "type": "icon_font",
+                                      "id": "2056F",
+                                      "name": "audioChevron",
+                                      "width": 16,
+                                      "height": 16,
+                                      "iconFontName": "chevron-down",
+                                      "iconFontFamily": "lucide",
+                                      "fill": "#275441"
+                                    }
+                                  ]
+                                }
+                              ]
+                            }
+                          ]
+                        }
+                      ]
+                    },
+                    {
+                      "type": "frame",
                       "id": "D7iq1",
                       "name": "Recall Section",
                       "width": "fill_container",

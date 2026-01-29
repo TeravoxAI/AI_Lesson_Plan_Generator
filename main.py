@@ -47,6 +47,9 @@ async def root():
                 "POST /generate/lesson-plan": "Generate a lesson plan",
                 "GET /generate/lesson-types": "Get available lesson types",
                 "GET /generate/lesson-types/{subject}": "Get lesson types for a subject"
+            },
+            "media": {
+                "GET /audio/{grade}/{subject}/{track_number}": "Serve audio track files"
             }
         }
     }
@@ -56,11 +59,58 @@ async def root():
 async def health_check():
     """Health check endpoint"""
     from src.db.client import db
-    
+
     return {
         "status": "healthy",
         "database_connected": db.is_connected()
     }
+
+
+@app.get("/audio/{grade}/{subject}/{track_number}")
+async def serve_audio(grade: str, subject: str, track_number: int):
+    """
+    Serve audio files for a specific grade, subject, and track number.
+
+    Args:
+        grade: Grade level (e.g., "Grade 2" or "2")
+        subject: Subject name (e.g., "English")
+        track_number: Track number (e.g., 70)
+
+    Returns:
+        Audio file as MP3
+    """
+    from fastapi import HTTPException
+
+    # Normalize grade to extract number only
+    grade_num = grade.replace("Grade ", "").replace("grade ", "").strip()
+
+    # Construct audio folder path: Grade_2_English_Tracks
+    audio_folder = f"Grade_{grade_num}_{subject}_Tracks"
+
+    # File naming pattern: GE2_Track_70.mp3
+    audio_filename = f"GE{grade_num}_Track_{track_number:02d}.mp3"
+    audio_path = os.path.join(os.path.dirname(__file__), audio_folder, audio_filename)
+
+    # Check if file exists
+    if not os.path.exists(audio_path):
+        # Try alternative naming without leading zero
+        audio_filename = f"GE{grade_num}_Track_{track_number}.mp3"
+        audio_path = os.path.join(os.path.dirname(__file__), audio_folder, audio_filename)
+
+        if not os.path.exists(audio_path):
+            raise HTTPException(
+                status_code=404,
+                detail=f"Audio track {track_number} not found for Grade {grade_num} {subject}"
+            )
+
+    return FileResponse(
+        audio_path,
+        media_type="audio/mpeg",
+        headers={
+            "Content-Disposition": f'inline; filename="{audio_filename}"',
+            "Accept-Ranges": "bytes"
+        }
+    )
 
 
 # Mount frontend static files (if frontend directory exists)
