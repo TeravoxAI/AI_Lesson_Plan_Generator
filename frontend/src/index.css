@@ -317,6 +317,30 @@ body {
   color: var(--primary);
 }
 
+.action-btn.save-btn {
+  background: var(--primary);
+  color: white;
+  border-color: var(--primary);
+}
+
+.action-btn.save-btn:hover {
+  background: #1e3d2f;
+  border-color: #1e3d2f;
+  color: white;
+}
+
+.action-btn.cancel-btn {
+  background: #d94545;
+  color: white;
+  border-color: #d94545;
+}
+
+.action-btn.cancel-btn:hover {
+  background: #b83939;
+  border-color: #b83939;
+  color: white;
+}
+
 .output-divider {
   height: 1px;
   background: var(--border-light);
@@ -423,6 +447,21 @@ body {
   font-size: 14px;
   color: var(--text-secondary);
   line-height: 1.7;
+  transition: all 0.3s ease;
+}
+
+/* Editing mode */
+.lesson-plan.editing {
+  border: 2px solid var(--primary);
+  border-radius: 8px;
+  padding: 16px;
+  background: #fafafa;
+  outline: none;
+}
+
+.lesson-plan.editing:focus {
+  border-color: var(--primary);
+  box-shadow: 0 0 0 3px rgba(39, 84, 65, 0.1);
 }
 
 .lesson-plan h2 {

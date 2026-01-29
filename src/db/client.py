@@ -328,13 +328,34 @@ class DatabaseClient:
         """Get a lesson plan by ID"""
         if not self.client:
             return None
-        
+
         result = self.client.table("lesson_plans").select("*").eq("id", plan_id).execute()
-        
+
         if result.data:
             return result.data[0]
         return None
-    
+
+    def update_lesson_plan(self, plan_id: int, html_content: str) -> bool:
+        """Update the HTML content of a lesson plan"""
+        if not self.client:
+            return False
+
+        try:
+            from datetime import datetime, timezone
+
+            # Update the lesson_plan JSON field with new HTML content
+            data = {
+                "lesson_plan": json.dumps({"html_content": html_content}),
+                "updated_at": datetime.now(timezone.utc).isoformat()
+            }
+
+            result = self.client.table("lesson_plans").update(data).eq("id", plan_id).execute()
+
+            return result.data is not None and len(result.data) > 0
+        except Exception as e:
+            print(f"Error updating lesson plan: {e}")
+            return False
+
     def list_lesson_plans(
         self,
         subject: Optional[str] = None,
