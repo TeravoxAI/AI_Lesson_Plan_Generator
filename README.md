@@ -171,28 +171,27 @@ Frontend will be available at: `http://localhost:3000`
 ## Project Structure
 
 ```
-LessonPlan_Generator/
-├── src/
-│   ├── db/                    # Database client and schema
-│   ├── generation/            # Lesson generation logic
-│   │   ├── lesson_generator.py
-│   │   └── router.py          # Context retrieval router
-│   ├── ingestion/             # Document ingestion (OCR, parsing)
-│   ├── models.py              # Pydantic data models
-│   ├── prompts/               # LLM prompt templates
-│   └── config.py              # Configuration management
-├── routers/                   # FastAPI route handlers
-│   ├── generate.py            # Lesson generation endpoints
-│   └── ingest.py              # Document upload endpoints
-├── frontend/                  # React frontend
-│   ├── src/
-│   │   ├── App.jsx            # Main application component
-│   │   └── index.css          # Styles
-│   └── vite.config.js         # Vite configuration
-├── Grade_*_*_Tracks/          # Audio track folders (user-provided)
-├── main.py                    # FastAPI application entry point
-├── requirements.txt           # Python dependencies
-└── README.md                  # This file
+AI_Lesson_Plan_Generator/
+├── docs/                 # Documentation files
+├── frontend/             # React/Vite frontend application
+│   ├── src/              # Frontend source code
+│   ├── public/           # Static assets
+│   └── vite.config.js    # Vite configuration
+├── routers/              # API Route definitions
+│   ├── authentication.py # Auth endpoints
+│   ├── authorization.py  # RBAC logic
+│   ├── generate.py       # Lesson generation endpoints
+│   └── ingest.py         # Content ingestion endpoints
+├── src/                  # Core application logic
+│   ├── db/               # Database client and schema
+│   ├── generation/       # Lesson generation logic (LLM)
+│   ├── ingestion/        # Document processing logic
+│   ├── prompts/          # LLM system prompts
+│   ├── config.py         # Configuration settings
+│   └── models.py         # Pydantic data models
+├── main.py               # Application entry point
+├── requirements.txt      # Python dependencies
+└── README.md             # Project documentation
 ```
 
 ## API Endpoints
