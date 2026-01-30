@@ -371,6 +371,34 @@ class DatabaseClient:
             print(f"Error fetching user profile: {e}")
             return None
 
+    def increment_query_limit(self, user_id: str) -> bool:
+        """
+        Increment the query_limit counter for a user.
+        """
+        if not self.client:
+            return False
+
+        try:
+            # 1. Get current value
+            user = self.get_user_profile(user_id)
+            if not user:
+                return False
+
+            current_limit = user.get("query_limit", 0) or 0
+
+            # 2. Increment
+            new_limit = current_limit + 1
+
+            # 3. Update
+            result = self.client.table("users").update({
+                "query_limit": new_limit
+            }).eq("id", user_id).execute()
+
+            return bool(result.data)
+        except Exception as e:
+            print(f"Error incrementing query limit: {e}")
+            return False
+
     def update_lesson_plan(self, plan_id: int, html_content: str) -> bool:
         """Update the HTML content of a lesson plan"""
         if not self.client:

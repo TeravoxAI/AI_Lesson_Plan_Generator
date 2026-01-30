@@ -14,6 +14,7 @@ from src.generation.book_selector import (
     is_valid_lesson_type,
     LESSON_TYPE_DESCRIPTIONS
 )
+from src.db.client import db
 # Authorization Import
 from routers.authorization import get_current_user
 from typing import Dict, Any
@@ -50,6 +51,14 @@ async def generate_lesson_plan(
     user_role = current_user.get("role", "").lower() if current_user.get("role") else ""
     user_subject = current_user.get("subject", "")
     is_approved = current_user.get("is_approved", False)
+    query_limit = current_user.get("query_limit", 0) or 0
+
+    # 0. Rate Limiting Check
+    if query_limit >= 20:
+        raise HTTPException(
+            status_code=403,
+            detail="Maximum generation limit reached (20/20). Please contact support."
+        )
 
     # 1. Teachers can only generate for their subject
     if user_role == "teacher":
@@ -91,6 +100,10 @@ async def generate_lesson_plan(
         page_end=request.page_end,
         topic=request.topic
     )
+
+    # Increment query limit for the user
+    if current_user and "id" in current_user:
+        db.increment_query_limit(current_user["id"])
 
     return response
 

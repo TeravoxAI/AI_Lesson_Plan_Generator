@@ -242,8 +242,10 @@ function App() {
         e.preventDefault()
         setLoading(true)
         setStatus({ type: 'loading', message: 'Generating lesson plan...' })
-        setLessonPlan(null)
-        setLessonMeta(null)
+        // Do not clear previous plan/meta here so it stays visible
+        // setLessonPlan(null)
+        // setLessonMeta(null)
+
 
         try {
             // For now, use the first selected type (backend currently supports single type)
