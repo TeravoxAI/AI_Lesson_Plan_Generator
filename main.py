@@ -7,7 +7,7 @@ from fastapi.staticfiles import StaticFiles
 from fastapi.responses import FileResponse
 import os
 
-from routers import ingest, generate
+from routers import ingest, generate, authentication, authorization
 
 # Create FastAPI app
 app = FastAPI(
@@ -28,6 +28,8 @@ app.add_middleware(
 # Include routers
 app.include_router(ingest.router, prefix="/ingest")
 app.include_router(generate.router, prefix="/generate")
+app.include_router(authentication.router, prefix="/authentication")
+app.include_router(authorization.router, prefix="/authorization")
 
 
 @app.get("/")

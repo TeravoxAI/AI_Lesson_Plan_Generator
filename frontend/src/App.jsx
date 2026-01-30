@@ -1,4 +1,6 @@
 import { useState, useEffect, useRef } from 'react'
+import Login from './Login'
+import Signup from './Signup'
 
 const API_BASE = ''  // Proxied through Vite
 
@@ -142,6 +144,10 @@ const getYouTubeVideoId = (url) => {
 }
 
 function App() {
+    const [user, setUser] = useState(null)
+    const [session, setSession] = useState(null)
+    const [authView, setAuthView] = useState('login')
+
     const [activeView, setActiveView] = useState('generate')
     const [loading, setLoading] = useState(false)
     const [status, setStatus] = useState(null)
@@ -236,8 +242,10 @@ function App() {
         e.preventDefault()
         setLoading(true)
         setStatus({ type: 'loading', message: 'Generating lesson plan...' })
-        setLessonPlan(null)
-        setLessonMeta(null)
+        // Do not clear previous plan/meta here so it stays visible
+        // setLessonPlan(null)
+        // setLessonMeta(null)
+
 
         try {
             // For now, use the first selected type (backend currently supports single type)
@@ -245,7 +253,10 @@ function App() {
 
             const res = await fetch(`${API_BASE}/generate/lesson-plan`, {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${session?.access_token}`
+                },
                 body: JSON.stringify({
                     grade: generateForm.grade,
                     subject: generateForm.subject,
@@ -254,6 +265,13 @@ function App() {
                     page_end: generateForm.lesson_number
                 })
             })
+
+            // Handle 403 Access Denied specifically
+            if (res.status === 403) {
+                const errData = await res.json()
+                setStatus({ type: 'error', message: errData.detail || 'Access Denied: You do not have permission to perform this action.' })
+                return
+            }
 
             const data = await res.json()
 
@@ -415,6 +433,29 @@ function App() {
         return type.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase())
     }
 
+    const handleLoginSuccess = (userData, sessionData) => {
+        setUser(userData)
+        setSession(sessionData)
+    }
+
+    const handleLogout = async () => {
+        try {
+            await fetch('/authentication/logout', { method: 'POST' })
+        } catch (e) {
+            console.error(e)
+        }
+        setUser(null)
+        setSession(null)
+        setAuthView('login')
+    }
+
+    if (!user) {
+        if (authView === 'signup') {
+            return <Signup onSignupSuccess={handleLoginSuccess} onSwitchToLogin={() => setAuthView('login')} />
+        }
+        return <Login onLogin={handleLoginSuccess} onSwitchToSignup={() => setAuthView('signup')} />
+    }
+
     return (
         <div className="app">
             {/* Header */}
@@ -425,545 +466,582 @@ function App() {
                 </div>
                 <div className="user-area">
                     <UserIcon className="user-icon" />
-                    <span className="user-name">Teacher Portal</span>
+                    <span className="user-name">
+                        {user.role === 'principal' && user.is_approved ? 'Principal Portal' : 'Teacher Portal'} | {user.first_name} {user.last_name}
+                    </span>
+                    <button
+                        onClick={handleLogout}
+                        style={{
+                            background: 'rgba(255,255,255,0.2)',
+                            border: 'none',
+                            color: 'white',
+                            cursor: 'pointer',
+                            padding: '4px 8px',
+                            borderRadius: '4px',
+                            fontSize: '12px',
+                            fontWeight: '500'
+                        }}
+                    >
+                        Logout
+                    </button>
                 </div>
             </header>
 
-            {/* Secondary Navigation */}
-            <div style={{ padding: '16px 48px', background: 'var(--background)' }}>
-                <div className="secondary-nav">
-                    <button
-                        className={`nav-btn ${activeView === 'generate' ? 'active' : ''}`}
-                        onClick={() => setActiveView('generate')}
-                    >
-                        Generate
-                    </button>
-                    <button
-                        className={`nav-btn ${activeView === 'upload' ? 'active' : ''}`}
-                        onClick={() => setActiveView('upload')}
-                    >
-                        Upload
-                    </button>
-                    <button
-                        className={`nav-btn ${activeView === 'library' ? 'active' : ''}`}
-                        onClick={() => setActiveView('library')}
-                    >
-                        Library
-                    </button>
-                </div>
-            </div>
-
-            {/* Generate View */}
-            {activeView === 'generate' && (
-                <div className="main-content">
-                    {/* Form Panel */}
-                    <div className="form-panel">
-                        <h1 className="panel-title">Create Your Lesson Plan</h1>
-                        <p className="panel-subtitle">
-                            Fill in the details below to generate a customized lesson plan for your class.
+            {/* Verification Check */}
+            {user.role === 'principal' && !user.is_approved ? (
+                <div className="main-content" style={{ justifyContent: 'center', paddingTop: '100px' }}>
+                    <div className="status error" style={{ maxWidth: '600px', fontSize: '18px', padding: '24px' }}>
+                        <strong>Account Not Verified</strong>
+                        <p style={{ marginTop: '8px' }}>
+                            Your Principal account is currently pending approval. You cannot generate lesson plans until an administrator verifies your account.
                         </p>
-
-                        <form onSubmit={handleGenerate}>
-                            {/* Grade Level */}
-                            <div className="form-field">
-                                <label className="form-label">Grade Level</label>
-                                <select
-                                    className="form-select"
-                                    value={generateForm.grade}
-                                    onChange={e => setGenerateForm({ ...generateForm, grade: e.target.value })}
-                                >
-                                    <option value="Grade 2">Grade 2</option>
-                                </select>
-                            </div>
-
-                            {/* Subject */}
-                            <div className="form-field">
-                                <label className="form-label">Subject</label>
-                                <select
-                                    className="form-select"
-                                    value={generateForm.subject}
-                                    onChange={e => setGenerateForm({ ...generateForm, subject: e.target.value })}
-                                >
-                                    <option value="English">English</option>
-                                    <option value="Mathematics">Mathematics</option>
-                                </select>
-                            </div>
-
-                            {/* Lesson Number */}
-                            <div className="form-field">
-                                <label className="form-label">Lesson Number</label>
-                                <input
-                                    type="number"
-                                    className="form-input"
-                                    min="1"
-                                    value={generateForm.lesson_number}
-                                    onChange={e => setGenerateForm({ ...generateForm, lesson_number: parseInt(e.target.value) || 1 })}
-                                    placeholder="Enter lesson number"
-                                    required
-                                />
-                            </div>
-
-                            {/* Lesson Plan Type */}
-                            <div className="form-field">
-                                <label className="form-label">Lesson Plan Type</label>
-                                <p className="form-hint">Select one or more plan types</p>
-                                <div className="lesson-type-options">
-                                    {currentLessonTypes.map(lt => (
-                                        <div
-                                            key={lt.type}
-                                            className={`lesson-type-option ${generateForm.selected_types.includes(lt.type) ? 'selected' : ''}`}
-                                            onClick={() => toggleLessonType(lt.type)}
-                                        >
-                                            <div className="lesson-type-checkbox">
-                                                <CheckIcon />
-                                            </div>
-                                            <span className="lesson-type-label">{formatTypeName(lt.type)}</span>
-                                        </div>
-                                    ))}
-                                </div>
-                            </div>
-
-                            {/* Generate Button */}
-                            <button type="submit" className="generate-btn" disabled={loading}>
-                                {loading ? (
-                                    <>
-                                        <span className="spinner"></span>
-                                        Generating...
-                                    </>
-                                ) : (
-                                    <>
-                                        <SparklesIcon />
-                                        Generate Lesson Plan
-                                    </>
-                                )}
-                            </button>
-                        </form>
-
-                        {status && (
-                            <div className={`status ${status.type}`}>
-                                {status.type === 'loading' && <span className="spinner"></span>}
-                                {status.message}
-                            </div>
-                        )}
-                    </div>
-
-                    {/* Output Panel */}
-                    <div className="output-panel">
-                        <div className="output-header">
-                            <h2 className="output-title">Generated Lesson Plan</h2>
-                            {lessonPlan && (
-                                <div className="output-actions">
-                                    {isEditing ? (
-                                        <>
-                                            <button className="action-btn save-btn" onClick={handleSave} title="Save changes">
-                                                <SaveIcon />
-                                            </button>
-                                            <button className="action-btn cancel-btn" onClick={handleCancel} title="Cancel editing">
-                                                <CancelIcon />
-                                            </button>
-                                        </>
-                                    ) : (
-                                        <>
-                                            <button className="action-btn" onClick={handleEdit} title="Edit lesson plan">
-                                                <EditIcon />
-                                            </button>
-                                            <button className="action-btn" onClick={handleCopy} title="Copy to clipboard">
-                                                <CopyIcon />
-                                            </button>
-                                        </>
-                                    )}
-                                </div>
-                            )}
-                        </div>
-                        <div className="output-divider"></div>
-
-                        {lessonMeta && (
-                            <>
-                                <div className="lesson-meta">
-                                    <div className="meta-item">
-                                        <GraduationIcon />
-                                        <span>{lessonMeta.grade}</span>
-                                    </div>
-                                    <div className="meta-item">
-                                        <BookOpenIcon />
-                                        <span>{lessonMeta.subject}</span>
-                                    </div>
-                                    <div className="meta-item">
-                                        <ClockIcon />
-                                        <span>Lesson {lessonMeta.lessonNumber}</span>
-                                    </div>
-                                </div>
-                                {/* Usage metrics */}
-                                {(lessonMeta.generationTime || lessonMeta.cost) && (
-                                    <div className="usage-metrics">
-                                        {lessonMeta.generationTime && (
-                                            <div className="metric-item">
-                                                <TimerIcon />
-                                                <span>{lessonMeta.generationTime}s</span>
-                                            </div>
-                                        )}
-                                        {lessonMeta.cost !== undefined && lessonMeta.cost !== null && (
-                                            <div className="metric-item">
-                                                <DollarIcon />
-                                                <span>${lessonMeta.cost.toFixed(6)}</span>
-                                            </div>
-                                        )}
-                                        {lessonMeta.totalTokens && (
-                                            <div className="metric-item">
-                                                <TokenIcon />
-                                                <span>{lessonMeta.totalTokens.toLocaleString()} tokens</span>
-                                            </div>
-                                        )}
-                                    </div>
-                                )}
-                            </>
-                        )}
-
-                        {/* Teacher Resources Section - Collapsible */}
-                        {lessonMeta?.teacherResources?.length > 0 && (
-                            <div className="teacher-resources-card">
-                                <div
-                                    className="teacher-resources-header"
-                                    onClick={() => setResourcesExpanded(!resourcesExpanded)}
-                                >
-                                    <div className="resource-badge">
-                                        <span>TEACHER RESOURCES</span>
-                                    </div>
-                                    <svg
-                                        className={`chevron-icon ${resourcesExpanded ? 'expanded' : ''}`}
-                                        xmlns="http://www.w3.org/2000/svg"
-                                        width="20"
-                                        height="20"
-                                        viewBox="0 0 24 24"
-                                        fill="none"
-                                        stroke="currentColor"
-                                        strokeWidth="2"
-                                    >
-                                        <polyline points="6 9 12 15 18 9" />
-                                    </svg>
-                                </div>
-
-                                {resourcesExpanded && (
-                                    <div className="teacher-resources-content">
-                                        {lessonMeta.teacherResources.map((resource, index) => {
-                                            const isExpanded = resourceItemsExpanded[index] !== false // Default to expanded
-
-                                            if (resource.type === 'video') {
-                                                const videoId = getYouTubeVideoId(resource.reference)
-
-                                                if (!videoId) {
-                                                    return (
-                                                        <div key={index} className="resource-error">
-                                                            <p>{resource.title}</p>
-                                                            <span>Invalid video URL</span>
-                                                        </div>
-                                                    )
-                                                }
-
-                                                return (
-                                                    <div key={index} className="resource-item-card">
-                                                        <div
-                                                            className="resource-item-header"
-                                                            onClick={() => setResourceItemsExpanded(prev => ({
-                                                                ...prev,
-                                                                [index]: !isExpanded
-                                                            }))}
-                                                        >
-                                                            <div className="resource-item-header-left">
-                                                                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                                                                    <circle cx="12" cy="12" r="10" />
-                                                                    <polygon points="10 8 16 12 10 16 10 8" />
-                                                                </svg>
-                                                                <span>{resource.title}</span>
-                                                            </div>
-                                                            <svg
-                                                                className={`resource-chevron ${isExpanded ? 'expanded' : ''}`}
-                                                                xmlns="http://www.w3.org/2000/svg"
-                                                                width="16"
-                                                                height="16"
-                                                                viewBox="0 0 24 24"
-                                                                fill="none"
-                                                                stroke="currentColor"
-                                                                strokeWidth="2"
-                                                            >
-                                                                <polyline points="6 9 12 15 18 9" />
-                                                            </svg>
-                                                        </div>
-                                                        {isExpanded && (
-                                                            <div className="video-container">
-                                                                <iframe
-                                                                    src={`https://www.youtube.com/embed/${videoId}`}
-                                                                    title={resource.title}
-                                                                    frameBorder="0"
-                                                                    allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                                                                    allowFullScreen
-                                                                />
-                                                            </div>
-                                                        )}
-                                                    </div>
-                                                )
-                                            } else if (resource.type === 'audio') {
-                                                // Extract track number from API URL: /audio/2/English/70 -> 70
-                                                const urlParts = resource.reference.split('/')
-                                                const trackNumber = urlParts[urlParts.length - 1] || (index + 1).toString()
-
-                                                return (
-                                                    <div key={index} className="resource-item-card">
-                                                        <div
-                                                            className="resource-item-header"
-                                                            onClick={() => setResourceItemsExpanded(prev => ({
-                                                                ...prev,
-                                                                [index]: !isExpanded
-                                                            }))}
-                                                        >
-                                                            <div className="resource-item-header-left">
-                                                                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                                                                    <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5" />
-                                                                    <path d="M15.54 8.46a5 5 0 0 1 0 7.07" />
-                                                                </svg>
-                                                                <span>{resource.title}</span>
-                                                                <div className="track-badge">Track {trackNumber}</div>
-                                                            </div>
-                                                            <svg
-                                                                className={`resource-chevron ${isExpanded ? 'expanded' : ''}`}
-                                                                xmlns="http://www.w3.org/2000/svg"
-                                                                width="16"
-                                                                height="16"
-                                                                viewBox="0 0 24 24"
-                                                                fill="none"
-                                                                stroke="currentColor"
-                                                                strokeWidth="2"
-                                                            >
-                                                                <polyline points="6 9 12 15 18 9" />
-                                                            </svg>
-                                                        </div>
-                                                        {isExpanded && (
-                                                            <div className="audio-player-container">
-                                                                <audio controls className="audio-player">
-                                                                    <source src={resource.reference} type="audio/mpeg" />
-                                                                    Your browser does not support the audio element.
-                                                                </audio>
-                                                            </div>
-                                                        )}
-                                                    </div>
-                                                )
-                                            }
-
-                                            return null
-                                        })}
-                                    </div>
-                                )}
-                            </div>
-                        )}
-
-                        {lessonPlan ? (
-                            <div
-                                ref={lessonPlanRef}
-                                className={`lesson-plan ${isEditing ? 'editing' : ''}`}
-                                contentEditable={isEditing}
-                                suppressContentEditableWarning={true}
-                                dangerouslySetInnerHTML={{ __html: lessonPlan }}
-                            />
-                        ) : (
-                            <div className="empty-state">
-                                <FileIcon />
-                                <p>No lesson plan generated yet</p>
-                                <span>Fill in the form and click "Generate" to create your lesson plan</span>
-                            </div>
-                        )}
                     </div>
                 </div>
-            )}
-
-            {/* Upload View */}
-            {activeView === 'upload' && (
-                <div className="main-content">
-                    <div className="form-panel" style={{ width: '100%', maxWidth: '600px', margin: '0 auto' }}>
-                        <h1 className="panel-title">Upload Documents</h1>
-                        <p className="panel-subtitle">
-                            Upload textbooks or Scheme of Work documents to enhance lesson plan generation.
-                        </p>
-
-                        <div className="secondary-nav" style={{ marginBottom: '24px' }}>
+            ) : (
+                <>
+                    {/* Secondary Navigation */}
+                    <div style={{ padding: '16px 48px', background: 'var(--background)' }}>
+                        <div className="secondary-nav">
                             <button
-                                className={`nav-btn ${uploadType === 'textbook' ? 'active' : ''}`}
-                                onClick={() => setUploadType('textbook')}
+                                className={`nav-btn ${activeView === 'generate' ? 'active' : ''}`}
+                                onClick={() => setActiveView('generate')}
                             >
-                                Textbook
-                            </button>
-                            <button
-                                className={`nav-btn ${uploadType === 'sow' ? 'active' : ''}`}
-                                onClick={() => setUploadType('sow')}
-                            >
-                                Scheme of Work
+                                Generate
                             </button>
                         </div>
+                    </div>
 
-                        <form onSubmit={handleUpload}>
-                            <div
-                                className={`file-upload ${selectedFile ? 'has-file' : ''}`}
-                                onDrop={handleFileDrop}
-                                onDragOver={e => e.preventDefault()}
-                                onClick={() => fileInputRef.current?.click()}
-                            >
-                                <div className="file-upload-icon">📁</div>
-                                {selectedFile ? (
-                                    <p><strong>{selectedFile.name}</strong></p>
-                                ) : (
-                                    <>
-                                        <p>Drag & drop your {uploadType === 'textbook' ? 'PDF' : 'PDF/Image'} here</p>
-                                        <span>or click to browse</span>
-                                    </>
-                                )}
-                                <input
-                                    type="file"
-                                    ref={fileInputRef}
-                                    style={{ display: 'none' }}
-                                    accept={uploadType === 'textbook' ? '.pdf' : '.pdf,.png,.jpg,.jpeg'}
-                                    onChange={e => setSelectedFile(e.target.files[0])}
-                                />
-                            </div>
+                    {/* Generate View */}
+                    {activeView === 'generate' && (
+                        <div className="main-content">
+                            {/* Form Panel */}
+                            <div className="form-panel">
+                                <h1 className="panel-title">Create Your Lesson Plan</h1>
+                                <p className="panel-subtitle">
+                                    Fill in the details below to generate a customized lesson plan for your class.
+                                </p>
 
-                            <div className="form-grid">
-                                <div className="form-field">
-                                    <label className="form-label">Grade</label>
-                                    <select
-                                        className="form-select"
-                                        value={uploadForm.grade}
-                                        onChange={e => setUploadForm({ ...uploadForm, grade: e.target.value })}
-                                    >
-                                        <option value="Grade 2">Grade 2</option>
-                                    </select>
-                                </div>
-
-                                <div className="form-field">
-                                    <label className="form-label">Subject</label>
-                                    <select
-                                        className="form-select"
-                                        value={uploadForm.subject}
-                                        onChange={e => setUploadForm({ ...uploadForm, subject: e.target.value })}
-                                    >
-                                        <option value="English">English</option>
-                                        <option value="Mathematics">Mathematics</option>
-                                    </select>
-                                </div>
-
-                                {uploadType === 'textbook' ? (
-                                    <>
-                                        <div className="form-field">
-                                            <label className="form-label">Book Type</label>
-                                            <select
-                                                className="form-select"
-                                                value={uploadForm.book_type}
-                                                onChange={e => setUploadForm({ ...uploadForm, book_type: e.target.value })}
-                                            >
-                                                {uploadForm.subject === 'English' ? (
-                                                    <>
-                                                        <option value="learners">Learner's Book</option>
-                                                        <option value="activity">Activity Book</option>
-                                                        <option value="reading">Reading Book</option>
-                                                    </>
-                                                ) : (
-                                                    <>
-                                                        <option value="course_book">Course Book</option>
-                                                        <option value="workbook">Workbook</option>
-                                                    </>
-                                                )}
-                                            </select>
-                                        </div>
-                                        <div className="form-field">
-                                            <label className="form-label">Book Title</label>
-                                            <input
-                                                type="text"
-                                                className="form-input"
-                                                value={uploadForm.title}
-                                                onChange={e => setUploadForm({ ...uploadForm, title: e.target.value })}
-                                                placeholder="e.g., Oxford English Grade 2"
-                                                required
-                                            />
-                                        </div>
-                                    </>
-                                ) : (
+                                <form onSubmit={handleGenerate}>
+                                    {/* Grade Level */}
                                     <div className="form-field">
-                                        <label className="form-label">Term</label>
+                                        <label className="form-label">Grade Level</label>
                                         <select
                                             className="form-select"
-                                            value={uploadForm.term}
-                                            onChange={e => setUploadForm({ ...uploadForm, term: e.target.value })}
+                                            value={generateForm.grade}
+                                            onChange={e => setGenerateForm({ ...generateForm, grade: e.target.value })}
                                         >
-                                            <option value="Term 1">Term 1</option>
-                                            <option value="Term 2">Term 2</option>
-                                            <option value="Term 3">Term 3</option>
+                                            <option value="Grade 1">Grade 1</option>
+                                            <option value="Grade 2">Grade 2</option>
+                                            <option value="Grade 3">Grade 3</option>
+                                            <option value="Grade 4">Grade 4</option>
+                                            <option value="Grade 5">Grade 5</option>
+                                            <option value="Grade 6">Grade 6</option>
                                         </select>
                                     </div>
-                                )}
-                            </div>
 
-                            <button type="submit" className="generate-btn" disabled={loading || !selectedFile}>
-                                {loading ? (
-                                    <>
-                                        <span className="spinner"></span>
-                                        Processing...
-                                    </>
-                                ) : (
-                                    'Upload & Process'
-                                )}
-                            </button>
-                        </form>
+                                    {/* Subject */}
+                                    <div className="form-field">
+                                        <label className="form-label">Subject</label>
+                                        <select
+                                            className="form-select"
+                                            value={generateForm.subject}
+                                            onChange={e => setGenerateForm({ ...generateForm, subject: e.target.value })}
+                                        >
+                                            <option value="English">English</option>
+                                            <option value="Mathematics">Mathematics</option>
+                                            <option value="Science">Science</option>
+                                            <option value="History">History</option>
+                                        </select>
+                                    </div>
 
-                        {status && (
-                            <div className={`status ${status.type}`}>
-                                {status.type === 'loading' && <span className="spinner"></span>}
-                                {status.message}
-                            </div>
-                        )}
-                    </div>
-                </div>
-            )}
+                                    {/* Lesson Number */}
+                                    <div className="form-field">
+                                        <label className="form-label">Lesson Number</label>
+                                        <input
+                                            type="number"
+                                            className="form-input"
+                                            min="1"
+                                            value={generateForm.lesson_number}
+                                            onChange={e => setGenerateForm({ ...generateForm, lesson_number: parseInt(e.target.value) || 1 })}
+                                            placeholder="Enter lesson number"
+                                            required
+                                        />
+                                    </div>
 
-            {/* Library View */}
-            {activeView === 'library' && (
-                <div className="main-content">
-                    <div className="form-panel" style={{ width: '100%', maxWidth: '800px', margin: '0 auto' }}>
-                        <h1 className="panel-title">Document Library</h1>
-                        <p className="panel-subtitle">
-                            View all uploaded textbooks and scheme of work documents.
-                        </p>
-
-                        {books.length === 0 ? (
-                            <div className="empty-state" style={{ minHeight: '200px' }}>
-                                <FileIcon />
-                                <p>No documents uploaded yet</p>
-                                <span>Upload a textbook or SOW to get started</span>
-                            </div>
-                        ) : (
-                            <div className="books-list">
-                                {books.map(book => (
-                                    <div key={book.id} className="book-item">
-                                        <div className="book-info">
-                                            <h3>{book.title}</h3>
-                                            <p>{book.grade_level} • {book.subject}</p>
-                                        </div>
-                                        <div className="book-badges">
-                                            <span className="book-badge">{book.book_type}</span>
-                                            {book.page_count && (
-                                                <span className="book-badge">{book.page_count} pages</span>
-                                            )}
+                                    {/* Lesson Plan Type */}
+                                    <div className="form-field">
+                                        <label className="form-label">Lesson Plan Type</label>
+                                        <p className="form-hint">Select one or more plan types</p>
+                                        <div className="lesson-type-options">
+                                            {currentLessonTypes.map(lt => (
+                                                <div
+                                                    key={lt.type}
+                                                    className={`lesson-type-option ${generateForm.selected_types.includes(lt.type) ? 'selected' : ''}`}
+                                                    onClick={() => toggleLessonType(lt.type)}
+                                                >
+                                                    <div className="lesson-type-checkbox">
+                                                        <CheckIcon />
+                                                    </div>
+                                                    <span className="lesson-type-label">{formatTypeName(lt.type)}</span>
+                                                </div>
+                                            ))}
                                         </div>
                                     </div>
-                                ))}
-                            </div>
-                        )}
 
-                        <button
-                            className="generate-btn"
-                            style={{ marginTop: '24px', background: 'var(--background-light)', color: 'var(--text-primary)', border: '1px solid var(--border)' }}
-                            onClick={fetchBooks}
-                        >
-                            Refresh List
-                        </button>
-                    </div>
-                </div>
+                                    {/* Generate Button */}
+                                    <button type="submit" className="generate-btn" disabled={loading}>
+                                        {loading ? (
+                                            <>
+                                                <span className="spinner"></span>
+                                                Generating...
+                                            </>
+                                        ) : (
+                                            <>
+                                                <SparklesIcon />
+                                                Generate Lesson Plan
+                                            </>
+                                        )}
+                                    </button>
+                                </form>
+
+                                {status && (
+                                    <div className={`status ${status.type}`}>
+                                        {status.type === 'loading' && <span className="spinner"></span>}
+                                        {status.message}
+                                    </div>
+                                )}
+                            </div>
+
+                            {/* Output Panel */}
+                            <div className="output-panel">
+                                <div className="output-header">
+                                    <h2 className="output-title">Generated Lesson Plan</h2>
+                                    {lessonPlan && (
+                                        <div className="output-actions">
+                                            {isEditing ? (
+                                                <>
+                                                    <button className="action-btn save-btn" onClick={handleSave} title="Save changes">
+                                                        <SaveIcon />
+                                                    </button>
+                                                    <button className="action-btn cancel-btn" onClick={handleCancel} title="Cancel editing">
+                                                        <CancelIcon />
+                                                    </button>
+                                                </>
+                                            ) : (
+                                                <>
+                                                    <button className="action-btn" onClick={handleEdit} title="Edit lesson plan">
+                                                        <EditIcon />
+                                                    </button>
+                                                    <button className="action-btn" onClick={handleCopy} title="Copy to clipboard">
+                                                        <CopyIcon />
+                                                    </button>
+                                                </>
+                                            )}
+                                        </div>
+                                    )}
+                                </div>
+                                <div className="output-divider"></div>
+
+                                {
+                                    lessonMeta && (
+                                        <>
+                                            <div className="lesson-meta">
+                                                <div className="meta-item">
+                                                    <GraduationIcon />
+                                                    <span>{lessonMeta.grade}</span>
+                                                </div>
+                                                <div className="meta-item">
+                                                    <BookOpenIcon />
+                                                    <span>{lessonMeta.subject}</span>
+                                                </div>
+                                                <div className="meta-item">
+                                                    <ClockIcon />
+                                                    <span>Lesson {lessonMeta.lessonNumber}</span>
+                                                </div>
+                                            </div>
+                                            {/* Usage metrics */}
+                                            {(lessonMeta.generationTime || lessonMeta.cost) && (
+                                                <div className="usage-metrics">
+                                                    {lessonMeta.generationTime && (
+                                                        <div className="metric-item">
+                                                            <TimerIcon />
+                                                            <span>{lessonMeta.generationTime}s</span>
+                                                        </div>
+                                                    )}
+                                                    {lessonMeta.cost !== undefined && lessonMeta.cost !== null && (
+                                                        <div className="metric-item">
+                                                            <DollarIcon />
+                                                            <span>${lessonMeta.cost.toFixed(6)}</span>
+                                                        </div>
+                                                    )}
+                                                    {lessonMeta.totalTokens && (
+                                                        <div className="metric-item">
+                                                            <TokenIcon />
+                                                            <span>{lessonMeta.totalTokens.toLocaleString()} tokens</span>
+                                                        </div>
+                                                    )}
+                                                </div>
+                                            )}
+                                        </>
+                                    )
+                                }
+
+                                {/* Teacher Resources Section - Collapsible */}
+                                {
+                                    lessonMeta?.teacherResources?.length > 0 && (
+                                        <div className="teacher-resources-card">
+                                            <div
+                                                className="teacher-resources-header"
+                                                onClick={() => setResourcesExpanded(!resourcesExpanded)}
+                                            >
+                                                <div className="resource-badge">
+                                                    <span>TEACHER RESOURCES</span>
+                                                </div>
+                                                <svg
+                                                    className={`chevron-icon ${resourcesExpanded ? 'expanded' : ''}`}
+                                                    xmlns="http://www.w3.org/2000/svg"
+                                                    width="20"
+                                                    height="20"
+                                                    viewBox="0 0 24 24"
+                                                    fill="none"
+                                                    stroke="currentColor"
+                                                    strokeWidth="2"
+                                                >
+                                                    <polyline points="6 9 12 15 18 9" />
+                                                </svg>
+                                            </div>
+
+                                            {resourcesExpanded && (
+                                                <div className="teacher-resources-content">
+                                                    {lessonMeta.teacherResources.map((resource, index) => {
+                                                        const isExpanded = resourceItemsExpanded[index] !== false // Default to expanded
+
+                                                        if (resource.type === 'video') {
+                                                            const videoId = getYouTubeVideoId(resource.reference)
+
+                                                            if (!videoId) {
+                                                                return (
+                                                                    <div key={index} className="resource-error">
+                                                                        <p>{resource.title}</p>
+                                                                        <span>Invalid video URL</span>
+                                                                    </div>
+                                                                )
+                                                            }
+
+                                                            return (
+                                                                <div key={index} className="resource-item-card">
+                                                                    <div
+                                                                        className="resource-item-header"
+                                                                        onClick={() => setResourceItemsExpanded(prev => ({
+                                                                            ...prev,
+                                                                            [index]: !isExpanded
+                                                                        }))}
+                                                                    >
+                                                                        <div className="resource-item-header-left">
+                                                                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                                                                                <circle cx="12" cy="12" r="10" />
+                                                                                <polygon points="10 8 16 12 10 16 10 8" />
+                                                                            </svg>
+                                                                            <span>{resource.title}</span>
+                                                                        </div>
+                                                                        <svg
+                                                                            className={`resource-chevron ${isExpanded ? 'expanded' : ''}`}
+                                                                            xmlns="http://www.w3.org/2000/svg"
+                                                                            width="16"
+                                                                            height="16"
+                                                                            viewBox="0 0 24 24"
+                                                                            fill="none"
+                                                                            stroke="currentColor"
+                                                                            strokeWidth="2"
+                                                                        >
+                                                                            <polyline points="6 9 12 15 18 9" />
+                                                                        </svg>
+                                                                    </div>
+                                                                    {isExpanded && (
+                                                                        <div className="video-container">
+                                                                            <iframe
+                                                                                src={`https://www.youtube.com/embed/${videoId}`}
+                                                                                title={resource.title}
+                                                                                frameBorder="0"
+                                                                                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                                                                                allowFullScreen
+                                                                            />
+                                                                        </div>
+                                                                    )}
+                                                                </div>
+                                                            )
+                                                        } else if (resource.type === 'audio') {
+                                                            // Extract track number from API URL: /audio/2/English/70 -> 70
+                                                            const urlParts = resource.reference.split('/')
+                                                            const trackNumber = urlParts[urlParts.length - 1] || (index + 1).toString()
+
+                                                            return (
+                                                                <div key={index} className="resource-item-card">
+                                                                    <div
+                                                                        className="resource-item-header"
+                                                                        onClick={() => setResourceItemsExpanded(prev => ({
+                                                                            ...prev,
+                                                                            [index]: !isExpanded
+                                                                        }))}
+                                                                    >
+                                                                        <div className="resource-item-header-left">
+                                                                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                                                                                <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5" />
+                                                                                <path d="M15.54 8.46a5 5 0 0 1 0 7.07" />
+                                                                            </svg>
+                                                                            <span>{resource.title}</span>
+                                                                            <div className="track-badge">Track {trackNumber}</div>
+                                                                        </div>
+                                                                        <svg
+                                                                            className={`resource-chevron ${isExpanded ? 'expanded' : ''}`}
+                                                                            xmlns="http://www.w3.org/2000/svg"
+                                                                            width="16"
+                                                                            height="16"
+                                                                            viewBox="0 0 24 24"
+                                                                            fill="none"
+                                                                            stroke="currentColor"
+                                                                            strokeWidth="2"
+                                                                        >
+                                                                            <polyline points="6 9 12 15 18 9" />
+                                                                        </svg>
+                                                                    </div>
+                                                                    {isExpanded && (
+                                                                        <div className="audio-player-container">
+                                                                            <audio controls className="audio-player">
+                                                                                <source src={resource.reference} type="audio/mpeg" />
+                                                                                Your browser does not support the audio element.
+                                                                            </audio>
+                                                                        </div>
+                                                                    )}
+                                                                </div>
+                                                            )
+                                                        }
+
+                                                        return null
+                                                    })}
+                                                </div>
+                                            )}
+                                        </div>
+                                    )
+                                }
+
+                                {
+                                    lessonPlan ? (
+                                        <div
+                                            ref={lessonPlanRef}
+                                            className={`lesson-plan ${isEditing ? 'editing' : ''}`}
+                                            contentEditable={isEditing}
+                                            suppressContentEditableWarning={true}
+                                            dangerouslySetInnerHTML={{ __html: lessonPlan }}
+                                        />
+                                    ) : (
+                                        <div className="empty-state">
+                                            <FileIcon />
+                                            <p>No lesson plan generated yet</p>
+                                            <span>Fill in the form and click "Generate" to create your lesson plan</span>
+                                        </div>
+                                    )
+                                }
+                            </div >
+                        </div >
+                    )
+                    }
+
+                    {/* Upload View */}
+                    {
+                        activeView === 'upload' && (
+                            <div className="main-content">
+                                <div className="form-panel" style={{ width: '100%', maxWidth: '600px', margin: '0 auto' }}>
+                                    <h1 className="panel-title">Upload Documents</h1>
+                                    <p className="panel-subtitle">
+                                        Upload textbooks or Scheme of Work documents to enhance lesson plan generation.
+                                    </p>
+
+                                    <div className="secondary-nav" style={{ marginBottom: '24px' }}>
+                                        <button
+                                            className={`nav-btn ${uploadType === 'textbook' ? 'active' : ''}`}
+                                            onClick={() => setUploadType('textbook')}
+                                        >
+                                            Textbook
+                                        </button>
+                                        <button
+                                            className={`nav-btn ${uploadType === 'sow' ? 'active' : ''}`}
+                                            onClick={() => setUploadType('sow')}
+                                        >
+                                            Scheme of Work
+                                        </button>
+                                    </div>
+
+                                    <form onSubmit={handleUpload}>
+                                        <div
+                                            className={`file-upload ${selectedFile ? 'has-file' : ''}`}
+                                            onDrop={handleFileDrop}
+                                            onDragOver={e => e.preventDefault()}
+                                            onClick={() => fileInputRef.current?.click()}
+                                        >
+                                            <div className="file-upload-icon">📁</div>
+                                            {selectedFile ? (
+                                                <p><strong>{selectedFile.name}</strong></p>
+                                            ) : (
+                                                <>
+                                                    <p>Drag & drop your {uploadType === 'textbook' ? 'PDF' : 'PDF/Image'} here</p>
+                                                    <span>or click to browse</span>
+                                                </>
+                                            )}
+                                            <input
+                                                type="file"
+                                                ref={fileInputRef}
+                                                style={{ display: 'none' }}
+                                                accept={uploadType === 'textbook' ? '.pdf' : '.pdf,.png,.jpg,.jpeg'}
+                                                onChange={e => setSelectedFile(e.target.files[0])}
+                                            />
+                                        </div>
+
+                                        <div className="form-grid">
+                                            <div className="form-field">
+                                                <label className="form-label">Grade</label>
+                                                <select
+                                                    className="form-select"
+                                                    value={uploadForm.grade}
+                                                    onChange={e => setUploadForm({ ...uploadForm, grade: e.target.value })}
+                                                >
+                                                    <option value="Grade 2">Grade 2</option>
+                                                </select>
+                                            </div>
+
+                                            <div className="form-field">
+                                                <label className="form-label">Subject</label>
+                                                <select
+                                                    className="form-select"
+                                                    value={uploadForm.subject}
+                                                    onChange={e => setUploadForm({ ...uploadForm, subject: e.target.value })}
+                                                >
+                                                    <option value="English">English</option>
+                                                    <option value="Mathematics">Mathematics</option>
+                                                </select>
+                                            </div>
+
+                                            {uploadType === 'textbook' ? (
+                                                <>
+                                                    <div className="form-field">
+                                                        <label className="form-label">Book Type</label>
+                                                        <select
+                                                            className="form-select"
+                                                            value={uploadForm.book_type}
+                                                            onChange={e => setUploadForm({ ...uploadForm, book_type: e.target.value })}
+                                                        >
+                                                            {uploadForm.subject === 'English' ? (
+                                                                <>
+                                                                    <option value="learners">Learner's Book</option>
+                                                                    <option value="activity">Activity Book</option>
+                                                                    <option value="reading">Reading Book</option>
+                                                                </>
+                                                            ) : (
+                                                                <>
+                                                                    <option value="course_book">Course Book</option>
+                                                                    <option value="workbook">Workbook</option>
+                                                                </>
+                                                            )}
+                                                        </select>
+                                                    </div>
+                                                    <div className="form-field">
+                                                        <label className="form-label">Book Title</label>
+                                                        <input
+                                                            type="text"
+                                                            className="form-input"
+                                                            value={uploadForm.title}
+                                                            onChange={e => setUploadForm({ ...uploadForm, title: e.target.value })}
+                                                            placeholder="e.g., Oxford English Grade 2"
+                                                            required
+                                                        />
+                                                    </div>
+                                                </>
+                                            ) : (
+                                                <div className="form-field">
+                                                    <label className="form-label">Term</label>
+                                                    <select
+                                                        className="form-select"
+                                                        value={uploadForm.term}
+                                                        onChange={e => setUploadForm({ ...uploadForm, term: e.target.value })}
+                                                    >
+                                                        <option value="Term 1">Term 1</option>
+                                                        <option value="Term 2">Term 2</option>
+                                                        <option value="Term 3">Term 3</option>
+                                                    </select>
+                                                </div>
+                                            )}
+                                        </div>
+
+                                        <button type="submit" className="generate-btn" disabled={loading || !selectedFile}>
+                                            {loading ? (
+                                                <>
+                                                    <span className="spinner"></span>
+                                                    Processing...
+                                                </>
+                                            ) : (
+                                                'Upload & Process'
+                                            )}
+                                        </button>
+                                    </form>
+
+                                    {status && (
+                                        <div className={`status ${status.type}`}>
+                                            {status.type === 'loading' && <span className="spinner"></span>}
+                                            {status.message}
+                                        </div>
+                                    )}
+                                </div>
+                            </div>
+                        )
+                    }
+
+                    {/* Library View */}
+                    {
+                        activeView === 'library' && (
+                            <div className="main-content">
+                                <div className="form-panel" style={{ width: '100%', maxWidth: '800px', margin: '0 auto' }}>
+                                    <h1 className="panel-title">Document Library</h1>
+                                    <p className="panel-subtitle">
+                                        View all uploaded textbooks and scheme of work documents.
+                                    </p>
+
+                                    {books.length === 0 ? (
+                                        <div className="empty-state" style={{ minHeight: '200px' }}>
+                                            <FileIcon />
+                                            <p>No documents uploaded yet</p>
+                                            <span>Upload a textbook or SOW to get started</span>
+                                        </div>
+                                    ) : (
+                                        <div className="books-list">
+                                            {books.map(book => (
+                                                <div key={book.id} className="book-item">
+                                                    <div className="book-info">
+                                                        <h3>{book.title}</h3>
+                                                        <p>{book.grade_level} • {book.subject}</p>
+                                                    </div>
+                                                    <div className="book-badges">
+                                                        <span className="book-badge">{book.book_type}</span>
+                                                        {book.page_count && (
+                                                            <span className="book-badge">{book.page_count} pages</span>
+                                                        )}
+                                                    </div>
+                                                </div>
+                                            ))}
+                                        </div>
+                                    )}
+
+                                    <button
+                                        className="generate-btn"
+                                        style={{ marginTop: '24px', background: 'var(--background-light)', color: 'var(--text-primary)', border: '1px solid var(--border)' }}
+                                        onClick={fetchBooks}
+                                    >
+                                        Refresh List
+                                    </button>
+                                </div>
+                            </div>
+                        )
+                    }
+                </>
             )}
         </div>
     )

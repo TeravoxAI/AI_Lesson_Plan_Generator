@@ -22,7 +22,6 @@ CREATE TABLE IF NOT EXISTS sow_entries (
     subject VARCHAR(50),
     term VARCHAR(20),
     title VARCHAR(200),           -- Document title/filename
-    
     -- Complete extraction stored as JSONB
     -- Contains the full structured output from ADE extract
     extraction JSONB NOT NULL DEFAULT '{}'::jsonb
@@ -60,3 +59,17 @@ CREATE TABLE IF NOT EXISTS lesson_plans (
 
 CREATE INDEX IF NOT EXISTS idx_lesson_plans_lookup ON lesson_plans(subject, grade_level, lesson_type);
 CREATE INDEX IF NOT EXISTS idx_lesson_plans_metadata ON lesson_plans USING GIN(metadata);
+
+-- 4. User Profiles (Linked to Auth)
+CREATE TABLE IF NOT EXISTS public.users (
+  id uuid REFERENCES auth.users on delete cascade not null primary key,
+  created_at timestamp with time zone null default now(),
+  first_name text,
+  last_name text,
+  grade text,
+  subject text,
+  school_branch text,
+  email text,
+  role text,
+  is_approved boolean default true
+);

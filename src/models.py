@@ -2,7 +2,7 @@
 Pydantic Models for API Request/Response
 """
 from enum import Enum
-from typing import Optional, List
+from typing import Optional, List, Dict, Any
 from pydantic import BaseModel, Field
 
 
@@ -64,6 +64,33 @@ class SOWUpload(BaseModel):
     grade: str = "Grade 2"
     subject: Subject
     term: str = "Term 1"
+
+
+class UserCredentials(BaseModel):
+    """User credentials for signup/login"""
+    email: str
+    password: str
+
+
+class UserRegistration(BaseModel):
+    """User registration data"""
+    first_name: str
+    last_name: str
+    grade: Optional[str] = None
+    subject: Optional[str] = None
+    school_branch: str
+    email: str
+    password: str
+    role : str
+
+
+class AuthResponse(BaseModel):
+    """Response model for authentication"""
+    success: bool
+    message: str
+    user: Optional[Dict[str, Any]] = None
+    session: Optional[Dict[str, Any]] = None
+    error: Optional[str] = None
 
 
 # ============= Response Models =============
