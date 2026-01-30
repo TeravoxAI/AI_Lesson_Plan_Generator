@@ -1,0 +1,57 @@
+{
+    "builds": [
+        {
+            "src": "api/index.py",
+            "use": "@vercel/python"
+        },
+        {
+            "src": "frontend/package.json",
+            "use": "@vercel/static-build",
+            "config": {
+                "distDir": "dist"
+            }
+        }
+    ],
+    "rewrites": [
+        {
+            "source": "/api/(.*)",
+            "destination": "/api/index.py"
+        },
+        {
+            "source": "/ingest/(.*)",
+            "destination": "/api/index.py"
+        },
+        {
+            "source": "/generate/(.*)",
+            "destination": "/api/index.py"
+        },
+        {
+            "source": "/authentication/(.*)",
+            "destination": "/api/index.py"
+        },
+        {
+            "source": "/authorization/(.*)",
+            "destination": "/api/index.py"
+        },
+        {
+            "source": "/audio/(.*)",
+            "destination": "/api/index.py"
+        },
+        {
+            "source": "/health",
+            "destination": "/api/index.py"
+        },
+        {
+            "source": "/docs",
+            "destination": "/api/index.py"
+        },
+        {
+            "source": "/openapi.json",
+            "destination": "/api/index.py"
+        },
+        {
+            "source": "/(.*)",
+            "destination": "/frontend/$1"
+        }
+    ]
+}
