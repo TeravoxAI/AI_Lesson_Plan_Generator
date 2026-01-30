@@ -2411,6 +2411,1851 @@
           ]
         }
       ]
+    },
+    {
+      "type": "frame",
+      "id": "v3jMB",
+      "x": -1113,
+      "y": 1019,
+      "name": "Desktop - Login",
+      "width": 1440,
+      "height": 800,
+      "fill": "$--background",
+      "children": [
+        {
+          "type": "frame",
+          "id": "M2iPS",
+          "name": "leftPanel",
+          "width": 720,
+          "height": "fill_container",
+          "fill": "$--primary",
+          "layout": "vertical",
+          "gap": 24,
+          "padding": 48,
+          "justifyContent": "center",
+          "alignItems": "center",
+          "children": [
+            {
+              "type": "icon_font",
+              "id": "WfR7D",
+              "name": "brandIcon",
+              "width": 64,
+              "height": 64,
+              "iconFontName": "book-open",
+              "iconFontFamily": "lucide",
+              "fill": "#FFFFFF"
+            },
+            {
+              "type": "text",
+              "id": "UcnXg",
+              "name": "brandTitle",
+              "fill": "#FFFFFF",
+              "content": "Lesson Plan Generator",
+              "textAlign": "center",
+              "fontFamily": "Inter",
+              "fontSize": 36,
+              "fontWeight": "600"
+            },
+            {
+              "type": "text",
+              "id": "302L0",
+              "name": "brandSubtitle",
+              "opacity": 0.8,
+              "fill": "#FFFFFF",
+              "textGrowth": "fixed-width",
+              "width": 400,
+              "content": "Create professional lesson plans in minutes with AI-powered generation",
+              "lineHeight": 1.5,
+              "textAlign": "center",
+              "fontFamily": "Inter",
+              "fontSize": 16,
+              "fontWeight": "normal"
+            }
+          ]
+        },
+        {
+          "type": "frame",
+          "id": "p1OkP",
+          "name": "rightPanel",
+          "width": "fill_container",
+          "height": "fill_container",
+          "fill": "$--surface",
+          "layout": "vertical",
+          "padding": 48,
+          "justifyContent": "center",
+          "alignItems": "center",
+          "children": [
+            {
+              "type": "frame",
+              "id": "g13ec",
+              "name": "loginForm",
+              "width": 360,
+              "layout": "vertical",
+              "gap": 24,
+              "children": [
+                {
+                  "type": "frame",
+                  "id": "kFWiA",
+                  "name": "formHeader",
+                  "width": "fill_container",
+                  "layout": "vertical",
+                  "gap": 8,
+                  "children": [
+                    {
+                      "type": "text",
+                      "id": "vODi4",
+                      "name": "formTitle",
+                      "fill": "$--text-primary",
+                      "content": "Welcome Back",
+                      "fontFamily": "Inter",
+                      "fontSize": 28,
+                      "fontWeight": "600"
+                    },
+                    {
+                      "type": "text",
+                      "id": "XUPiO",
+                      "name": "formSubtitle",
+                      "fill": "$--text-secondary",
+                      "content": "Sign in to your account to continue",
+                      "fontFamily": "Inter",
+                      "fontSize": 14,
+                      "fontWeight": "normal"
+                    }
+                  ]
+                },
+                {
+                  "type": "frame",
+                  "id": "IHs0Y",
+                  "name": "emailField",
+                  "width": "fill_container",
+                  "layout": "vertical",
+                  "gap": 6,
+                  "children": [
+                    {
+                      "type": "text",
+                      "id": "4e2YU",
+                      "name": "emailLabel",
+                      "fill": "$--text-primary",
+                      "content": "Email",
+                      "fontFamily": "Inter",
+                      "fontSize": 14,
+                      "fontWeight": "500"
+                    },
+                    {
+                      "type": "frame",
+                      "id": "9JEUD",
+                      "name": "emailInput",
+                      "width": "fill_container",
+                      "height": 44,
+                      "fill": "$--background-light",
+                      "cornerRadius": "$--radius-md",
+                      "stroke": {
+                        "align": "inside",
+                        "thickness": 1,
+                        "fill": "$--border"
+                      },
+                      "padding": [
+                        0,
+                        16
+                      ],
+                      "alignItems": "center",
+                      "children": [
+                        {
+                          "type": "text",
+                          "id": "1SBU8",
+                          "name": "emailPlaceholder",
+                          "fill": "$--text-muted",
+                          "content": "Enter your email",
+                          "fontFamily": "Inter",
+                          "fontSize": 14,
+                          "fontWeight": "normal"
+                        }
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "type": "frame",
+                  "id": "2PdwM",
+                  "name": "passwordField",
+                  "width": "fill_container",
+                  "layout": "vertical",
+                  "gap": 6,
+                  "children": [
+                    {
+                      "type": "text",
+                      "id": "qbGOx",
+                      "name": "passwordLabel",
+                      "fill": "$--text-primary",
+                      "content": "Password",
+                      "fontFamily": "Inter",
+                      "fontSize": 14,
+                      "fontWeight": "500"
+                    },
+                    {
+                      "type": "frame",
+                      "id": "Wv2Zu",
+                      "name": "passwordInput",
+                      "width": "fill_container",
+                      "height": 44,
+                      "fill": "$--background-light",
+                      "cornerRadius": "$--radius-md",
+                      "stroke": {
+                        "align": "inside",
+                        "thickness": 1,
+                        "fill": "$--border"
+                      },
+                      "padding": [
+                        0,
+                        16
+                      ],
+                      "justifyContent": "space_between",
+                      "alignItems": "center",
+                      "children": [
+                        {
+                          "type": "text",
+                          "id": "4binx",
+                          "name": "passwordPlaceholder",
+                          "fill": "$--text-muted",
+                          "content": "Enter your password",
+                          "fontFamily": "Inter",
+                          "fontSize": 14,
+                          "fontWeight": "normal"
+                        },
+                        {
+                          "type": "icon_font",
+                          "id": "hcWzm",
+                          "name": "passwordIcon",
+                          "width": 20,
+                          "height": 20,
+                          "iconFontName": "eye-off",
+                          "iconFontFamily": "lucide",
+                          "fill": "$--text-muted"
+                        }
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "type": "frame",
+                  "id": "jARaZ",
+                  "name": "loginButton",
+                  "width": "fill_container",
+                  "height": 48,
+                  "fill": "$--primary",
+                  "cornerRadius": "$--radius-md",
+                  "justifyContent": "center",
+                  "alignItems": "center",
+                  "children": [
+                    {
+                      "type": "text",
+                      "id": "VRRGp",
+                      "name": "loginButtonText",
+                      "fill": "#FFFFFF",
+                      "content": "Sign In",
+                      "fontFamily": "Inter",
+                      "fontSize": 16,
+                      "fontWeight": "600"
+                    }
+                  ]
+                },
+                {
+                  "type": "frame",
+                  "id": "X4Wft",
+                  "name": "signupPrompt",
+                  "width": "fill_container",
+                  "gap": 4,
+                  "justifyContent": "center",
+                  "children": [
+                    {
+                      "type": "text",
+                      "id": "2Tw61",
+                      "name": "signupText",
+                      "fill": "$--text-secondary",
+                      "content": "Don't have an account?",
+                      "fontFamily": "Inter",
+                      "fontSize": 14,
+                      "fontWeight": "normal"
+                    },
+                    {
+                      "type": "text",
+                      "id": "vGpB9",
+                      "name": "signupLink",
+                      "fill": "$--primary",
+                      "content": "Sign Up",
+                      "fontFamily": "Inter",
+                      "fontSize": 14,
+                      "fontWeight": "600"
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "type": "frame",
+      "id": "Hl2mT",
+      "x": 383,
+      "y": 1019,
+      "name": "Mobile - Login",
+      "width": 390,
+      "height": 844,
+      "fill": "$--background",
+      "layout": "vertical",
+      "children": [
+        {
+          "type": "frame",
+          "id": "i6pbl",
+          "name": "mHeader",
+          "width": "fill_container",
+          "fill": "$--primary",
+          "layout": "vertical",
+          "gap": 16,
+          "padding": [
+            40,
+            24,
+            32,
+            24
+          ],
+          "alignItems": "center",
+          "children": [
+            {
+              "type": "icon_font",
+              "id": "VT4nn",
+              "name": "mBrandIcon",
+              "width": 48,
+              "height": 48,
+              "iconFontName": "book-open",
+              "iconFontFamily": "lucide",
+              "fill": "#FFFFFF"
+            },
+            {
+              "type": "text",
+              "id": "jNxd9",
+              "name": "mBrandTitle",
+              "fill": "#FFFFFF",
+              "content": "Lesson Plan Generator",
+              "textAlign": "center",
+              "fontFamily": "Inter",
+              "fontSize": 22,
+              "fontWeight": "600"
+            },
+            {
+              "type": "text",
+              "id": "qjCcy",
+              "name": "mBrandSubtitle",
+              "opacity": 0.8,
+              "fill": "#FFFFFF",
+              "content": "Create professional lesson plans with AI",
+              "textAlign": "center",
+              "fontFamily": "Inter",
+              "fontSize": 14,
+              "fontWeight": "normal"
+            }
+          ]
+        },
+        {
+          "type": "frame",
+          "id": "hbaTD",
+          "name": "mContent",
+          "width": "fill_container",
+          "height": "fill_container",
+          "fill": "$--surface",
+          "cornerRadius": [
+            24,
+            24,
+            0,
+            0
+          ],
+          "layout": "vertical",
+          "gap": 20,
+          "padding": 24,
+          "children": [
+            {
+              "type": "frame",
+              "id": "XgBRf",
+              "name": "mFormHeader",
+              "width": "fill_container",
+              "layout": "vertical",
+              "gap": 4,
+              "children": [
+                {
+                  "type": "text",
+                  "id": "8VXEo",
+                  "name": "mFormTitle",
+                  "fill": "$--text-primary",
+                  "content": "Welcome Back",
+                  "fontFamily": "Inter",
+                  "fontSize": 24,
+                  "fontWeight": "600"
+                },
+                {
+                  "type": "text",
+                  "id": "WgPGl",
+                  "name": "mFormSubtitle",
+                  "fill": "$--text-secondary",
+                  "content": "Sign in to continue",
+                  "fontFamily": "Inter",
+                  "fontSize": 14,
+                  "fontWeight": "normal"
+                }
+              ]
+            },
+            {
+              "type": "frame",
+              "id": "eb178",
+              "name": "mEmailField",
+              "width": "fill_container",
+              "layout": "vertical",
+              "gap": 6,
+              "children": [
+                {
+                  "type": "text",
+                  "id": "dpvO2",
+                  "name": "mEmailLabel",
+                  "fill": "$--text-primary",
+                  "content": "Email",
+                  "fontFamily": "Inter",
+                  "fontSize": 14,
+                  "fontWeight": "500"
+                },
+                {
+                  "type": "frame",
+                  "id": "l1Xqh",
+                  "name": "mEmailInput",
+                  "width": "fill_container",
+                  "height": 48,
+                  "fill": "$--background-light",
+                  "cornerRadius": "$--radius-md",
+                  "stroke": {
+                    "align": "inside",
+                    "thickness": 1,
+                    "fill": "$--border"
+                  },
+                  "padding": [
+                    0,
+                    16
+                  ],
+                  "alignItems": "center",
+                  "children": [
+                    {
+                      "type": "text",
+                      "id": "Na5Kx",
+                      "name": "mEmailPlaceholder",
+                      "fill": "$--text-muted",
+                      "content": "Enter your email",
+                      "fontFamily": "Inter",
+                      "fontSize": 14,
+                      "fontWeight": "normal"
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "type": "frame",
+              "id": "hZtCn",
+              "name": "mPasswordField",
+              "width": "fill_container",
+              "layout": "vertical",
+              "gap": 6,
+              "children": [
+                {
+                  "type": "text",
+                  "id": "nw01k",
+                  "name": "mPasswordLabel",
+                  "fill": "$--text-primary",
+                  "content": "Password",
+                  "fontFamily": "Inter",
+                  "fontSize": 14,
+                  "fontWeight": "500"
+                },
+                {
+                  "type": "frame",
+                  "id": "aKZmw",
+                  "name": "mPasswordInput",
+                  "width": "fill_container",
+                  "height": 48,
+                  "fill": "$--background-light",
+                  "cornerRadius": "$--radius-md",
+                  "stroke": {
+                    "align": "inside",
+                    "thickness": 1,
+                    "fill": "$--border"
+                  },
+                  "padding": [
+                    0,
+                    16
+                  ],
+                  "justifyContent": "space_between",
+                  "alignItems": "center",
+                  "children": [
+                    {
+                      "type": "text",
+                      "id": "odfsY",
+                      "name": "mPasswordPlaceholder",
+                      "fill": "$--text-muted",
+                      "content": "Enter your password",
+                      "fontFamily": "Inter",
+                      "fontSize": 14,
+                      "fontWeight": "normal"
+                    },
+                    {
+                      "type": "icon_font",
+                      "id": "DW3WA",
+                      "name": "mPasswordIcon",
+                      "width": 20,
+                      "height": 20,
+                      "iconFontName": "eye-off",
+                      "iconFontFamily": "lucide",
+                      "fill": "$--text-muted"
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "type": "frame",
+              "id": "LDOVl",
+              "name": "mLoginButton",
+              "width": "fill_container",
+              "height": 52,
+              "fill": "$--primary",
+              "cornerRadius": "$--radius-md",
+              "justifyContent": "center",
+              "alignItems": "center",
+              "children": [
+                {
+                  "type": "text",
+                  "id": "AVjxY",
+                  "name": "mLoginButtonText",
+                  "fill": "#FFFFFF",
+                  "content": "Sign In",
+                  "fontFamily": "Inter",
+                  "fontSize": 16,
+                  "fontWeight": "600"
+                }
+              ]
+            },
+            {
+              "type": "frame",
+              "id": "coXaM",
+              "name": "mSignupPrompt",
+              "width": "fill_container",
+              "gap": 4,
+              "justifyContent": "center",
+              "children": [
+                {
+                  "type": "text",
+                  "id": "h4AUJ",
+                  "name": "mSignupText",
+                  "fill": "$--text-secondary",
+                  "content": "Don't have an account?",
+                  "fontFamily": "Inter",
+                  "fontSize": 14,
+                  "fontWeight": "normal"
+                },
+                {
+                  "type": "text",
+                  "id": "rArWv",
+                  "name": "mSignupLink",
+                  "fill": "$--primary",
+                  "content": "Sign Up",
+                  "fontFamily": "Inter",
+                  "fontSize": 14,
+                  "fontWeight": "600"
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "type": "frame",
+      "id": "kAGYl",
+      "x": -1113,
+      "y": 1919,
+      "name": "Desktop - Signup",
+      "width": 1440,
+      "height": 900,
+      "fill": "$--background",
+      "children": [
+        {
+          "type": "frame",
+          "id": "iv0JM",
+          "name": "sLeftPanel",
+          "width": 560,
+          "height": "fill_container",
+          "fill": "$--primary",
+          "layout": "vertical",
+          "gap": 24,
+          "padding": 48,
+          "justifyContent": "center",
+          "alignItems": "center",
+          "children": [
+            {
+              "type": "icon_font",
+              "id": "HK1VX",
+              "name": "sBrandIcon",
+              "width": 64,
+              "height": 64,
+              "iconFontName": "book-open",
+              "iconFontFamily": "lucide",
+              "fill": "#FFFFFF"
+            },
+            {
+              "type": "text",
+              "id": "4Qugf",
+              "name": "sBrandTitle",
+              "fill": "#FFFFFF",
+              "content": "Lesson Plan Generator",
+              "textAlign": "center",
+              "fontFamily": "Inter",
+              "fontSize": 36,
+              "fontWeight": "600"
+            },
+            {
+              "type": "text",
+              "id": "HYoZq",
+              "name": "sBrandSubtitle",
+              "opacity": 0.8,
+              "fill": "#FFFFFF",
+              "textGrowth": "fixed-width",
+              "width": 360,
+              "content": "Join thousands of educators creating better lesson plans",
+              "lineHeight": 1.5,
+              "textAlign": "center",
+              "fontFamily": "Inter",
+              "fontSize": 16,
+              "fontWeight": "normal"
+            }
+          ]
+        },
+        {
+          "type": "frame",
+          "id": "jcgDf",
+          "name": "sRightPanel",
+          "width": "fill_container",
+          "height": "fill_container",
+          "fill": "$--surface",
+          "layout": "vertical",
+          "padding": 48,
+          "justifyContent": "center",
+          "alignItems": "center",
+          "children": [
+            {
+              "type": "frame",
+              "id": "4L80p",
+              "name": "signupForm",
+              "width": 480,
+              "layout": "vertical",
+              "gap": 20,
+              "children": [
+                {
+                  "type": "frame",
+                  "id": "1Whu3",
+                  "name": "sFormHeader",
+                  "width": "fill_container",
+                  "layout": "vertical",
+                  "gap": 8,
+                  "children": [
+                    {
+                      "type": "text",
+                      "id": "b0pri",
+                      "name": "sFormTitle",
+                      "fill": "$--text-primary",
+                      "content": "Create Account",
+                      "fontFamily": "Inter",
+                      "fontSize": 28,
+                      "fontWeight": "600"
+                    },
+                    {
+                      "type": "text",
+                      "id": "QZodm",
+                      "name": "sFormSubtitle",
+                      "fill": "$--text-secondary",
+                      "content": "Fill in your details to get started",
+                      "fontFamily": "Inter",
+                      "fontSize": 14,
+                      "fontWeight": "normal"
+                    }
+                  ]
+                },
+                {
+                  "type": "frame",
+                  "id": "cyeYJ",
+                  "name": "nameRow",
+                  "width": "fill_container",
+                  "gap": 16,
+                  "children": [
+                    {
+                      "type": "frame",
+                      "id": "DOEu3",
+                      "name": "firstNameField",
+                      "width": "fill_container",
+                      "layout": "vertical",
+                      "gap": 6,
+                      "children": [
+                        {
+                          "type": "text",
+                          "id": "iG9NP",
+                          "name": "firstNameLabel",
+                          "fill": "$--text-primary",
+                          "content": "First Name",
+                          "fontFamily": "Inter",
+                          "fontSize": 14,
+                          "fontWeight": "500"
+                        },
+                        {
+                          "type": "frame",
+                          "id": "8KteB",
+                          "name": "firstNameInput",
+                          "width": "fill_container",
+                          "height": 44,
+                          "fill": "$--background-light",
+                          "cornerRadius": "$--radius-md",
+                          "stroke": {
+                            "align": "inside",
+                            "thickness": 1,
+                            "fill": "$--border"
+                          },
+                          "padding": [
+                            0,
+                            16
+                          ],
+                          "alignItems": "center",
+                          "children": [
+                            {
+                              "type": "text",
+                              "id": "tmMjK",
+                              "name": "firstNamePlaceholder",
+                              "fill": "$--text-muted",
+                              "content": "First name",
+                              "fontFamily": "Inter",
+                              "fontSize": 14,
+                              "fontWeight": "normal"
+                            }
+                          ]
+                        }
+                      ]
+                    },
+                    {
+                      "type": "frame",
+                      "id": "rMNgw",
+                      "name": "lastNameField",
+                      "width": "fill_container",
+                      "layout": "vertical",
+                      "gap": 6,
+                      "children": [
+                        {
+                          "type": "text",
+                          "id": "oIV6m",
+                          "name": "lastNameLabel",
+                          "fill": "$--text-primary",
+                          "content": "Last Name",
+                          "fontFamily": "Inter",
+                          "fontSize": 14,
+                          "fontWeight": "500"
+                        },
+                        {
+                          "type": "frame",
+                          "id": "XcTEC",
+                          "name": "lastNameInput",
+                          "width": "fill_container",
+                          "height": 44,
+                          "fill": "$--background-light",
+                          "cornerRadius": "$--radius-md",
+                          "stroke": {
+                            "align": "inside",
+                            "thickness": 1,
+                            "fill": "$--border"
+                          },
+                          "padding": [
+                            0,
+                            16
+                          ],
+                          "alignItems": "center",
+                          "children": [
+                            {
+                              "type": "text",
+                              "id": "CF3PB",
+                              "name": "lastNamePlaceholder",
+                              "fill": "$--text-muted",
+                              "content": "Last name",
+                              "fontFamily": "Inter",
+                              "fontSize": 14,
+                              "fontWeight": "normal"
+                            }
+                          ]
+                        }
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "type": "frame",
+                  "id": "6nuhL",
+                  "name": "sEmailField",
+                  "width": "fill_container",
+                  "layout": "vertical",
+                  "gap": 6,
+                  "children": [
+                    {
+                      "type": "text",
+                      "id": "vTVyi",
+                      "name": "sEmailLabel",
+                      "fill": "$--text-primary",
+                      "content": "Email",
+                      "fontFamily": "Inter",
+                      "fontSize": 14,
+                      "fontWeight": "500"
+                    },
+                    {
+                      "type": "frame",
+                      "id": "glois",
+                      "name": "sEmailInput",
+                      "width": "fill_container",
+                      "height": 44,
+                      "fill": "$--background-light",
+                      "cornerRadius": "$--radius-md",
+                      "stroke": {
+                        "align": "inside",
+                        "thickness": 1,
+                        "fill": "$--border"
+                      },
+                      "padding": [
+                        0,
+                        16
+                      ],
+                      "alignItems": "center",
+                      "children": [
+                        {
+                          "type": "text",
+                          "id": "mbMB8",
+                          "name": "sEmailPlaceholder",
+                          "fill": "$--text-muted",
+                          "content": "Enter your email",
+                          "fontFamily": "Inter",
+                          "fontSize": 14,
+                          "fontWeight": "normal"
+                        }
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "type": "frame",
+                  "id": "kIC8v",
+                  "name": "sPasswordField",
+                  "width": "fill_container",
+                  "layout": "vertical",
+                  "gap": 6,
+                  "children": [
+                    {
+                      "type": "text",
+                      "id": "j32jS",
+                      "name": "sPasswordLabel",
+                      "fill": "$--text-primary",
+                      "content": "Password",
+                      "fontFamily": "Inter",
+                      "fontSize": 14,
+                      "fontWeight": "500"
+                    },
+                    {
+                      "type": "frame",
+                      "id": "vxqae",
+                      "name": "sPasswordInput",
+                      "width": "fill_container",
+                      "height": 44,
+                      "fill": "$--background-light",
+                      "cornerRadius": "$--radius-md",
+                      "stroke": {
+                        "align": "inside",
+                        "thickness": 1,
+                        "fill": "$--border"
+                      },
+                      "padding": [
+                        0,
+                        16
+                      ],
+                      "justifyContent": "space_between",
+                      "alignItems": "center",
+                      "children": [
+                        {
+                          "type": "text",
+                          "id": "V8z6S",
+                          "name": "sPasswordPlaceholder",
+                          "fill": "$--text-muted",
+                          "content": "Create a password",
+                          "fontFamily": "Inter",
+                          "fontSize": 14,
+                          "fontWeight": "normal"
+                        },
+                        {
+                          "type": "icon_font",
+                          "id": "b3TL7",
+                          "name": "sPasswordIcon",
+                          "width": 20,
+                          "height": 20,
+                          "iconFontName": "eye-off",
+                          "iconFontFamily": "lucide",
+                          "fill": "$--text-muted"
+                        }
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "type": "frame",
+                  "id": "qnRLD",
+                  "name": "roleSchoolRow",
+                  "width": "fill_container",
+                  "gap": 16,
+                  "children": [
+                    {
+                      "type": "frame",
+                      "id": "k7AS2",
+                      "name": "roleField",
+                      "width": "fill_container",
+                      "layout": "vertical",
+                      "gap": 6,
+                      "children": [
+                        {
+                          "type": "text",
+                          "id": "lB2GA",
+                          "name": "roleLabel",
+                          "fill": "$--text-primary",
+                          "content": "Role",
+                          "fontFamily": "Inter",
+                          "fontSize": 14,
+                          "fontWeight": "500"
+                        },
+                        {
+                          "type": "frame",
+                          "id": "VSt1O",
+                          "name": "roleDropdown",
+                          "width": "fill_container",
+                          "height": 44,
+                          "fill": "$--background-light",
+                          "cornerRadius": "$--radius-md",
+                          "stroke": {
+                            "align": "inside",
+                            "thickness": 1,
+                            "fill": "$--border"
+                          },
+                          "padding": [
+                            0,
+                            16
+                          ],
+                          "justifyContent": "space_between",
+                          "alignItems": "center",
+                          "children": [
+                            {
+                              "type": "text",
+                              "id": "A1Pji",
+                              "name": "roleValue",
+                              "fill": "$--text-muted",
+                              "content": "Select role",
+                              "fontFamily": "Inter",
+                              "fontSize": 14,
+                              "fontWeight": "normal"
+                            },
+                            {
+                              "type": "icon_font",
+                              "id": "Ovad1",
+                              "name": "roleIcon",
+                              "width": 16,
+                              "height": 16,
+                              "iconFontName": "chevron-down",
+                              "iconFontFamily": "lucide",
+                              "fill": "$--text-muted"
+                            }
+                          ]
+                        }
+                      ]
+                    },
+                    {
+                      "type": "frame",
+                      "id": "zCkeO",
+                      "name": "schoolField",
+                      "width": "fill_container",
+                      "layout": "vertical",
+                      "gap": 6,
+                      "children": [
+                        {
+                          "type": "text",
+                          "id": "6Y0ps",
+                          "name": "schoolLabel",
+                          "fill": "$--text-primary",
+                          "content": "School Branch",
+                          "fontFamily": "Inter",
+                          "fontSize": 14,
+                          "fontWeight": "500"
+                        },
+                        {
+                          "type": "frame",
+                          "id": "X5c96",
+                          "name": "schoolInput",
+                          "width": "fill_container",
+                          "height": 44,
+                          "fill": "$--background-light",
+                          "cornerRadius": "$--radius-md",
+                          "stroke": {
+                            "align": "inside",
+                            "thickness": 1,
+                            "fill": "$--border"
+                          },
+                          "padding": [
+                            0,
+                            16
+                          ],
+                          "alignItems": "center",
+                          "children": [
+                            {
+                              "type": "text",
+                              "id": "0SW3O",
+                              "name": "schoolPlaceholder",
+                              "fill": "$--text-muted",
+                              "content": "School branch",
+                              "fontFamily": "Inter",
+                              "fontSize": 14,
+                              "fontWeight": "normal"
+                            }
+                          ]
+                        }
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "type": "frame",
+                  "id": "qYqqI",
+                  "name": "gradeSubjectRow",
+                  "width": "fill_container",
+                  "gap": 16,
+                  "children": [
+                    {
+                      "type": "frame",
+                      "id": "ngfVC",
+                      "name": "gradeField",
+                      "width": "fill_container",
+                      "layout": "vertical",
+                      "gap": 6,
+                      "children": [
+                        {
+                          "type": "text",
+                          "id": "nKCxa",
+                          "name": "gradeLabel",
+                          "fill": "$--text-primary",
+                          "content": "Grade",
+                          "fontFamily": "Inter",
+                          "fontSize": 14,
+                          "fontWeight": "500"
+                        },
+                        {
+                          "type": "frame",
+                          "id": "DN9dz",
+                          "name": "gradeDropdown",
+                          "width": "fill_container",
+                          "height": 44,
+                          "fill": "$--background-light",
+                          "cornerRadius": "$--radius-md",
+                          "stroke": {
+                            "align": "inside",
+                            "thickness": 1,
+                            "fill": "$--border"
+                          },
+                          "padding": [
+                            0,
+                            16
+                          ],
+                          "justifyContent": "space_between",
+                          "alignItems": "center",
+                          "children": [
+                            {
+                              "type": "text",
+                              "id": "GGQSS",
+                              "name": "gradeValue",
+                              "fill": "$--text-muted",
+                              "content": "Select grade",
+                              "fontFamily": "Inter",
+                              "fontSize": 14,
+                              "fontWeight": "normal"
+                            },
+                            {
+                              "type": "icon_font",
+                              "id": "lE08D",
+                              "name": "gradeIcon",
+                              "width": 16,
+                              "height": 16,
+                              "iconFontName": "chevron-down",
+                              "iconFontFamily": "lucide",
+                              "fill": "$--text-muted"
+                            }
+                          ]
+                        }
+                      ]
+                    },
+                    {
+                      "type": "frame",
+                      "id": "naN2R",
+                      "name": "subjectField",
+                      "width": "fill_container",
+                      "layout": "vertical",
+                      "gap": 6,
+                      "children": [
+                        {
+                          "type": "text",
+                          "id": "b7Elr",
+                          "name": "subjectLabel",
+                          "fill": "$--text-primary",
+                          "content": "Subject",
+                          "fontFamily": "Inter",
+                          "fontSize": 14,
+                          "fontWeight": "500"
+                        },
+                        {
+                          "type": "frame",
+                          "id": "hCVFM",
+                          "name": "subjectDropdown",
+                          "width": "fill_container",
+                          "height": 44,
+                          "fill": "$--background-light",
+                          "cornerRadius": "$--radius-md",
+                          "stroke": {
+                            "align": "inside",
+                            "thickness": 1,
+                            "fill": "$--border"
+                          },
+                          "padding": [
+                            0,
+                            16
+                          ],
+                          "justifyContent": "space_between",
+                          "alignItems": "center",
+                          "children": [
+                            {
+                              "type": "text",
+                              "id": "csE4i",
+                              "name": "subjectValue",
+                              "fill": "$--text-muted",
+                              "content": "Select subject",
+                              "fontFamily": "Inter",
+                              "fontSize": 14,
+                              "fontWeight": "normal"
+                            },
+                            {
+                              "type": "icon_font",
+                              "id": "tDKLW",
+                              "name": "subjectIcon",
+                              "width": 16,
+                              "height": 16,
+                              "iconFontName": "chevron-down",
+                              "iconFontFamily": "lucide",
+                              "fill": "$--text-muted"
+                            }
+                          ]
+                        }
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "type": "frame",
+                  "id": "J8vS7",
+                  "name": "signupButton",
+                  "width": "fill_container",
+                  "height": 48,
+                  "fill": "$--primary",
+                  "cornerRadius": "$--radius-md",
+                  "justifyContent": "center",
+                  "alignItems": "center",
+                  "children": [
+                    {
+                      "type": "text",
+                      "id": "4RjZk",
+                      "name": "signupButtonText",
+                      "fill": "#FFFFFF",
+                      "content": "Create Account",
+                      "fontFamily": "Inter",
+                      "fontSize": 16,
+                      "fontWeight": "600"
+                    }
+                  ]
+                },
+                {
+                  "type": "frame",
+                  "id": "qFyAc",
+                  "name": "loginPrompt",
+                  "width": "fill_container",
+                  "gap": 4,
+                  "justifyContent": "center",
+                  "children": [
+                    {
+                      "type": "text",
+                      "id": "sxKtj",
+                      "name": "loginText",
+                      "fill": "$--text-secondary",
+                      "content": "Already have an account?",
+                      "fontFamily": "Inter",
+                      "fontSize": 14,
+                      "fontWeight": "normal"
+                    },
+                    {
+                      "type": "text",
+                      "id": "qUyhG",
+                      "name": "loginLink",
+                      "fill": "$--primary",
+                      "content": "Sign In",
+                      "fontFamily": "Inter",
+                      "fontSize": 14,
+                      "fontWeight": "600"
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "type": "frame",
+      "id": "OH7P6",
+      "x": 383,
+      "y": 1919,
+      "name": "Mobile - Signup",
+      "clip": true,
+      "width": 390,
+      "height": 900,
+      "fill": "$--background",
+      "layout": "vertical",
+      "children": [
+        {
+          "type": "frame",
+          "id": "azJuP",
+          "name": "smHeader",
+          "width": "fill_container",
+          "fill": "$--primary",
+          "layout": "vertical",
+          "gap": 12,
+          "padding": [
+            32,
+            24,
+            24,
+            24
+          ],
+          "alignItems": "center",
+          "children": [
+            {
+              "type": "icon_font",
+              "id": "PiHE7",
+              "name": "smBrandIcon",
+              "width": 40,
+              "height": 40,
+              "iconFontName": "book-open",
+              "iconFontFamily": "lucide",
+              "fill": "#FFFFFF"
+            },
+            {
+              "type": "text",
+              "id": "NlwtP",
+              "name": "smBrandTitle",
+              "fill": "#FFFFFF",
+              "content": "Lesson Plan Generator",
+              "textAlign": "center",
+              "fontFamily": "Inter",
+              "fontSize": 20,
+              "fontWeight": "600"
+            }
+          ]
+        },
+        {
+          "type": "frame",
+          "id": "Mwc3J",
+          "name": "smContent",
+          "width": "fill_container",
+          "height": "fill_container",
+          "fill": "$--surface",
+          "cornerRadius": [
+            20,
+            20,
+            0,
+            0
+          ],
+          "layout": "vertical",
+          "gap": 16,
+          "padding": 20,
+          "children": [
+            {
+              "type": "frame",
+              "id": "u8RC8",
+              "name": "smFormHeader",
+              "width": "fill_container",
+              "layout": "vertical",
+              "gap": 4,
+              "children": [
+                {
+                  "type": "text",
+                  "id": "sCzgx",
+                  "name": "smFormTitle",
+                  "fill": "$--text-primary",
+                  "content": "Create Account",
+                  "fontFamily": "Inter",
+                  "fontSize": 22,
+                  "fontWeight": "600"
+                },
+                {
+                  "type": "text",
+                  "id": "oJoEG",
+                  "name": "smFormSubtitle",
+                  "fill": "$--text-secondary",
+                  "content": "Fill in your details",
+                  "fontFamily": "Inter",
+                  "fontSize": 13,
+                  "fontWeight": "normal"
+                }
+              ]
+            },
+            {
+              "type": "frame",
+              "id": "ZyNtu",
+              "name": "smNameRow",
+              "width": "fill_container",
+              "gap": 12,
+              "children": [
+                {
+                  "type": "frame",
+                  "id": "WdTaZ",
+                  "name": "smFirstNameField",
+                  "width": "fill_container",
+                  "layout": "vertical",
+                  "gap": 5,
+                  "children": [
+                    {
+                      "type": "text",
+                      "id": "ilA2o",
+                      "name": "smFirstNameLabel",
+                      "fill": "$--text-primary",
+                      "content": "First Name",
+                      "fontFamily": "Inter",
+                      "fontSize": 13,
+                      "fontWeight": "500"
+                    },
+                    {
+                      "type": "frame",
+                      "id": "vMc2w",
+                      "name": "smFirstNameInput",
+                      "width": "fill_container",
+                      "height": 44,
+                      "fill": "$--background-light",
+                      "cornerRadius": "$--radius-md",
+                      "stroke": {
+                        "align": "inside",
+                        "thickness": 1,
+                        "fill": "$--border"
+                      },
+                      "padding": [
+                        0,
+                        12
+                      ],
+                      "alignItems": "center",
+                      "children": [
+                        {
+                          "type": "text",
+                          "id": "zgW2V",
+                          "name": "smFirstNamePlaceholder",
+                          "fill": "$--text-muted",
+                          "content": "First",
+                          "fontFamily": "Inter",
+                          "fontSize": 13,
+                          "fontWeight": "normal"
+                        }
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "type": "frame",
+                  "id": "TJijA",
+                  "name": "smLastNameField",
+                  "width": "fill_container",
+                  "layout": "vertical",
+                  "gap": 5,
+                  "children": [
+                    {
+                      "type": "text",
+                      "id": "MPak6",
+                      "name": "smLastNameLabel",
+                      "fill": "$--text-primary",
+                      "content": "Last Name",
+                      "fontFamily": "Inter",
+                      "fontSize": 13,
+                      "fontWeight": "500"
+                    },
+                    {
+                      "type": "frame",
+                      "id": "pdEpu",
+                      "name": "smLastNameInput",
+                      "width": "fill_container",
+                      "height": 44,
+                      "fill": "$--background-light",
+                      "cornerRadius": "$--radius-md",
+                      "stroke": {
+                        "align": "inside",
+                        "thickness": 1,
+                        "fill": "$--border"
+                      },
+                      "padding": [
+                        0,
+                        12
+                      ],
+                      "alignItems": "center",
+                      "children": [
+                        {
+                          "type": "text",
+                          "id": "YxMdD",
+                          "name": "smLastNamePlaceholder",
+                          "fill": "$--text-muted",
+                          "content": "Last",
+                          "fontFamily": "Inter",
+                          "fontSize": 13,
+                          "fontWeight": "normal"
+                        }
+                      ]
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "type": "frame",
+              "id": "y3nwL",
+              "name": "smEmailField",
+              "width": "fill_container",
+              "layout": "vertical",
+              "gap": 5,
+              "children": [
+                {
+                  "type": "text",
+                  "id": "D8aPP",
+                  "name": "smEmailLabel",
+                  "fill": "$--text-primary",
+                  "content": "Email",
+                  "fontFamily": "Inter",
+                  "fontSize": 13,
+                  "fontWeight": "500"
+                },
+                {
+                  "type": "frame",
+                  "id": "EzgLX",
+                  "name": "smEmailInput",
+                  "width": "fill_container",
+                  "height": 44,
+                  "fill": "$--background-light",
+                  "cornerRadius": "$--radius-md",
+                  "stroke": {
+                    "align": "inside",
+                    "thickness": 1,
+                    "fill": "$--border"
+                  },
+                  "padding": [
+                    0,
+                    12
+                  ],
+                  "alignItems": "center",
+                  "children": [
+                    {
+                      "type": "text",
+                      "id": "Pc8jZ",
+                      "name": "smEmailPlaceholder",
+                      "fill": "$--text-muted",
+                      "content": "Enter your email",
+                      "fontFamily": "Inter",
+                      "fontSize": 13,
+                      "fontWeight": "normal"
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "type": "frame",
+              "id": "4ptrv",
+              "name": "smPasswordField",
+              "width": "fill_container",
+              "layout": "vertical",
+              "gap": 5,
+              "children": [
+                {
+                  "type": "text",
+                  "id": "fZzcR",
+                  "name": "smPasswordLabel",
+                  "fill": "$--text-primary",
+                  "content": "Password",
+                  "fontFamily": "Inter",
+                  "fontSize": 13,
+                  "fontWeight": "500"
+                },
+                {
+                  "type": "frame",
+                  "id": "qbse8",
+                  "name": "smPasswordInput",
+                  "width": "fill_container",
+                  "height": 44,
+                  "fill": "$--background-light",
+                  "cornerRadius": "$--radius-md",
+                  "stroke": {
+                    "align": "inside",
+                    "thickness": 1,
+                    "fill": "$--border"
+                  },
+                  "padding": [
+                    0,
+                    12
+                  ],
+                  "justifyContent": "space_between",
+                  "alignItems": "center",
+                  "children": [
+                    {
+                      "type": "text",
+                      "id": "ySQHe",
+                      "name": "smPasswordPlaceholder",
+                      "fill": "$--text-muted",
+                      "content": "Create password",
+                      "fontFamily": "Inter",
+                      "fontSize": 13,
+                      "fontWeight": "normal"
+                    },
+                    {
+                      "type": "icon_font",
+                      "id": "NoUOv",
+                      "name": "smPasswordIcon",
+                      "width": 18,
+                      "height": 18,
+                      "iconFontName": "eye-off",
+                      "iconFontFamily": "lucide",
+                      "fill": "$--text-muted"
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "type": "frame",
+              "id": "o7XuL",
+              "name": "smRoleSchoolRow",
+              "width": "fill_container",
+              "gap": 12,
+              "children": [
+                {
+                  "type": "frame",
+                  "id": "laXWG",
+                  "name": "smRoleField",
+                  "width": "fill_container",
+                  "layout": "vertical",
+                  "gap": 5,
+                  "children": [
+                    {
+                      "type": "text",
+                      "id": "S6IpT",
+                      "name": "smRoleLabel",
+                      "fill": "$--text-primary",
+                      "content": "Role",
+                      "fontFamily": "Inter",
+                      "fontSize": 13,
+                      "fontWeight": "500"
+                    },
+                    {
+                      "type": "frame",
+                      "id": "AFBrP",
+                      "name": "smRoleDropdown",
+                      "width": "fill_container",
+                      "height": 44,
+                      "fill": "$--background-light",
+                      "cornerRadius": "$--radius-md",
+                      "stroke": {
+                        "align": "inside",
+                        "thickness": 1,
+                        "fill": "$--border"
+                      },
+                      "padding": [
+                        0,
+                        12
+                      ],
+                      "justifyContent": "space_between",
+                      "alignItems": "center",
+                      "children": [
+                        {
+                          "type": "text",
+                          "id": "fgebc",
+                          "name": "smRoleValue",
+                          "fill": "$--text-muted",
+                          "content": "Role",
+                          "fontFamily": "Inter",
+                          "fontSize": 13,
+                          "fontWeight": "normal"
+                        },
+                        {
+                          "type": "icon_font",
+                          "id": "RhbHf",
+                          "name": "smRoleIcon",
+                          "width": 14,
+                          "height": 14,
+                          "iconFontName": "chevron-down",
+                          "iconFontFamily": "lucide",
+                          "fill": "$--text-muted"
+                        }
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "type": "frame",
+                  "id": "BalzL",
+                  "name": "smSchoolField",
+                  "width": "fill_container",
+                  "layout": "vertical",
+                  "gap": 5,
+                  "children": [
+                    {
+                      "type": "text",
+                      "id": "8nEnR",
+                      "name": "smSchoolLabel",
+                      "fill": "$--text-primary",
+                      "content": "School Branch",
+                      "fontFamily": "Inter",
+                      "fontSize": 13,
+                      "fontWeight": "500"
+                    },
+                    {
+                      "type": "frame",
+                      "id": "Et8MM",
+                      "name": "smSchoolInput",
+                      "width": "fill_container",
+                      "height": 44,
+                      "fill": "$--background-light",
+                      "cornerRadius": "$--radius-md",
+                      "stroke": {
+                        "align": "inside",
+                        "thickness": 1,
+                        "fill": "$--border"
+                      },
+                      "padding": [
+                        0,
+                        12
+                      ],
+                      "alignItems": "center",
+                      "children": [
+                        {
+                          "type": "text",
+                          "id": "Zbn0Y",
+                          "name": "smSchoolPlaceholder",
+                          "fill": "$--text-muted",
+                          "content": "Branch",
+                          "fontFamily": "Inter",
+                          "fontSize": 13,
+                          "fontWeight": "normal"
+                        }
+                      ]
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "type": "frame",
+              "id": "mDTRk",
+              "name": "smGradeSubjectRow",
+              "width": "fill_container",
+              "gap": 12,
+              "children": [
+                {
+                  "type": "frame",
+                  "id": "kU4OJ",
+                  "name": "smGradeField",
+                  "width": "fill_container",
+                  "layout": "vertical",
+                  "gap": 5,
+                  "children": [
+                    {
+                      "type": "text",
+                      "id": "hziXi",
+                      "name": "smGradeLabel",
+                      "fill": "$--text-primary",
+                      "content": "Grade",
+                      "fontFamily": "Inter",
+                      "fontSize": 13,
+                      "fontWeight": "500"
+                    },
+                    {
+                      "type": "frame",
+                      "id": "JkkIW",
+                      "name": "smGradeDropdown",
+                      "width": "fill_container",
+                      "height": 44,
+                      "fill": "$--background-light",
+                      "cornerRadius": "$--radius-md",
+                      "stroke": {
+                        "align": "inside",
+                        "thickness": 1,
+                        "fill": "$--border"
+                      },
+                      "padding": [
+                        0,
+                        12
+                      ],
+                      "justifyContent": "space_between",
+                      "alignItems": "center",
+                      "children": [
+                        {
+                          "type": "text",
+                          "id": "OSpBQ",
+                          "name": "smGradeValue",
+                          "fill": "$--text-muted",
+                          "content": "Grade",
+                          "fontFamily": "Inter",
+                          "fontSize": 13,
+                          "fontWeight": "normal"
+                        },
+                        {
+                          "type": "icon_font",
+                          "id": "nHYF3",
+                          "name": "smGradeIcon",
+                          "width": 14,
+                          "height": 14,
+                          "iconFontName": "chevron-down",
+                          "iconFontFamily": "lucide",
+                          "fill": "$--text-muted"
+                        }
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "type": "frame",
+                  "id": "DF74S",
+                  "name": "smSubjectField",
+                  "width": "fill_container",
+                  "layout": "vertical",
+                  "gap": 5,
+                  "children": [
+                    {
+                      "type": "text",
+                      "id": "6aobc",
+                      "name": "smSubjectLabel",
+                      "fill": "$--text-primary",
+                      "content": "Subject",
+                      "fontFamily": "Inter",
+                      "fontSize": 13,
+                      "fontWeight": "500"
+                    },
+                    {
+                      "type": "frame",
+                      "id": "dQX1E",
+                      "name": "smSubjectDropdown",
+                      "width": "fill_container",
+                      "height": 44,
+                      "fill": "$--background-light",
+                      "cornerRadius": "$--radius-md",
+                      "stroke": {
+                        "align": "inside",
+                        "thickness": 1,
+                        "fill": "$--border"
+                      },
+                      "padding": [
+                        0,
+                        12
+                      ],
+                      "justifyContent": "space_between",
+                      "alignItems": "center",
+                      "children": [
+                        {
+                          "type": "text",
+                          "id": "sHBQD",
+                          "name": "smSubjectValue",
+                          "fill": "$--text-muted",
+                          "content": "Subject",
+                          "fontFamily": "Inter",
+                          "fontSize": 13,
+                          "fontWeight": "normal"
+                        },
+                        {
+                          "type": "icon_font",
+                          "id": "CCvzP",
+                          "name": "smSubjectIcon",
+                          "width": 14,
+                          "height": 14,
+                          "iconFontName": "chevron-down",
+                          "iconFontFamily": "lucide",
+                          "fill": "$--text-muted"
+                        }
+                      ]
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "type": "frame",
+              "id": "RDpm4",
+              "name": "smSignupButton",
+              "width": "fill_container",
+              "height": 48,
+              "fill": "$--primary",
+              "cornerRadius": "$--radius-md",
+              "justifyContent": "center",
+              "alignItems": "center",
+              "children": [
+                {
+                  "type": "text",
+                  "id": "USRdF",
+                  "name": "smSignupButtonText",
+                  "fill": "#FFFFFF",
+                  "content": "Create Account",
+                  "fontFamily": "Inter",
+                  "fontSize": 15,
+                  "fontWeight": "600"
+                }
+              ]
+            },
+            {
+              "type": "frame",
+              "id": "MjYf8",
+              "name": "smLoginPrompt",
+              "width": "fill_container",
+              "gap": 4,
+              "justifyContent": "center",
+              "children": [
+                {
+                  "type": "text",
+                  "id": "HtQcj",
+                  "name": "smLoginText",
+                  "fill": "$--text-secondary",
+                  "content": "Have an account?",
+                  "fontFamily": "Inter",
+                  "fontSize": 13,
+                  "fontWeight": "normal"
+                },
+                {
+                  "type": "text",
+                  "id": "OlYeN",
+                  "name": "smLoginLink",
+                  "fill": "$--primary",
+                  "content": "Sign In",
+                  "fontFamily": "Inter",
+                  "fontSize": 13,
+                  "fontWeight": "600"
+                }
+              ]
+            }
+          ]
+        }
+      ]
     }
   ],
   "variables": {
