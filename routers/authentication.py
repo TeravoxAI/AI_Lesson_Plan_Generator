@@ -35,7 +35,7 @@ async def sign_up(user_data: UserRegistration):
                     "subject": user_data.subject,
                     "school_branch": user_data.school_branch,
                     "role": user_data.role,
-                    "is_approved": False if user_data.role.lower() == 'principal' else True
+                    "is_approved": False  # All users require admin approval
                 }
             )
 
@@ -57,7 +57,7 @@ async def sign_up(user_data: UserRegistration):
                  "subject": user_data.subject,
                  "school_branch": user_data.school_branch,
                  "role": user_data.role,
-                 "is_approved": False if user_data.role.lower() == 'principal' else True
+                 "is_approved": False  # All users require admin approval
             })
 
             return AuthResponse(

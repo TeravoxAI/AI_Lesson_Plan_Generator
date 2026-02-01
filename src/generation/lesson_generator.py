@@ -158,6 +158,138 @@ class LessonGenerator:
                 "resources": []
             }
     
+    def generate_math(
+        self,
+        grade: str,
+        unit_number: int,
+        course_book_pages: str,
+        workbook_pages: Optional[str] = None,
+        created_by_id: Optional[str] = None,
+        save_to_db: bool = True
+    ) -> GenerateResponse:
+        """
+        Generate a Math lesson plan using unit-based context.
+
+        Args:
+            grade: Grade level (e.g., "Grade 2")
+            unit_number: Unit/chapter number from Math SOW
+            course_book_pages: Course book pages (e.g., "145" or "145-150")
+            workbook_pages: Optional workbook pages (e.g., "80" or "80-85")
+            created_by_id: User ID of the teacher creating this lesson plan
+            save_to_db: Whether to save the generated plan to database
+
+        Returns:
+            GenerateResponse with the lesson plan, cost, and time taken
+        """
+        subject = "Mathematics"
+        start_time = time.time()
+
+        try:
+            # Retrieve Math context using unit and page numbers
+            context = router.retrieve_math_context(
+                grade=grade,
+                unit_number=unit_number,
+                course_book_pages=course_book_pages,
+                workbook_pages=workbook_pages
+            )
+
+            print(f"\n📝 [GENERATE] Building prompt for Math lesson plan...")
+
+            # Extract teacher resources from SOW context if available
+            teacher_resources = []
+            sow_context = context.get("sow_context")
+            if sow_context:
+                # For Math SOW, resources might be embedded in content
+                # Extract URLs from content if present
+                content = sow_context.get("content", "")
+                import re
+                url_pattern = r'https?://[^\s<>"{}|\\^`\[\]]+'
+                urls = re.findall(url_pattern, content)
+                for url in urls:
+                    if "youtube" in url or "youtu.be" in url:
+                        teacher_resources.append({
+                            "title": "Video Resource",
+                            "type": "video",
+                            "reference": url
+                        })
+
+            # Format content for prompt
+            book_content_str = router.format_book_content(context["book_content"])
+            sow_strategy_str = context.get("sow_strategy", "")
+
+            # Build prompt for Math (use "concept" as default lesson type for prompt building)
+            prompt = self._build_prompt(
+                grade=grade,
+                subject=subject,
+                lesson_type="concept",  # Math doesn't use lesson types, but prompt needs one
+                book_content=book_content_str,
+                sow_strategy=sow_strategy_str,
+                page_start=0,  # Not used for Math
+                page_end=0
+            )
+
+            # Generate lesson plan (HTML)
+            html_content, usage_data = self._call_llm(prompt, subject)
+
+            # Clean up HTML if wrapped in code blocks
+            html_content = html_content.strip()
+            if html_content.startswith("```"):
+                lines = html_content.split("\n")
+                html_content = "\n".join(lines[1:-1])
+
+            # Calculate time taken
+            end_time = time.time()
+            generation_time = round(end_time - start_time, 2)
+
+            print(f"   ✓ Math lesson plan generated successfully!")
+            print(f"Lesson Plan:\n{html_content}")
+            print(f"   HTML length: {len(html_content)} chars")
+            print(f"   ⏱️  Time: {generation_time}s")
+
+            # Save to database if enabled
+            plan_id = None
+            if save_to_db:
+                textbook_ids = context["metadata"].get("textbook_ids", [])
+                textbook_id = textbook_ids[0] if textbook_ids else None
+
+                plan_id = db.insert_lesson_plan(
+                    grade_level=grade,
+                    subject=subject,
+                    lesson_type=f"unit_{unit_number}",  # Store unit number as lesson type
+                    page_start=0,
+                    page_end=0,
+                    topic=f"Chapter {unit_number}: {course_book_pages}",
+                    lesson_plan={"html_content": html_content},
+                    textbook_id=textbook_id,
+                    sow_entry_id=context["metadata"].get("sow_entry_id"),
+                    created_by_id=created_by_id,
+                    generation_time=generation_time,
+                    cost=usage_data["cost"],
+                    input_tokens=usage_data["input_tokens"],
+                    output_tokens=usage_data["output_tokens"],
+                    total_tokens=usage_data["total_tokens"]
+                )
+
+            return GenerateResponse(
+                success=True,
+                html_content=html_content,
+                plan_id=plan_id,
+                teacher_resources=teacher_resources,
+                generation_time=generation_time,
+                cost=usage_data["cost"],
+                input_tokens=usage_data["input_tokens"],
+                output_tokens=usage_data["output_tokens"],
+                total_tokens=usage_data["total_tokens"]
+            )
+
+        except Exception as e:
+            import traceback
+            traceback.print_exc()
+            return GenerateResponse(
+                success=False,
+                error=str(e)
+            )
+
     def generate(
         self,
         grade: str,
@@ -166,6 +298,7 @@ class LessonGenerator:
         page_start: int,
         page_end: Optional[int] = None,
         topic: Optional[str] = None,
+        created_by_id: Optional[str] = None,
         save_to_db: bool = True
     ) -> GenerateResponse:
         """
@@ -296,6 +429,7 @@ class LessonGenerator:
                     lesson_plan={"html_content": html_content},
                     textbook_id=textbook_id,
                     sow_entry_id=context["metadata"].get("sow_entry_id"),
+                    created_by_id=created_by_id,
                     generation_time=generation_time,
                     cost=usage_data["cost"],
                     input_tokens=usage_data["input_tokens"],
