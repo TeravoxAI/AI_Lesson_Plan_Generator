@@ -626,7 +626,7 @@ function App() {
                                         >
                                             <option value="English">English</option>
                                             <option value="Mathematics">Mathematics</option>
-                                            <option value="Science">Science</option>
+                                            {/* <option value="Science">Science</option> */}
                                             <option value="History">History</option>
                                         </select>
                                     </div>
