@@ -1213,3 +1213,29 @@ body {
     font-size: 13px;
   }
 }
+
+/* Footer */
+.app-footer {
+  background: var(--primary);
+  color: white;
+  text-align: center;
+  padding: 16px 24px;
+  margin-top: auto;
+  font-size: 13px;
+}
+
+.app-footer p {
+  margin: 0;
+  opacity: 0.9;
+}
+
+/* Auth Page Wrapper (for footer on login/signup) */
+.auth-page {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+
+.auth-page .auth-container {
+  flex: 1;
+}

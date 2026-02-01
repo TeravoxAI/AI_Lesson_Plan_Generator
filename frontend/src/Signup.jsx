@@ -81,9 +81,10 @@ const Signup = ({ onSignupSuccess, onSwitchToLogin }) => {
     }
 
     return (
-        <div className="auth-container">
-            {/* Left Branded Panel */}
-            <div className="auth-brand-panel auth-brand-panel-narrow">
+        <div className="auth-page">
+            <div className="auth-container">
+                {/* Left Branded Panel */}
+                <div className="auth-brand-panel auth-brand-panel-narrow">
                 <div className="auth-brand-content">
                     <div className="auth-brand-icon">
                         <BookOpenIcon />
@@ -179,7 +180,7 @@ const Signup = ({ onSignupSuccess, onSwitchToLogin }) => {
                                         onChange={handleChange}
                                     >
                                         <option value="teacher">Teacher</option>
-                                        <option value="principal">Principal</option>
+                                        {/* <option value="principal">Principal</option> */}
                                     </select>
                                 </div>
                             </div>
@@ -266,6 +267,12 @@ const Signup = ({ onSignupSuccess, onSwitchToLogin }) => {
                     </form>
                 </div>
             </div>
+            </div>
+
+            {/* Footer */}
+            <footer className="app-footer">
+                <p>&copy; {new Date().getFullYear()} Teravox AI. All rights reserved.</p>
+            </footer>
         </div>
     )
 }

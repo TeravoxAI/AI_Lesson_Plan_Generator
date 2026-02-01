@@ -51,6 +51,7 @@ CREATE TABLE IF NOT EXISTS lesson_plans (
     -- Metadata
     textbook_id BIGINT REFERENCES textbooks(id),
     sow_entry_id BIGINT REFERENCES sow_entries(id),
+    created_by_id UUID REFERENCES public.users(id),  -- Track who created the lesson plan
 
     -- Usage Metrics and Other Metadata (stored as JSON)
     -- Example: {"generation_time": 3.45, "cost": 0.002341, "input_tokens": 1234, "output_tokens": 567, "total_tokens": 1801}
@@ -59,6 +60,7 @@ CREATE TABLE IF NOT EXISTS lesson_plans (
 
 CREATE INDEX IF NOT EXISTS idx_lesson_plans_lookup ON lesson_plans(subject, grade_level, lesson_type);
 CREATE INDEX IF NOT EXISTS idx_lesson_plans_metadata ON lesson_plans USING GIN(metadata);
+CREATE INDEX IF NOT EXISTS idx_lesson_plans_created_by ON lesson_plans(created_by_id, created_at);
 
 -- 4. User Profiles (Linked to Auth)
 CREATE TABLE IF NOT EXISTS public.users (
@@ -71,5 +73,5 @@ CREATE TABLE IF NOT EXISTS public.users (
   school_branch text,
   email text,
   role text,
-  is_approved boolean default true
+  is_approved boolean default false
 );

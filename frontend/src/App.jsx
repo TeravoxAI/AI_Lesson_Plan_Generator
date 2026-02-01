@@ -154,6 +154,7 @@ function App() {
     const [books, setBooks] = useState([])
     const [lessonPlan, setLessonPlan] = useState(null)
     const [lessonTypes, setLessonTypes] = useState({})
+    const [mathUnits, setMathUnits] = useState([])
     const [lessonMeta, setLessonMeta] = useState(null)
     const [resourcesExpanded, setResourcesExpanded] = useState(true)
     const [resourceItemsExpanded, setResourceItemsExpanded] = useState({})
@@ -166,7 +167,11 @@ function App() {
         grade: 'Grade 2',
         subject: 'English',
         lesson_number: 1,
-        selected_types: ['recall']  // Default to first type
+        selected_types: ['recall'],  // Default to first type (for English)
+        // Math-specific fields
+        unit_number: null,
+        course_book_pages: '',
+        workbook_pages: ''
     })
 
     const [uploadForm, setUploadForm] = useState({
@@ -205,6 +210,21 @@ function App() {
         }
     }, [generateForm.subject, lessonTypes])
 
+    // Fetch Math units when subject changes to Mathematics
+    useEffect(() => {
+        if (generateForm.subject === 'Mathematics') {
+            fetchMathUnits(generateForm.grade)
+        } else {
+            setMathUnits([])
+            setGenerateForm(prev => ({
+                ...prev,
+                unit_number: null,
+                course_book_pages: '',
+                workbook_pages: ''
+            }))
+        }
+    }, [generateForm.subject, generateForm.grade])
+
     const fetchBooks = async () => {
         try {
             const res = await fetch(`${API_BASE}/ingest/books`)
@@ -222,6 +242,24 @@ function App() {
             setLessonTypes(data)
         } catch (err) {
             console.error('Failed to fetch lesson types:', err)
+        }
+    }
+
+    const fetchMathUnits = async (grade) => {
+        try {
+            const res = await fetch(`${API_BASE}/generate/units/${encodeURIComponent(grade)}`)
+            const data = await res.json()
+            setMathUnits(data.units || [])
+            // Set default unit if available
+            if (data.units && data.units.length > 0) {
+                setGenerateForm(prev => ({
+                    ...prev,
+                    unit_number: data.units[0].unit_number
+                }))
+            }
+        } catch (err) {
+            console.error('Failed to fetch math units:', err)
+            setMathUnits([])
         }
     }
 
@@ -246,10 +284,41 @@ function App() {
         // setLessonPlan(null)
         // setLessonMeta(null)
 
-
         try {
-            // For now, use the first selected type (backend currently supports single type)
-            const primaryType = generateForm.selected_types[0]
+            let requestBody
+
+            if (generateForm.subject === 'Mathematics') {
+                // Math flow: send unit_number and page numbers
+                if (!generateForm.unit_number) {
+                    setStatus({ type: 'error', message: 'Please select a chapter/unit' })
+                    setLoading(false)
+                    return
+                }
+                if (!generateForm.course_book_pages) {
+                    setStatus({ type: 'error', message: 'Please enter course book page numbers' })
+                    setLoading(false)
+                    return
+                }
+
+                requestBody = {
+                    grade: generateForm.grade,
+                    subject: generateForm.subject,
+                    unit_number: generateForm.unit_number,
+                    course_book_pages: generateForm.course_book_pages,
+                    workbook_pages: generateForm.workbook_pages || null
+                }
+            } else {
+                // English flow: send lesson_type and lesson_number
+                const primaryType = generateForm.selected_types[0]
+
+                requestBody = {
+                    grade: generateForm.grade,
+                    subject: generateForm.subject,
+                    lesson_type: primaryType,
+                    page_start: generateForm.lesson_number,
+                    page_end: generateForm.lesson_number
+                }
+            }
 
             const res = await fetch(`${API_BASE}/generate/lesson-plan`, {
                 method: 'POST',
@@ -257,13 +326,7 @@ function App() {
                     'Content-Type': 'application/json',
                     'Authorization': `Bearer ${session?.access_token}`
                 },
-                body: JSON.stringify({
-                    grade: generateForm.grade,
-                    subject: generateForm.subject,
-                    lesson_type: primaryType,
-                    page_start: generateForm.lesson_number,
-                    page_end: generateForm.lesson_number
-                })
+                body: JSON.stringify(requestBody)
             })
 
             // Handle 403 Access Denied specifically
@@ -277,12 +340,12 @@ function App() {
 
             if (data.success) {
                 setLessonPlan(data.html_content || '')
-                setLessonMeta({
+
+                // Build meta based on subject
+                const meta = {
                     planId: data.plan_id,
                     grade: generateForm.grade,
                     subject: generateForm.subject,
-                    lessonNumber: generateForm.lesson_number,
-                    types: generateForm.selected_types,
                     teacherResources: data.teacher_resources || [],
                     // Usage metrics
                     generationTime: data.generation_time,
@@ -290,7 +353,21 @@ function App() {
                     inputTokens: data.input_tokens,
                     outputTokens: data.output_tokens,
                     totalTokens: data.total_tokens
-                })
+                }
+
+                if (generateForm.subject === 'Mathematics') {
+                    meta.unitNumber = generateForm.unit_number
+                    meta.courseBookPages = generateForm.course_book_pages
+                    meta.workbookPages = generateForm.workbook_pages
+                    // Find unit title for display
+                    const unit = mathUnits.find(u => u.unit_number === generateForm.unit_number)
+                    meta.unitTitle = unit?.unit_title || `Chapter ${generateForm.unit_number}`
+                } else {
+                    meta.lessonNumber = generateForm.lesson_number
+                    meta.types = generateForm.selected_types
+                }
+
+                setLessonMeta(meta)
                 setStatus({ type: 'success', message: 'Lesson plan generated successfully!' })
             } else {
                 setStatus({ type: 'error', message: data.error || 'Generation failed' })
@@ -554,39 +631,96 @@ function App() {
                                         </select>
                                     </div>
 
-                                    {/* Lesson Number */}
-                                    <div className="form-field">
-                                        <label className="form-label">Lesson Number</label>
-                                        <input
-                                            type="number"
-                                            className="form-input"
-                                            min="1"
-                                            value={generateForm.lesson_number}
-                                            onChange={e => setGenerateForm({ ...generateForm, lesson_number: parseInt(e.target.value) || 1 })}
-                                            placeholder="Enter lesson number"
-                                            required
-                                        />
-                                    </div>
-
-                                    {/* Lesson Plan Type */}
-                                    <div className="form-field">
-                                        <label className="form-label">Lesson Plan Type</label>
-                                        <p className="form-hint">Select one or more plan types</p>
-                                        <div className="lesson-type-options">
-                                            {currentLessonTypes.map(lt => (
-                                                <div
-                                                    key={lt.type}
-                                                    className={`lesson-type-option ${generateForm.selected_types.includes(lt.type) ? 'selected' : ''}`}
-                                                    onClick={() => toggleLessonType(lt.type)}
+                                    {/* Conditional fields based on subject */}
+                                    {generateForm.subject === 'Mathematics' ? (
+                                        <>
+                                            {/* Chapter/Unit Selection for Math */}
+                                            <div className="form-field">
+                                                <label className="form-label">Chapter/Unit</label>
+                                                <select
+                                                    className="form-select"
+                                                    value={generateForm.unit_number || ''}
+                                                    onChange={e => setGenerateForm({ ...generateForm, unit_number: parseInt(e.target.value) || null })}
+                                                    required
                                                 >
-                                                    <div className="lesson-type-checkbox">
-                                                        <CheckIcon />
-                                                    </div>
-                                                    <span className="lesson-type-label">{formatTypeName(lt.type)}</span>
+                                                    <option value="">Select a chapter</option>
+                                                    {mathUnits.map(unit => (
+                                                        <option key={unit.unit_number} value={unit.unit_number}>
+                                                            Chapter {unit.unit_number}: {unit.unit_title}
+                                                        </option>
+                                                    ))}
+                                                </select>
+                                                {mathUnits.length === 0 && (
+                                                    <p className="form-hint" style={{ color: '#f59e0b', marginTop: '4px' }}>
+                                                        No Math SOW uploaded for this grade. Please upload a Math Scheme of Work first.
+                                                    </p>
+                                                )}
+                                            </div>
+
+                                            {/* Course Book Pages for Math */}
+                                            <div className="form-field">
+                                                <label className="form-label">Course Book Pages</label>
+                                                <input
+                                                    type="text"
+                                                    className="form-input"
+                                                    value={generateForm.course_book_pages}
+                                                    onChange={e => setGenerateForm({ ...generateForm, course_book_pages: e.target.value })}
+                                                    placeholder="e.g., 145 or 145-150"
+                                                    required
+                                                />
+                                                <p className="form-hint">Enter a single page (145) or a range (145-150)</p>
+                                            </div>
+
+                                            {/* Practice Workbook Pages for Math (Optional) */}
+                                            <div className="form-field">
+                                                <label className="form-label">Practice Workbook Pages <span style={{ color: '#9ca3af', fontWeight: 'normal' }}>(Optional)</span></label>
+                                                <input
+                                                    type="text"
+                                                    className="form-input"
+                                                    value={generateForm.workbook_pages}
+                                                    onChange={e => setGenerateForm({ ...generateForm, workbook_pages: e.target.value })}
+                                                    placeholder="e.g., 80 or 80-85"
+                                                />
+                                                <p className="form-hint">Optional: Enter workbook pages for additional practice</p>
+                                            </div>
+                                        </>
+                                    ) : (
+                                        <>
+                                            {/* Lesson Number for English */}
+                                            <div className="form-field">
+                                                <label className="form-label">Lesson Number</label>
+                                                <input
+                                                    type="number"
+                                                    className="form-input"
+                                                    min="1"
+                                                    value={generateForm.lesson_number}
+                                                    onChange={e => setGenerateForm({ ...generateForm, lesson_number: parseInt(e.target.value) || 1 })}
+                                                    placeholder="Enter lesson number"
+                                                    required
+                                                />
+                                            </div>
+
+                                            {/* Lesson Plan Type for English */}
+                                            <div className="form-field">
+                                                <label className="form-label">Lesson Plan Type</label>
+                                                <p className="form-hint">Select one or more plan types</p>
+                                                <div className="lesson-type-options">
+                                                    {currentLessonTypes.map(lt => (
+                                                        <div
+                                                            key={lt.type}
+                                                            className={`lesson-type-option ${generateForm.selected_types.includes(lt.type) ? 'selected' : ''}`}
+                                                            onClick={() => toggleLessonType(lt.type)}
+                                                        >
+                                                            <div className="lesson-type-checkbox">
+                                                                <CheckIcon />
+                                                            </div>
+                                                            <span className="lesson-type-label">{formatTypeName(lt.type)}</span>
+                                                        </div>
+                                                    ))}
                                                 </div>
-                                            ))}
-                                        </div>
-                                    </div>
+                                            </div>
+                                        </>
+                                    )}
 
                                     {/* Generate Button */}
                                     <button type="submit" className="generate-btn" disabled={loading}>
@@ -654,12 +788,25 @@ function App() {
                                                     <BookOpenIcon />
                                                     <span>{lessonMeta.subject}</span>
                                                 </div>
-                                                <div className="meta-item">
-                                                    <ClockIcon />
-                                                    <span>Lesson {lessonMeta.lessonNumber}</span>
-                                                </div>
+                                                {lessonMeta.subject === 'Mathematics' ? (
+                                                    <>
+                                                        <div className="meta-item">
+                                                            <ClockIcon />
+                                                            <span>{lessonMeta.unitTitle}</span>
+                                                        </div>
+                                                        <div className="meta-item">
+                                                            <BookOpenIcon />
+                                                            <span>Pages: {lessonMeta.courseBookPages}{lessonMeta.workbookPages ? ` + WB: ${lessonMeta.workbookPages}` : ''}</span>
+                                                        </div>
+                                                    </>
+                                                ) : (
+                                                    <div className="meta-item">
+                                                        <ClockIcon />
+                                                        <span>Lesson {lessonMeta.lessonNumber}</span>
+                                                    </div>
+                                                )}
                                             </div>
-                                            {/* Usage metrics */}
+                                            {/* Usage metrics - Hidden
                                             {(lessonMeta.generationTime || lessonMeta.cost) && (
                                                 <div className="usage-metrics">
                                                     {lessonMeta.generationTime && (
@@ -682,6 +829,7 @@ function App() {
                                                     )}
                                                 </div>
                                             )}
+                                            */}
                                         </>
                                     )
                                 }
@@ -1043,6 +1191,11 @@ function App() {
                     }
                 </>
             )}
+
+            {/* Footer */}
+            <footer className="app-footer">
+                <p>&copy; {new Date().getFullYear()} Teravox AI. All rights reserved.</p>
+            </footer>
         </div>
     )
 }

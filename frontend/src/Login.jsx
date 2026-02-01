@@ -62,9 +62,10 @@ const Login = ({ onLogin, onSwitchToSignup }) => {
     }
 
     return (
-        <div className="auth-container">
-            {/* Left Branded Panel */}
-            <div className="auth-brand-panel">
+        <div className="auth-page">
+            <div className="auth-container">
+                {/* Left Branded Panel */}
+                <div className="auth-brand-panel">
                 <div className="auth-brand-content">
                     <div className="auth-brand-icon">
                         <BookOpenIcon />
@@ -149,6 +150,12 @@ const Login = ({ onLogin, onSwitchToSignup }) => {
                     </form>
                 </div>
             </div>
+            </div>
+
+            {/* Footer */}
+            <footer className="app-footer">
+                <p>&copy; {new Date().getFullYear()} Teravox AI. All rights reserved.</p>
+            </footer>
         </div>
     )
 }

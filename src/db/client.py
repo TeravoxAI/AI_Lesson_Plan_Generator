@@ -277,6 +277,7 @@ class DatabaseClient:
         lesson_plan: Dict[str, Any],
         textbook_id: Optional[int] = None,
         sow_entry_id: Optional[int] = None,
+        created_by_id: Optional[str] = None,
         generation_time: Optional[float] = None,
         cost: Optional[float] = None,
         input_tokens: Optional[int] = None,
@@ -310,6 +311,7 @@ class DatabaseClient:
             "lesson_plan": json.dumps(lesson_plan) if isinstance(lesson_plan, dict) else lesson_plan,
             "textbook_id": textbook_id,
             "sow_entry_id": sow_entry_id,
+            "created_by_id": created_by_id,
             "metadata": json.dumps(metadata) if metadata else json.dumps({})
         }
 
@@ -318,6 +320,35 @@ class DatabaseClient:
         if result.data:
             return result.data[0]["id"]
         return None
+
+    def count_weekly_lesson_plans(self, user_id: str) -> int:
+        """
+        Count lesson plans created by a user in the last 7 days.
+        Used for weekly rate limiting (20 per week per teacher).
+        """
+        if not self.client:
+            return 0
+
+        try:
+            from datetime import datetime, timedelta, timezone
+
+            # Calculate date 7 days ago
+            week_ago = datetime.now(timezone.utc) - timedelta(days=7)
+            week_ago_iso = week_ago.isoformat()
+
+            # Count lesson plans created by this user in the last 7 days
+            result = self.client.table("lesson_plans").select(
+                "id", count="exact"
+            ).eq(
+                "created_by_id", user_id
+            ).gte(
+                "created_at", week_ago_iso
+            ).execute()
+
+            return result.count if result.count is not None else 0
+        except Exception as e:
+            print(f"Error counting weekly lesson plans: {e}")
+            return 0
     def get_lesson_plan(self, plan_id: int) -> Optional[Dict[str, Any]]:
         """Get a lesson plan by ID"""
         if not self.client:
