@@ -72,6 +72,7 @@ async def health_check():
 async def serve_audio(grade: str, subject: str, track_number: int):
     """
     Serve audio files for a specific grade, subject, and track number.
+    Redirects to Vercel Blob storage in production, serves locally in development.
 
     Args:
         grade: Grade level (e.g., "Grade 2" or "2")
@@ -79,24 +80,35 @@ async def serve_audio(grade: str, subject: str, track_number: int):
         track_number: Track number (e.g., 70)
 
     Returns:
-        Audio file as MP3
+        Redirect to Vercel Blob URL or local file
     """
     from fastapi import HTTPException
+    from fastapi.responses import RedirectResponse
 
     # Normalize grade to extract number only
     grade_num = grade.replace("Grade ", "").replace("grade ", "").strip()
 
-    # Construct audio folder path: Grade_2_English_Tracks
-    audio_folder = f"Grade_{grade_num}_{subject}_Tracks"
+    # Vercel Blob Storage URL (production)
+    vercel_blob_base = os.getenv("VERCEL_BLOB_BASE_URL", "https://3rkrggfpfx5eehv5.public.blob.vercel-storage.com")
 
-    # File naming pattern: GE2_Track_70.mp3
+    # Check if running on Vercel (VERCEL env var is set)
+    is_vercel = os.getenv("VERCEL") is not None
+
+    if is_vercel:
+        # Production: Redirect to Vercel Blob
+        # File naming in Blob: GE2-Track-70.mp3 (with hyphens)
+        blob_filename = f"GE{grade_num}-Track-{track_number:02d}.mp3"
+        blob_url = f"{vercel_blob_base}/{blob_filename}"
+        return RedirectResponse(url=blob_url, status_code=302)
+
+    # Local development: Serve from filesystem
+    audio_folder = f"Grade_{grade_num}_{subject}_Tracks"
     audio_filename = f"GE{grade_num}_Track_{track_number:02d}.mp3"
 
-    # Try multiple paths (for local dev and Vercel deployment)
     base_dir = os.path.dirname(__file__)
     possible_paths = [
-        os.path.join(base_dir, "api", "audio_tracks", audio_folder, audio_filename),  # Vercel
-        os.path.join(base_dir, audio_folder, audio_filename),  # Local dev
+        os.path.join(base_dir, audio_folder, audio_filename),  # Root directory
+        os.path.join(base_dir, "api", "audio_tracks", audio_folder, audio_filename),  # api folder
     ]
 
     audio_path = None
@@ -108,11 +120,8 @@ async def serve_audio(grade: str, subject: str, track_number: int):
     # If not found, try alternative naming without leading zero
     if not audio_path:
         audio_filename = f"GE{grade_num}_Track_{track_number}.mp3"
-        possible_paths = [
-            os.path.join(base_dir, "api", "audio_tracks", audio_folder, audio_filename),
-            os.path.join(base_dir, audio_folder, audio_filename),
-        ]
-        for path in possible_paths:
+        for folder_path in [audio_folder, os.path.join("api", "audio_tracks", audio_folder)]:
+            path = os.path.join(base_dir, folder_path, audio_filename)
             if os.path.exists(path):
                 audio_path = path
                 break
