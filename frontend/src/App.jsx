@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef } from 'react'
 import Login from './Login'
 import Signup from './Signup'
+import UsageIndicator from './UsageIndicator'
 
 const API_BASE = ''  // Proxied through Vite
 
@@ -160,6 +161,7 @@ function App() {
     const [resourceItemsExpanded, setResourceItemsExpanded] = useState({})
     const [isEditing, setIsEditing] = useState(false)
     const [editedContent, setEditedContent] = useState('')
+    const [usageKey, setUsageKey] = useState(0)  // Key to refresh usage indicator
     const lessonPlanRef = useRef(null)
 
     // Form states
@@ -369,6 +371,8 @@ function App() {
 
                 setLessonMeta(meta)
                 setStatus({ type: 'success', message: 'Lesson plan generated successfully!' })
+                // Refresh usage indicator
+                setUsageKey(prev => prev + 1)
             } else {
                 setStatus({ type: 'error', message: data.error || 'Generation failed' })
             }
@@ -597,6 +601,9 @@ function App() {
                                 <p className="panel-subtitle">
                                     Fill in the details below to generate a customized lesson plan for your class.
                                 </p>
+
+                                {/* Weekly Usage Indicator */}
+                                <UsageIndicator key={usageKey} session={session} />
 
                                 <form onSubmit={handleGenerate}>
                                     {/* Grade Level */}

@@ -107,6 +107,17 @@ class ContextRouter:
             print(f"   ⚠ SOW entry has no extraction data")
             return context
 
+        # Debug: Print full SOW entry structure
+        print(f"\n   📄 [DEBUG] Full SOW entry ID: {sow_data.get('id')}")
+        print(f"   📄 [DEBUG] SOW subject: '{sow_data.get('subject')}'")
+        print(f"   📄 [DEBUG] SOW grade_level: '{sow_data.get('grade_level')}'")
+        print(f"   📄 [DEBUG] SOW file_name: {sow_data.get('file_name')}")
+
+        import json
+        extraction_preview = json.dumps(extraction, indent=2)[:1000]  # First 1000 chars
+        print(f"   📄 [DEBUG] Extraction preview:\n{extraction_preview}...")
+        print()
+
         # Debug: Print SOW structure
         print(f"   🔍 SOW extraction keys: {list(extraction.keys())}")
         if "curriculum" in extraction:
@@ -149,6 +160,16 @@ class ContextRouter:
             print(f"   ✓ Matched lesson_plan_types: {matched_types}")
 
         context["sow_context"] = sow_context
+
+        # Debug: Print full lesson context
+        if sow_context.get("found"):
+            print(f"\n   📘 [DEBUG] Lesson context extracted:")
+            print(f"      - Unit: {sow_context.get('unit')}")
+            print(f"      - Lesson title: {sow_context.get('lesson_title')}")
+            print(f"      - Content: {sow_context.get('content', '')[:300]}...")
+            print(f"      - External resources: {len(sow_context.get('external_resources', []))}")
+            print(f"      - Book references: {len(sow_context.get('book_references', []))}")
+            print()
 
         if not sow_context.get("found"):
             print(f"   ⚠ No lesson {lesson_number} found in SOW")
@@ -195,6 +216,9 @@ class ContextRouter:
             # Fetch specific pages
             fetched_pages = db.get_pages_by_numbers(book["id"], pages)
 
+            print(f"       📖 Found book ID: {book['id']}, title: '{book.get('title', '')}'")
+            print(f"       📖 Fetched {len(fetched_pages)} pages from {len(pages)} requested")
+
             if fetched_pages:
                 context["metadata"]["textbook_ids"].append(book["id"])
                 context["metadata"]["books_fetched"].append({
@@ -204,6 +228,13 @@ class ContextRouter:
                     "pages_requested": pages,
                     "pages_found": len(fetched_pages)
                 })
+
+                # Debug: Print sample of book content
+                if fetched_pages:
+                    first_page = fetched_pages[0]
+                    content_preview = (first_page.get("book_text") or first_page.get("content", ""))[:200]
+                    print(f"       📄 Sample content from page {first_page.get('page_no', '?')}: {content_preview}...")
+
 
                 for page in fetched_pages:
                     page_no = page.get("page_no") or page.get("book_page_no")

@@ -226,13 +226,30 @@ class DatabaseClient:
         """Get all SOW entries for a subject/grade"""
         if not self.client:
             return []
-        result = self.client.table("sow_entries").select("*").eq(
-            "subject", subject
-        ).eq(
-            "grade_level", grade_level
-        ).execute()
 
-        return result.data or []
+        print(f"   🔍 [DB] Querying SOW: subject='{subject}', grade_level='{grade_level}'")
+
+        try:
+            result = self.client.table("sow_entries").select("*").eq(
+                "subject", subject
+            ).eq(
+                "grade_level", grade_level
+            ).execute()
+
+            print(f"   📊 [DB] Found {len(result.data or [])} SOW entries")
+            if result.data:
+                print(f"   ✓ Sample: subject='{result.data[0].get('subject')}', grade='{result.data[0].get('grade_level')}', id={result.data[0].get('id')}")
+            else:
+                # If nothing found, show what's available
+                all_result = self.client.table("sow_entries").select("subject, grade_level").limit(10).execute()
+                if all_result.data:
+                    combos = [(r.get('subject'), r.get('grade_level')) for r in all_result.data]
+                    print(f"   ⚠ Available combinations in DB: {combos}")
+
+            return result.data or []
+        except Exception as e:
+            print(f"   ❌ [DB] Error querying SOW: {e}")
+            return []
 
     def get_sow_by_id(self, sow_id: int) -> Optional[Dict[str, Any]]:
         """Get a SOW entry by ID"""
