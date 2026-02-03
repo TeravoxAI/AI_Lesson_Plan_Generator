@@ -98,7 +98,8 @@ class LessonGenerator:
 
         try:
             print(f"\n🤖 [LLM] Calling {self.model}...")
-            with httpx.Client() as client:
+            # Increase timeout to 180 seconds (3 minutes) for slow API responses
+            with httpx.Client(timeout=180.0) as client:
                 response = client.post(
                     f"{self.base_url}/chat/completions",
                     headers=headers,

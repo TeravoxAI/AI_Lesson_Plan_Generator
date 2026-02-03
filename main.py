@@ -99,6 +99,7 @@ async def serve_audio(grade: str, subject: str, track_number: int):
         # File naming in Blob: GE2-Track-70.mp3 (with hyphens)
         blob_filename = f"GE{grade_num}-Track-{track_number:02d}.mp3"
         blob_url = f"{vercel_blob_base}/{blob_filename}"
+        print(f"   🔊 [AUDIO] Redirecting to Blob: {blob_url}")
         return RedirectResponse(url=blob_url, status_code=302)
 
     # Local development: Serve from filesystem
@@ -132,6 +133,7 @@ async def serve_audio(grade: str, subject: str, track_number: int):
             detail=f"Audio track {track_number} not found for Grade {grade_num} {subject}"
         )
 
+    print(f"   🔊 [AUDIO] Serving local file: {audio_path}")
     return FileResponse(
         audio_path,
         media_type="audio/mpeg",
