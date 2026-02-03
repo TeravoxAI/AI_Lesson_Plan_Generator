@@ -98,7 +98,7 @@ class LessonGenerator:
 
         try:
             print(f"\n🤖 [LLM] Calling {self.model}...")
-            with httpx.Client(timeout=120.0) as client:
+            with httpx.Client() as client:
                 response = client.post(
                     f"{self.base_url}/chat/completions",
                     headers=headers,
@@ -108,6 +108,8 @@ class LessonGenerator:
 
                 result = response.json()
                 content = result["choices"][0]["message"]["content"]
+
+                print(f"Response from LLM:\n{content}\n")
 
                 # Extract usage data from OpenRouter response
                 usage = result.get("usage", {})

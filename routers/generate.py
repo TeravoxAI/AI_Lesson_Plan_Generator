@@ -235,6 +235,24 @@ async def get_all_lesson_types():
     return result
 
 
+@router.get("/weekly-usage")
+async def get_weekly_usage(current_user: Dict[str, Any] = Depends(get_current_user)):
+    """
+    Get the current user's weekly lesson plan usage.
+    Returns count of lesson plans created this week and the weekly limit.
+    """
+    user_id = current_user.get("id")
+    weekly_count = db.count_weekly_lesson_plans(user_id) if user_id else 0
+    weekly_limit = 20
+
+    return {
+        "used": weekly_count,
+        "limit": weekly_limit,
+        "remaining": max(0, weekly_limit - weekly_count),
+        "percentage": round((weekly_count / weekly_limit) * 100, 1) if weekly_limit > 0 else 0
+    }
+
+
 @router.get("/history")
 async def get_lesson_plan_history(
     subject: Optional[Subject] = None,

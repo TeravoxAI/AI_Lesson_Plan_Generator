@@ -4256,6 +4256,273 @@
           ]
         }
       ]
+    },
+    {
+      "type": "frame",
+      "id": "06rFd",
+      "x": -2175,
+      "y": 976,
+      "name": "Frame",
+      "clip": true,
+      "width": 1030,
+      "height": 596,
+      "fill": "#FFFFFF",
+      "layout": "none",
+      "children": [
+        {
+          "type": "frame",
+          "id": "d37Xk",
+          "x": 0,
+          "y": 0,
+          "name": "UsageIndicator",
+          "reusable": true,
+          "width": 320,
+          "height": 100,
+          "fill": "#FFFFFF",
+          "cornerRadius": 8,
+          "layout": "vertical",
+          "gap": 12,
+          "padding": 16,
+          "children": [
+            {
+              "type": "frame",
+              "id": "7PxT3",
+              "name": "headerRow",
+              "width": "fill_container",
+              "gap": 8,
+              "children": [
+                {
+                  "type": "frame",
+                  "id": "6YNcE",
+                  "name": "icon",
+                  "width": 20,
+                  "height": 20,
+                  "fill": "#10B981",
+                  "cornerRadius": 10
+                },
+                {
+                  "type": "text",
+                  "id": "3IHad",
+                  "name": "titleText",
+                  "fill": "#1F2937",
+                  "content": "Weekly Usage",
+                  "fontFamily": "Inter",
+                  "fontSize": 14,
+                  "fontWeight": "600"
+                },
+                {
+                  "type": "text",
+                  "id": "3uZMs",
+                  "name": "countText",
+                  "fill": "#10B981",
+                  "content": "2/20",
+                  "fontFamily": "Inter",
+                  "fontSize": 14,
+                  "fontWeight": "700"
+                }
+              ]
+            },
+            {
+              "type": "frame",
+              "id": "iLbBU",
+              "name": "progressBg",
+              "width": "fill_container",
+              "height": 8,
+              "fill": "#F3F4F6",
+              "cornerRadius": 4,
+              "children": [
+                {
+                  "type": "frame",
+                  "id": "WsOTL",
+                  "name": "progressFill",
+                  "width": 29,
+                  "height": 8,
+                  "fill": "#10B981",
+                  "cornerRadius": 4
+                }
+              ]
+            },
+            {
+              "type": "text",
+              "id": "d1GgQ",
+              "name": "subtitleText",
+              "fill": "#6B7280",
+              "content": "18 lesson plans remaining this week",
+              "fontFamily": "Inter",
+              "fontSize": 12,
+              "fontWeight": "normal"
+            }
+          ]
+        },
+        {
+          "type": "frame",
+          "id": "mn9Gz",
+          "x": 340,
+          "y": 0,
+          "name": "UsageIndicator_Medium",
+          "width": 320,
+          "height": 100,
+          "fill": "#FFFFFF",
+          "cornerRadius": 8,
+          "layout": "vertical",
+          "gap": 12,
+          "padding": 16,
+          "children": [
+            {
+              "type": "frame",
+              "id": "rasCc",
+              "name": "headerRow",
+              "width": "fill_container",
+              "gap": 8,
+              "children": [
+                {
+                  "type": "frame",
+                  "id": "Bmrxv",
+                  "name": "icon",
+                  "width": 20,
+                  "height": 20,
+                  "fill": "#F59E0B",
+                  "cornerRadius": 10
+                },
+                {
+                  "type": "text",
+                  "id": "EWuNL",
+                  "name": "titleText",
+                  "fill": "#1F2937",
+                  "content": "Weekly Usage",
+                  "fontFamily": "Inter",
+                  "fontSize": 14,
+                  "fontWeight": "600"
+                },
+                {
+                  "type": "text",
+                  "id": "YrjnY",
+                  "name": "countText",
+                  "fill": "#F59E0B",
+                  "content": "12/20",
+                  "fontFamily": "Inter",
+                  "fontSize": 14,
+                  "fontWeight": "700"
+                }
+              ]
+            },
+            {
+              "type": "frame",
+              "id": "ciAVR",
+              "name": "progressBg",
+              "width": "fill_container",
+              "height": 8,
+              "fill": "#F3F4F6",
+              "cornerRadius": 4,
+              "children": [
+                {
+                  "type": "frame",
+                  "id": "cTEdo",
+                  "name": "progressFill",
+                  "width": 173,
+                  "height": 8,
+                  "fill": "#F59E0B",
+                  "cornerRadius": 4
+                }
+              ]
+            },
+            {
+              "type": "text",
+              "id": "qsPS3",
+              "name": "subtitleText",
+              "fill": "#6B7280",
+              "content": "8 lesson plans remaining this week",
+              "fontFamily": "Inter",
+              "fontSize": 12,
+              "fontWeight": "normal"
+            }
+          ]
+        },
+        {
+          "type": "frame",
+          "id": "zcbCG",
+          "x": 680,
+          "y": 0,
+          "name": "UsageIndicator_High",
+          "width": 320,
+          "height": 100,
+          "fill": "#FFFFFF",
+          "cornerRadius": 8,
+          "layout": "vertical",
+          "gap": 12,
+          "padding": 16,
+          "children": [
+            {
+              "type": "frame",
+              "id": "shCaR",
+              "name": "headerRow",
+              "width": "fill_container",
+              "gap": 8,
+              "children": [
+                {
+                  "type": "frame",
+                  "id": "1lOjO",
+                  "name": "icon",
+                  "width": 20,
+                  "height": 20,
+                  "fill": "#EF4444",
+                  "cornerRadius": 10
+                },
+                {
+                  "type": "text",
+                  "id": "3kzOY",
+                  "name": "titleText",
+                  "fill": "#1F2937",
+                  "content": "Weekly Usage",
+                  "fontFamily": "Inter",
+                  "fontSize": 14,
+                  "fontWeight": "600"
+                },
+                {
+                  "type": "text",
+                  "id": "ZpEH5",
+                  "name": "countText",
+                  "fill": "#EF4444",
+                  "content": "19/20",
+                  "fontFamily": "Inter",
+                  "fontSize": 14,
+                  "fontWeight": "700"
+                }
+              ]
+            },
+            {
+              "type": "frame",
+              "id": "F8oRQ",
+              "name": "progressBg",
+              "width": "fill_container",
+              "height": 8,
+              "fill": "#F3F4F6",
+              "cornerRadius": 4,
+              "children": [
+                {
+                  "type": "frame",
+                  "id": "iEbRx",
+                  "name": "progressFill",
+                  "width": 274,
+                  "height": 8,
+                  "fill": "#EF4444",
+                  "cornerRadius": 4
+                }
+              ]
+            },
+            {
+              "type": "text",
+              "id": "3GoRk",
+              "name": "subtitleText",
+              "fill": "#6B7280",
+              "content": "1 lesson plan remaining this week",
+              "fontFamily": "Inter",
+              "fontSize": 12,
+              "fontWeight": "normal"
+            }
+          ]
+        }
+      ]
     }
   ],
   "variables": {
