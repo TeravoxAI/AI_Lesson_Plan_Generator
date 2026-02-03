@@ -97,7 +97,7 @@ async def serve_audio(grade: str, subject: str, track_number: int):
     if is_vercel:
         # Production: Redirect to Vercel Blob
         # File naming in Blob: GE2-Track-70.mp3 (with hyphens)
-        blob_filename = f"GE{grade_num}-Track-{track_number:02d}.mp3"
+        blob_filename = f"GE{grade_num}_Track_{track_number:02d}.mp3"
         blob_url = f"{vercel_blob_base}/{blob_filename}"
         print(f"   🔊 [AUDIO] Redirecting to Blob: {blob_url}")
         return RedirectResponse(url=blob_url, status_code=302)
