@@ -91,19 +91,37 @@ async def serve_audio(grade: str, subject: str, track_number: int):
 
     # File naming pattern: GE2_Track_70.mp3
     audio_filename = f"GE{grade_num}_Track_{track_number:02d}.mp3"
-    audio_path = os.path.join(os.path.dirname(__file__), audio_folder, audio_filename)
 
-    # Check if file exists
-    if not os.path.exists(audio_path):
-        # Try alternative naming without leading zero
+    # Try multiple paths (for local dev and Vercel deployment)
+    base_dir = os.path.dirname(__file__)
+    possible_paths = [
+        os.path.join(base_dir, "api", "audio_tracks", audio_folder, audio_filename),  # Vercel
+        os.path.join(base_dir, audio_folder, audio_filename),  # Local dev
+    ]
+
+    audio_path = None
+    for path in possible_paths:
+        if os.path.exists(path):
+            audio_path = path
+            break
+
+    # If not found, try alternative naming without leading zero
+    if not audio_path:
         audio_filename = f"GE{grade_num}_Track_{track_number}.mp3"
-        audio_path = os.path.join(os.path.dirname(__file__), audio_folder, audio_filename)
+        possible_paths = [
+            os.path.join(base_dir, "api", "audio_tracks", audio_folder, audio_filename),
+            os.path.join(base_dir, audio_folder, audio_filename),
+        ]
+        for path in possible_paths:
+            if os.path.exists(path):
+                audio_path = path
+                break
 
-        if not os.path.exists(audio_path):
-            raise HTTPException(
-                status_code=404,
-                detail=f"Audio track {track_number} not found for Grade {grade_num} {subject}"
-            )
+    if not audio_path:
+        raise HTTPException(
+            status_code=404,
+            detail=f"Audio track {track_number} not found for Grade {grade_num} {subject}"
+        )
 
     return FileResponse(
         audio_path,

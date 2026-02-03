@@ -1,4 +1,15 @@
 {
+    "headers": [
+        {
+            "source": "/(.*)",
+            "headers": [
+                {
+                    "key": "Content-Security-Policy",
+                    "value": "frame-src 'self' https://www.youtube.com https://youtube.com; default-src 'self' 'unsafe-inline' 'unsafe-eval' https:; script-src 'self' 'unsafe-inline' 'unsafe-eval' https:; style-src 'self' 'unsafe-inline' https:; img-src 'self' data: https:; media-src 'self' blob: https:;"
+                }
+            ]
+        }
+    ],
     "builds": [
         {
             "src": "api/index.py",
