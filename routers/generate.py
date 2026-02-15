@@ -68,21 +68,16 @@ async def generate_lesson_plan(
             detail=f"Weekly generation limit reached ({weekly_count}/20). Your limit resets in 7 days from your oldest lesson plan this week."
         )
 
-    # 1. Teachers can only generate for their subject
+    # 1. Check user approval and role
     if user_role == "teacher":
-        if user_subject != request.subject.value:
-            raise HTTPException(
-                status_code=403,
-                detail=f"Access denied. Teachers can only generate content for their assigned subject: {user_subject}"
-            )
-    # 2. Principals can generate for anything IF approved
+        # Teachers can now generate for any subject (restriction removed)
+        pass
     elif user_role == "principal":
         if not is_approved:
             raise HTTPException(
                 status_code=403,
                 detail="Access denied. Principal account not yet approved."
             )
-        pass
     else:
         # Deny unknown roles
         raise HTTPException(
