@@ -298,8 +298,7 @@ class ContextRouter:
         grade: str,
         unit_number: int,
         course_book_pages: str,
-        workbook_pages: Optional[str] = None,
-        book_types: Optional[List[str]] = None
+        workbook_pages: Optional[str] = None
     ) -> Dict[str, Any]:
         """
         Retrieve all context needed for Math lesson generation.
@@ -307,7 +306,7 @@ class ContextRouter:
         Flow:
         1. Find unit in Math SOW by unit_number
         2. Parse page numbers from course_book_pages and workbook_pages
-        3. Fetch textbook pages based on those page numbers (filtered by book_types)
+        3. Fetch textbook pages based on those page numbers
         4. Format for LLM
 
         Args:
@@ -315,14 +314,10 @@ class ContextRouter:
             unit_number: The chapter/unit number from Math SOW
             course_book_pages: Course book pages (e.g., "145" or "145-150")
             workbook_pages: Optional workbook pages (e.g., "80" or "80-85")
-            book_types: List of book types to fetch (e.g., ['CB', 'AB']). Defaults to both.
 
         Returns:
             Dict with context for lesson generation
         """
-        # Default to both books if not specified
-        if book_types is None:
-            book_types = ['CB', 'AB']
         subject = "Mathematics"
         db_grade = normalize_grade(grade)
 
@@ -380,13 +375,11 @@ class ContextRouter:
         if wb_pages:
             print(f"   📖 Workbook pages to fetch: {wb_pages}")
 
-        # Step 4: Fetch textbook pages (filtered by book_types)
+        # Step 4: Fetch textbook pages
         all_content = []
 
-        print(f"\n   📚 Selected book types: {book_types}")
-
-        # Fetch Course Book pages (only if CB is in book_types)
-        if cb_pages and 'CB' in book_types:
+        # Fetch Course Book pages
+        if cb_pages:
             print(f"\n   📘 Fetching Course Book pages...")
             # Try to find by book_tag first
             book = db.get_textbook_by_tag(db_grade, subject, "CB")
@@ -423,16 +416,11 @@ class ContextRouter:
                     print(f"      ⚠ No pages found for Course Book pages {cb_pages}")
             else:
                 print(f"      ⚠ Course Book not found in database")
-        elif cb_pages and 'CB' not in book_types:
-            print(f"\n   ⏭️  Skipping Course Book pages (not selected by user)")
 
-        # Fetch Workbook/Activity Book pages (only if AB is in book_types)
-        if wb_pages and 'AB' in book_types:
-            print(f"\n   📗 Fetching Activity Book pages...")
-            book = db.get_textbook_by_tag(db_grade, subject, "AB")
-            if not book:
-                # Try alternative tags
-                book = db.get_textbook_by_tag(db_grade, subject, "WB")
+        # Fetch Workbook pages (optional)
+        if wb_pages:
+            print(f"\n   📗 Fetching Workbook pages...")
+            book = db.get_textbook_by_tag(db_grade, subject, "WB")
             if not book:
                 book = db.get_textbook(db_grade, subject, "workbook")
 
@@ -441,7 +429,7 @@ class ContextRouter:
                 if fetched_pages:
                     context["metadata"]["textbook_ids"].append(book["id"])
                     context["metadata"]["books_fetched"].append({
-                        "book_type": "AB",
+                        "book_type": "WB",
                         "book_id": book["id"],
                         "title": book.get("title", ""),
                         "pages_requested": wb_pages,
@@ -453,21 +441,19 @@ class ContextRouter:
                         content_text = page.get("book_text") or page.get("content", "")
 
                         all_content.append({
-                            "book_type": "activity_book",
-                            "book_type_short": "AB",
+                            "book_type": "workbook",
+                            "book_type_short": "WB",
                             "title": book.get("title", ""),
                             "page_no": page_no,
                             "content": content_text,
                             "book_id": book["id"]
                         })
 
-                    print(f"      ✓ Fetched {len(fetched_pages)} Activity Book pages")
+                    print(f"      ✓ Fetched {len(fetched_pages)} Workbook pages")
                 else:
-                    print(f"      ⚠ No pages found for Activity Book pages {wb_pages}")
+                    print(f"      ⚠ No pages found for Workbook pages {wb_pages}")
             else:
-                print(f"      ⚠ Activity Book not found in database")
-        elif wb_pages and 'AB' not in book_types:
-            print(f"\n   ⏭️  Skipping Activity Book pages (not selected by user)")
+                print(f"      ⚠ Workbook not found in database")
 
         context["book_content"] = all_content
 

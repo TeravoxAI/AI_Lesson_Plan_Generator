@@ -99,21 +99,12 @@ async def generate_lesson_plan(
                 detail="Mathematics requires course_book_pages to be specified"
             )
 
-        # Validate book_types if provided
-        book_types = request.book_types or ['CB', 'AB']
-        if not book_types:
-            raise HTTPException(
-                status_code=400,
-                detail="At least one book type must be selected"
-            )
-
         # Generate Math lesson plan
         response = generator.generate_math(
             grade=request.grade,
             unit_number=request.unit_number,
             course_book_pages=request.course_book_pages,
             workbook_pages=request.workbook_pages,
-            book_types=book_types,
             created_by_id=user_id
         )
     else:
@@ -259,16 +250,13 @@ async def get_weekly_usage(current_user: Dict[str, Any] = Depends(get_current_us
 
 @router.get("/history")
 async def get_lesson_plan_history(
-    current_user: Dict[str, Any] = Depends(get_current_user),
     subject: Optional[Subject] = None,
     lesson_type: Optional[str] = None,
     limit: int = 50
 ):
-    """Get history of generated lesson plans for the authenticated user"""
+    """Get history of generated lesson plans"""
     from src.db.client import db
-    user_id = current_user.get("id")
-    plans = db.list_lesson_plans_by_user(
-        user_id=user_id,
+    plans = db.list_lesson_plans(
         subject=subject.value if subject else None,
         lesson_type=lesson_type,
         limit=limit
