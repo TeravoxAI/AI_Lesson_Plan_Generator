@@ -177,6 +177,12 @@ function App() {
         workbook_pages: ''
     })
 
+    // Book types for Mathematics (both selected by default)
+    const [bookTypes, setBookTypes] = useState({
+        courseBook: true,
+        activityBook: true
+    })
+
     const [uploadForm, setUploadForm] = useState({
         grade: 'Grade 2',
         subject: 'English',
@@ -303,12 +309,25 @@ function App() {
                     return
                 }
 
+                // Validate book types
+                if (!bookTypes.courseBook && !bookTypes.activityBook) {
+                    setStatus({ type: 'error', message: 'Please select at least one book type' })
+                    setLoading(false)
+                    return
+                }
+
+                // Build book_types array
+                const selectedBookTypes = []
+                if (bookTypes.courseBook) selectedBookTypes.push('CB')
+                if (bookTypes.activityBook) selectedBookTypes.push('AB')
+
                 requestBody = {
                     grade: generateForm.grade,
                     subject: generateForm.subject,
                     unit_number: generateForm.unit_number,
                     course_book_pages: generateForm.course_book_pages,
-                    workbook_pages: generateForm.workbook_pages || null
+                    workbook_pages: generateForm.workbook_pages || null,
+                    book_types: selectedBookTypes
                 }
             } else {
                 // English flow: send lesson_type and lesson_number
@@ -641,6 +660,36 @@ function App() {
                                     {/* Conditional fields based on subject */}
                                     {generateForm.subject === 'Mathematics' ? (
                                         <>
+                                            {/* Book Types Selection for Math */}
+                                            <div className="form-field">
+                                                <label className="form-label">Book Types</label>
+                                                <div style={{ display: 'flex', gap: '16px', marginTop: '8px' }}>
+                                                    <label style={{ display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer' }}>
+                                                        <input
+                                                            type="checkbox"
+                                                            checked={bookTypes.courseBook}
+                                                            onChange={(e) => setBookTypes({...bookTypes, courseBook: e.target.checked})}
+                                                            style={{ width: '18px', height: '18px', cursor: 'pointer' }}
+                                                        />
+                                                        <span style={{ fontSize: '14px', fontWeight: '500', color: 'var(--text-primary)' }}>
+                                                            Course Book
+                                                        </span>
+                                                    </label>
+                                                    <label style={{ display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer' }}>
+                                                        <input
+                                                            type="checkbox"
+                                                            checked={bookTypes.activityBook}
+                                                            onChange={(e) => setBookTypes({...bookTypes, activityBook: e.target.checked})}
+                                                            style={{ width: '18px', height: '18px', cursor: 'pointer' }}
+                                                        />
+                                                        <span style={{ fontSize: '14px', fontWeight: '500', color: 'var(--text-primary)' }}>
+                                                            Activity Book
+                                                        </span>
+                                                    </label>
+                                                </div>
+                                                <p className="form-hint">Select at least one book type for lesson generation</p>
+                                            </div>
+
                                             {/* Chapter/Unit Selection for Math */}
                                             <div className="form-field">
                                                 <label className="form-label">Chapter/Unit</label>

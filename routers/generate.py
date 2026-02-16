@@ -99,12 +99,21 @@ async def generate_lesson_plan(
                 detail="Mathematics requires course_book_pages to be specified"
             )
 
+        # Validate book_types if provided
+        book_types = request.book_types or ['CB', 'AB']
+        if not book_types:
+            raise HTTPException(
+                status_code=400,
+                detail="At least one book type must be selected"
+            )
+
         # Generate Math lesson plan
         response = generator.generate_math(
             grade=request.grade,
             unit_number=request.unit_number,
             course_book_pages=request.course_book_pages,
             workbook_pages=request.workbook_pages,
+            book_types=book_types,
             created_by_id=user_id
         )
     else:
