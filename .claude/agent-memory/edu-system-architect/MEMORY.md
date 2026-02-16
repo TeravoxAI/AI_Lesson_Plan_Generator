@@ -58,4 +58,33 @@ AI Lesson Plan Generator - Educational technology platform for Pakistani student
 - **Caching Layer**: Redis/CDN for frequently accessed textbook pages
 
 ---
-*Last updated: 2026-02-15*
+
+## Memory Update Protocol
+
+**CRITICAL**: After completing any architectural design or planning task:
+1. ✅ Update this MEMORY.md with key decisions made
+2. ✅ Document rationale for architectural choices
+3. ✅ Record integration patterns discovered
+4. ✅ Note scalability considerations or technical debt
+5. ✅ Create separate topic files for complex patterns (link from MEMORY.md)
+
+**What to save:**
+- System architecture decisions and trade-offs
+- Integration patterns with external services
+- Database schema design rationales
+- API design patterns that proved effective
+- Scalability bottlenecks identified
+- Security patterns implemented
+
+**What NOT to save:**
+- Task-specific implementation details (code comments handle that)
+- Temporary workarounds (unless they become permanent)
+- User-specific requests (unless they represent a pattern)
+
+**Topic file suggestions:**
+- `integration-patterns.md` - External service integration approaches
+- `deployment-strategies.md` - Deployment configurations and trade-offs
+- `scalability-decisions.md` - Performance and scaling patterns
+
+---
+*Last updated: 2026-02-16*

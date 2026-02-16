@@ -46,8 +46,8 @@ AI Lesson Plan Generator for Pakistani students - FastAPI backend, React fronten
 ### Component Structure
 ```
 frontend/src/
-├── App.jsx - Main tabs (Generate, History)
-├── History.jsx - User lesson plan history view
+├── App.jsx - Main tabs (Generate, History, Upload, Library)
+├── History.jsx - User lesson plan history view (NEW - 2026-02-16)
 ├── Login.jsx, Signup.jsx - Auth
 └── UsageIndicator.jsx - Token metrics
 ```
@@ -194,6 +194,20 @@ cd frontend && npm run dev
 
 ## Recent Features
 
+### History Tab Feature (2026-02-16)
+**Implementation**: User-specific lesson plan history with viewing and copying functionality
+- **Layout**: List view (table-like rows) instead of card grid
+- **Features**: Color-coded subject badges (green=#10b981 for English, orange=#f97316 for Math), hover effects
+- **UI**: Shows grade, lesson type, lesson number, and date - metadata (cost/tokens) removed from list view
+- **Modal Rendering**: View modal uses `.lesson-plan` CSS class (from index.css) for consistent formatting with generation view
+  - Same HTML rendering as `App.jsx` generation display (lines 984-991)
+  - Applies proper typography, headings, lists, and spacing from global `.lesson-plan` styles (lines 446-504 in index.css)
+- See [history-feature.md](history-feature.md) for full implementation details
+- See [list-layout-update.md](list-layout-update.md) for list layout pattern
+- Backend: `GET /generate/history` with authentication
+- Frontend: `History.jsx` component with responsive grid, modal viewer, clipboard copy
+- Database: `list_lesson_plans_by_user()` method filters by `created_by_id`
+
 ### Book Type Selection for Mathematics (2026-02-15)
 **Implementation**: Checkboxes to select which textbooks to use (Course Book, Activity Book, or both)
 - See [book-type-selection-feature.md](book-type-selection-feature.md) for full details
@@ -221,4 +235,34 @@ cd frontend && npm run dev
 **Database**: Uses existing `lesson_plans` table (no schema changes)
 
 ---
-*Last updated: 2026-02-15*
+
+## Memory Update Protocol
+
+**CRITICAL**: After completing any implementation task:
+1. ✅ Update this MEMORY.md with new patterns discovered
+2. ✅ Document database query patterns that proved efficient
+3. ✅ Record UI/UX patterns for educational interfaces
+4. ✅ Note performance optimizations applied
+5. ✅ Create separate topic files for complex implementations
+
+**What to save:**
+- Database schema changes and migration patterns
+- API endpoint patterns and best practices
+- Frontend component patterns for educational UIs
+- Performance optimization strategies
+- Common bugs/issues and their solutions
+- Integration patterns with external APIs
+
+**What NOT to save:**
+- One-off bug fixes (unless they reveal a pattern)
+- Feature-specific implementation details (code is self-documenting)
+- Experimental code that didn't make it to production
+
+**Topic file suggestions:**
+- `database-patterns.md` - Complex query patterns, schema evolutions
+- `api-design.md` - Endpoint design patterns, error handling
+- `ui-patterns.md` - Educational interface components, accessibility
+- `debugging.md` - Common issues and troubleshooting steps
+
+---
+*Last updated: 2026-02-16*

@@ -223,4 +223,34 @@ Before finalizing lesson plans, verify:
 - [ ] Assessment: both formative and summative included
 
 ---
-*Last updated: 2026-02-15*
+
+## Memory Update Protocol
+
+**CRITICAL**: After completing any lesson planning or prompt engineering task:
+1. ✅ Update this MEMORY.md with effective pedagogical patterns
+2. ✅ Document successful prompt templates that generated quality lessons
+3. ✅ Record subject-specific patterns discovered
+4. ✅ Note common lesson plan gaps and how to address them
+5. ✅ Create separate topic files for curriculum-specific requirements
+
+**What to save:**
+- Effective lesson plan structures for different subjects/grades
+- Successful prompt engineering templates
+- Pedagogical frameworks that work well in Pakistani context
+- AfL strategies that proved effective for specific lesson types
+- Differentiation approaches for diverse classrooms
+- Common curriculum alignment challenges and solutions
+
+**What NOT to save:**
+- Individual lesson plan content (unless it exemplifies a pattern)
+- One-off teacher requests (unless they reveal a common need)
+- Subject-specific content details (focus on pedagogical structure)
+
+**Topic file suggestions:**
+- `prompt-templates.md` - Proven LLM prompt templates for lesson generation
+- `curriculum-alignment.md` - Board-specific requirements and patterns
+- `differentiation-strategies.md` - Effective approaches for diverse learners
+- `afl-techniques.md` - Assessment for Learning strategies catalog
+
+---
+*Last updated: 2026-02-16*

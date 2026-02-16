@@ -2,6 +2,7 @@ import { useState, useEffect, useRef } from 'react'
 import Login from './Login'
 import Signup from './Signup'
 import UsageIndicator from './UsageIndicator'
+import History from './History'
 
 const API_BASE = ''  // Proxied through Vite
 
@@ -589,6 +590,12 @@ function App() {
                             >
                                 Generate
                             </button>
+                            <button
+                                className={`nav-btn ${activeView === 'history' ? 'active' : ''}`}
+                                onClick={() => setActiveView('history')}
+                            >
+                                History
+                            </button>
                         </div>
                     </div>
 
@@ -1140,6 +1147,13 @@ function App() {
                                     )}
                                 </div>
                             </div>
+                        )
+                    }
+
+                    {/* History View */}
+                    {
+                        activeView === 'history' && (
+                            <History session={session} />
                         )
                     }
 
