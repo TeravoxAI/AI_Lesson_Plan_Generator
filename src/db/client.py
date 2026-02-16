@@ -489,33 +489,6 @@ class DatabaseClient:
             print(f"Error listing lesson plans: {e}")
             return []
 
-    def list_lesson_plans_by_user(
-        self,
-        user_id: str,
-        subject: Optional[str] = None,
-        grade_level: Optional[str] = None,
-        lesson_type: Optional[str] = None,
-        limit: int = 50
-    ) -> List[Dict[str, Any]]:
-        """List lesson plans for a specific user with optional filtering"""
-        if not self.client:
-            return []
-
-        try:
-            query = self.client.table("lesson_plans").select("*").eq("created_by_id", user_id)
-
-            if subject:
-                query = query.eq("subject", subject)
-            if grade_level:
-                query = query.eq("grade_level", grade_level)
-            if lesson_type:
-                query = query.eq("lesson_type", lesson_type)
-            result = query.order("created_at", desc=True).limit(limit).execute()
-            return result.data or []
-        except Exception as e:
-            print(f"Error listing lesson plans by user: {e}")
-            return []
-
 
 # Singleton instance
 db = DatabaseClient()

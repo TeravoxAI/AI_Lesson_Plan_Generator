@@ -4,7 +4,7 @@ Lesson Generator - Generate lesson plans using LLM and save to database
 import os
 import json
 import time
-from typing import Dict, Any, Optional, Tuple, List
+from typing import Dict, Any, Optional, Tuple
 import httpx
 
 from src.models import LessonType, GenerateResponse, LessonPlan
@@ -167,7 +167,6 @@ class LessonGenerator:
         unit_number: int,
         course_book_pages: str,
         workbook_pages: Optional[str] = None,
-        book_types: Optional[List[str]] = None,
         created_by_id: Optional[str] = None,
         save_to_db: bool = True
     ) -> GenerateResponse:
@@ -179,7 +178,6 @@ class LessonGenerator:
             unit_number: Unit/chapter number from Math SOW
             course_book_pages: Course book pages (e.g., "145" or "145-150")
             workbook_pages: Optional workbook pages (e.g., "80" or "80-85")
-            book_types: List of book types to include (e.g., ['CB', 'AB']). Defaults to both.
             created_by_id: User ID of the teacher creating this lesson plan
             save_to_db: Whether to save the generated plan to database
 
@@ -189,18 +187,13 @@ class LessonGenerator:
         subject = "Mathematics"
         start_time = time.time()
 
-        # Default to both books if not specified
-        if book_types is None:
-            book_types = ['CB', 'AB']
-
         try:
             # Retrieve Math context using unit and page numbers
             context = router.retrieve_math_context(
                 grade=grade,
                 unit_number=unit_number,
                 course_book_pages=course_book_pages,
-                workbook_pages=workbook_pages,
-                book_types=book_types
+                workbook_pages=workbook_pages
             )
 
             print(f"\n📝 [GENERATE] Building prompt for Math lesson plan...")
