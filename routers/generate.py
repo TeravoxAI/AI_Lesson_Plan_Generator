@@ -280,13 +280,16 @@ async def get_weekly_usage(current_user: Dict[str, Any] = Depends(get_current_us
 
 @router.get("/history")
 async def get_lesson_plan_history(
+    current_user: Dict[str, Any] = Depends(get_current_user),
     subject: Optional[Subject] = None,
     lesson_type: Optional[str] = None,
     limit: int = 50
 ):
-    """Get history of generated lesson plans"""
+    """Get history of generated lesson plans for the authenticated user"""
     from src.db.client import db
-    plans = db.list_lesson_plans(
+    user_id = current_user.get("id")
+    plans = db.list_lesson_plans_by_user(
+        user_id=user_id,
         subject=subject.value if subject else None,
         lesson_type=lesson_type,
         limit=limit
