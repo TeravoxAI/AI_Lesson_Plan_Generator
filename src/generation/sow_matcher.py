@@ -574,6 +574,116 @@ def map_db_to_book_type(db_type: str) -> str:
     return mapping.get(db_type, db_type.upper())
 
 
+# ============ MATH SOW FUNCTIONS (Simplified Unit-Based Structure) ============
+
+def get_math_units(sow_data: Dict[str, Any]) -> List[Dict[str, Any]]:
+    """
+    Get all units from a Math SOW document.
+
+    Args:
+        sow_data: The full Math SOW JSON (with 'curriculum' key)
+
+    Returns:
+        List of units with unit_number and unit_title
+    """
+    curriculum = sow_data.get("curriculum", sow_data)
+    units = curriculum.get("units", [])
+
+    return [
+        {
+            "unit_number": unit.get("unit_number", 0),
+            "unit_title": unit.get("unit_title", "")
+        }
+        for unit in units
+    ]
+
+
+def get_math_unit_by_number(
+    sow_data: Dict[str, Any],
+    unit_number: int
+) -> Optional[Dict[str, Any]]:
+    """
+    Get a specific Math unit by its unit_number.
+
+    Args:
+        sow_data: The full Math SOW JSON (with 'curriculum' key)
+        unit_number: The unit number to find
+
+    Returns:
+        The matching unit dict with unit_number, unit_title, content, or None
+    """
+    curriculum = sow_data.get("curriculum", sow_data)
+    units = curriculum.get("units", [])
+
+    for unit in units:
+        if unit.get("unit_number") == unit_number:
+            return {
+                "unit_number": unit.get("unit_number", 0),
+                "unit_title": unit.get("unit_title", ""),
+                "content": unit.get("content", "")
+            }
+
+    return None
+
+
+def format_math_unit_for_prompt(unit: Dict[str, Any]) -> str:
+    """
+    Format Math unit content into a readable string for the LLM prompt.
+
+    Args:
+        unit: The unit dict from get_math_unit_by_number
+
+    Returns:
+        Formatted string for prompt
+    """
+    if not unit:
+        return "No Math SOW unit found. Generate based on textbook content only."
+
+    parts = []
+    parts.append(f"**Chapter {unit.get('unit_number', '')}: {unit.get('unit_title', '')}**")
+    parts.append("")
+
+    content = unit.get("content", "")
+    if content:
+        parts.append(content)
+
+    return "\n".join(parts)
+
+
+def parse_page_range(page_str: str) -> List[int]:
+    """
+    Parse a page string into a list of page numbers.
+    Supports single pages ("145") and ranges ("145-150").
+
+    Args:
+        page_str: String like "145" or "145-150"
+
+    Returns:
+        List of page numbers
+    """
+    if not page_str:
+        return []
+
+    page_str = page_str.strip()
+
+    # Handle range (145-150 or 145 - 150)
+    if "-" in page_str:
+        parts = page_str.split("-")
+        if len(parts) == 2:
+            try:
+                start = int(parts[0].strip())
+                end = int(parts[1].strip())
+                return list(range(start, end + 1))
+            except ValueError:
+                return []
+
+    # Handle single page
+    try:
+        return [int(page_str)]
+    except ValueError:
+        return []
+
+
 # ============ LEGACY SUPPORT ============
 
 def extract_pages_with_book_type(text: str) -> List[Tuple[str, int]]:

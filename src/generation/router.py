@@ -8,7 +8,12 @@ from src.db.client import db
 from src.generation.sow_matcher import (
     get_lesson_context_by_number,
     format_lesson_context_for_prompt,
-    map_book_type_to_db
+    map_book_type_to_db,
+    # Math functions
+    get_math_units,
+    get_math_unit_by_number,
+    format_math_unit_for_prompt,
+    parse_page_range
 )
 
 
@@ -102,6 +107,17 @@ class ContextRouter:
             print(f"   ⚠ SOW entry has no extraction data")
             return context
 
+        # Debug: Print full SOW entry structure
+        print(f"\n   📄 [DEBUG] Full SOW entry ID: {sow_data.get('id')}")
+        print(f"   📄 [DEBUG] SOW subject: '{sow_data.get('subject')}'")
+        print(f"   📄 [DEBUG] SOW grade_level: '{sow_data.get('grade_level')}'")
+        print(f"   📄 [DEBUG] SOW file_name: {sow_data.get('file_name')}")
+
+        import json
+        extraction_preview = json.dumps(extraction, indent=2)[:1000]  # First 1000 chars
+        print(f"   📄 [DEBUG] Extraction preview:\n{extraction_preview}...")
+        print()
+
         # Debug: Print SOW structure
         print(f"   🔍 SOW extraction keys: {list(extraction.keys())}")
         if "curriculum" in extraction:
@@ -144,6 +160,16 @@ class ContextRouter:
             print(f"   ✓ Matched lesson_plan_types: {matched_types}")
 
         context["sow_context"] = sow_context
+
+        # Debug: Print full lesson context
+        if sow_context.get("found"):
+            print(f"\n   📘 [DEBUG] Lesson context extracted:")
+            print(f"      - Unit: {sow_context.get('unit')}")
+            print(f"      - Lesson title: {sow_context.get('lesson_title')}")
+            print(f"      - Content: {sow_context.get('content', '')[:300]}...")
+            print(f"      - External resources: {len(sow_context.get('external_resources', []))}")
+            print(f"      - Book references: {len(sow_context.get('book_references', []))}")
+            print()
 
         if not sow_context.get("found"):
             print(f"   ⚠ No lesson {lesson_number} found in SOW")
@@ -190,6 +216,9 @@ class ContextRouter:
             # Fetch specific pages
             fetched_pages = db.get_pages_by_numbers(book["id"], pages)
 
+            print(f"       📖 Found book ID: {book['id']}, title: '{book.get('title', '')}'")
+            print(f"       📖 Fetched {len(fetched_pages)} pages from {len(pages)} requested")
+
             if fetched_pages:
                 context["metadata"]["textbook_ids"].append(book["id"])
                 context["metadata"]["books_fetched"].append({
@@ -199,6 +228,13 @@ class ContextRouter:
                     "pages_requested": pages,
                     "pages_found": len(fetched_pages)
                 })
+
+                # Debug: Print sample of book content
+                if fetched_pages:
+                    first_page = fetched_pages[0]
+                    content_preview = (first_page.get("book_text") or first_page.get("content", ""))[:200]
+                    print(f"       📄 Sample content from page {first_page.get('page_no', '?')}: {content_preview}...")
+
 
                 for page in fetched_pages:
                     page_no = page.get("page_no") or page.get("book_page_no")
@@ -243,6 +279,201 @@ class ContextRouter:
         # Print complete SOW extraction being used
         print("\n" + "="*80)
         print("📋 COMPLETE SOW EXTRACTION USED IN PROMPT:")
+        print("="*80)
+        print(context["sow_strategy"])
+        print("="*80)
+
+        # Print complete book OCR content being used
+        print("\n" + "="*80)
+        print("📖 COMPLETE BOOK OCR CONTENT USED IN PROMPT:")
+        print("="*80)
+        formatted_book_content = self.format_book_content(all_content)
+        print(formatted_book_content)
+        print("="*80 + "\n")
+
+        return context
+
+    def retrieve_math_context(
+        self,
+        grade: str,
+        unit_number: int,
+        course_book_pages: str,
+        workbook_pages: Optional[str] = None
+    ) -> Dict[str, Any]:
+        """
+        Retrieve all context needed for Math lesson generation.
+
+        Flow:
+        1. Find unit in Math SOW by unit_number
+        2. Parse page numbers from course_book_pages and workbook_pages
+        3. Fetch textbook pages based on those page numbers
+        4. Format for LLM
+
+        Args:
+            grade: Grade level (e.g., "Grade 2")
+            unit_number: The chapter/unit number from Math SOW
+            course_book_pages: Course book pages (e.g., "145" or "145-150")
+            workbook_pages: Optional workbook pages (e.g., "80" or "80-85")
+
+        Returns:
+            Dict with context for lesson generation
+        """
+        subject = "Mathematics"
+        db_grade = normalize_grade(grade)
+
+        print(f"\n📚 [MATH CONTEXT] Retrieving content for {subject} {grade}, Unit {unit_number}")
+        print(f"   Course Book Pages: {course_book_pages}")
+        if workbook_pages:
+            print(f"   Workbook Pages: {workbook_pages}")
+
+        context = {
+            "grade": grade,
+            "subject": subject,
+            "unit_number": unit_number,
+            "book_content": [],
+            "sow_strategy": None,
+            "sow_context": None,
+            "metadata": {
+                "textbook_ids": [],
+                "sow_entry_id": None,
+                "books_fetched": []
+            }
+        }
+
+        # Step 1: Fetch Math SOW and find the unit
+        print(f"\n📋 [SOW] Finding unit {unit_number} in Math SOW...")
+        sow_entries = db.get_sow_by_subject(subject, grade)
+
+        if not sow_entries:
+            print(f"   ⚠ No SOW entries found for {subject} {grade}")
+            return context
+
+        sow_data = sow_entries[0]
+        context["metadata"]["sow_entry_id"] = sow_data.get("id")
+
+        extraction = sow_data.get("extraction", {})
+        if not extraction:
+            print(f"   ⚠ SOW entry has no extraction data")
+            return context
+
+        # Step 2: Get unit content
+        unit = get_math_unit_by_number(extraction, unit_number)
+        context["sow_context"] = unit
+
+        if not unit:
+            print(f"   ⚠ No unit {unit_number} found in Math SOW")
+            context["sow_strategy"] = "No Math SOW unit found. Generate based on textbook content only."
+        else:
+            print(f"   ✓ Found: Chapter {unit['unit_number']}: {unit['unit_title']}")
+            context["sow_strategy"] = format_math_unit_for_prompt(unit)
+
+        # Step 3: Parse page numbers
+        cb_pages = parse_page_range(course_book_pages)
+        wb_pages = parse_page_range(workbook_pages) if workbook_pages else []
+
+        print(f"   📖 Course Book pages to fetch: {cb_pages}")
+        if wb_pages:
+            print(f"   📖 Workbook pages to fetch: {wb_pages}")
+
+        # Step 4: Fetch textbook pages
+        all_content = []
+
+        # Fetch Course Book pages
+        if cb_pages:
+            print(f"\n   📘 Fetching Course Book pages...")
+            # Try to find by book_tag first
+            book = db.get_textbook_by_tag(db_grade, subject, "CB")
+            if not book:
+                book = db.get_textbook(db_grade, subject, "course_book")
+
+            if book:
+                fetched_pages = db.get_pages_by_numbers(book["id"], cb_pages)
+                if fetched_pages:
+                    context["metadata"]["textbook_ids"].append(book["id"])
+                    context["metadata"]["books_fetched"].append({
+                        "book_type": "CB",
+                        "book_id": book["id"],
+                        "title": book.get("title", ""),
+                        "pages_requested": cb_pages,
+                        "pages_found": len(fetched_pages)
+                    })
+
+                    for page in fetched_pages:
+                        page_no = page.get("page_no") or page.get("book_page_no")
+                        content_text = page.get("book_text") or page.get("content", "")
+
+                        all_content.append({
+                            "book_type": "course_book",
+                            "book_type_short": "CB",
+                            "title": book.get("title", ""),
+                            "page_no": page_no,
+                            "content": content_text,
+                            "book_id": book["id"]
+                        })
+
+                    print(f"      ✓ Fetched {len(fetched_pages)} Course Book pages")
+                else:
+                    print(f"      ⚠ No pages found for Course Book pages {cb_pages}")
+            else:
+                print(f"      ⚠ Course Book not found in database")
+
+        # Fetch Workbook pages (optional)
+        if wb_pages:
+            print(f"\n   📗 Fetching Workbook pages...")
+            book = db.get_textbook_by_tag(db_grade, subject, "WB")
+            if not book:
+                book = db.get_textbook(db_grade, subject, "workbook")
+
+            if book:
+                fetched_pages = db.get_pages_by_numbers(book["id"], wb_pages)
+                if fetched_pages:
+                    context["metadata"]["textbook_ids"].append(book["id"])
+                    context["metadata"]["books_fetched"].append({
+                        "book_type": "WB",
+                        "book_id": book["id"],
+                        "title": book.get("title", ""),
+                        "pages_requested": wb_pages,
+                        "pages_found": len(fetched_pages)
+                    })
+
+                    for page in fetched_pages:
+                        page_no = page.get("page_no") or page.get("book_page_no")
+                        content_text = page.get("book_text") or page.get("content", "")
+
+                        all_content.append({
+                            "book_type": "workbook",
+                            "book_type_short": "WB",
+                            "title": book.get("title", ""),
+                            "page_no": page_no,
+                            "content": content_text,
+                            "book_id": book["id"]
+                        })
+
+                    print(f"      ✓ Fetched {len(fetched_pages)} Workbook pages")
+                else:
+                    print(f"      ⚠ No pages found for Workbook pages {wb_pages}")
+            else:
+                print(f"      ⚠ Workbook not found in database")
+
+        context["book_content"] = all_content
+
+        # Summary
+        print(f"\n   📝 Context Summary:")
+        if unit:
+            print(f"      - Unit: Chapter {unit['unit_number']}: {unit['unit_title']}")
+        print(f"      - Book pages loaded: {len(all_content)}")
+        if all_content:
+            books_used = {}
+            for item in all_content:
+                book_key = item.get('book_type_short', 'Unknown')
+                if book_key not in books_used:
+                    books_used[book_key] = []
+                books_used[book_key].append(item.get('page_no', '?'))
+            print(f"      - Books used: {', '.join([f'{k} (pages {books_used[k]})' for k in books_used])}")
+
+        # Print complete SOW extraction being used
+        print("\n" + "="*80)
+        print("📋 COMPLETE MATH SOW EXTRACTION USED IN PROMPT:")
         print("="*80)
         print(context["sow_strategy"])
         print("="*80)

@@ -45,10 +45,15 @@ class GenerateRequest(BaseModel):
     """Request model for lesson plan generation"""
     grade: str = "Grade 2"
     subject: Subject
-    lesson_type: LessonType
-    page_start: int
+    # English flow: lesson_type + lesson_number (page_start)
+    lesson_type: Optional[LessonType] = None
+    page_start: Optional[int] = None
     page_end: Optional[int] = None
     topic: Optional[str] = None
+    # Math flow: unit_number + page numbers
+    unit_number: Optional[int] = None
+    course_book_pages: Optional[str] = None  # e.g., "145" or "145-150"
+    workbook_pages: Optional[str] = None  # Optional, e.g., "80" or "80-85"
 
 
 class TextbookUpload(BaseModel):
@@ -201,4 +206,23 @@ class SOWCurriculum(BaseModel):
 class SOWDocument(BaseModel):
     """Complete SOW document structure"""
     curriculum: SOWCurriculum = Field(..., description="The curriculum data")
+
+
+# ============= Math SOW Models (Simplified Format) =============
+
+class MathSOWUnit(BaseModel):
+    """A Math unit with content (simplified structure without lessons)"""
+    unit_number: int = Field(..., description="Unit/Chapter number")
+    unit_title: str = Field(..., description="Unit/Chapter title")
+    content: str = Field(default="", description="Complete unit content including SLOs, skills, activities, etc.")
+
+
+class MathSOWCurriculum(BaseModel):
+    """Math curriculum structure"""
+    units: List[MathSOWUnit] = Field(default_factory=list, description="Units in the Math curriculum")
+
+
+class MathSOWDocument(BaseModel):
+    """Complete Math SOW document structure"""
+    curriculum: MathSOWCurriculum = Field(..., description="The Math curriculum data")
 

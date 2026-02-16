@@ -226,13 +226,30 @@ class DatabaseClient:
         """Get all SOW entries for a subject/grade"""
         if not self.client:
             return []
-        result = self.client.table("sow_entries").select("*").eq(
-            "subject", subject
-        ).eq(
-            "grade_level", grade_level
-        ).execute()
 
-        return result.data or []
+        print(f"   🔍 [DB] Querying SOW: subject='{subject}', grade_level='{grade_level}'")
+
+        try:
+            result = self.client.table("sow_entries").select("*").eq(
+                "subject", subject
+            ).eq(
+                "grade_level", grade_level
+            ).execute()
+
+            print(f"   📊 [DB] Found {len(result.data or [])} SOW entries")
+            if result.data:
+                print(f"   ✓ Sample: subject='{result.data[0].get('subject')}', grade='{result.data[0].get('grade_level')}', id={result.data[0].get('id')}")
+            else:
+                # If nothing found, show what's available
+                all_result = self.client.table("sow_entries").select("subject, grade_level").limit(10).execute()
+                if all_result.data:
+                    combos = [(r.get('subject'), r.get('grade_level')) for r in all_result.data]
+                    print(f"   ⚠ Available combinations in DB: {combos}")
+
+            return result.data or []
+        except Exception as e:
+            print(f"   ❌ [DB] Error querying SOW: {e}")
+            return []
 
     def get_sow_by_id(self, sow_id: int) -> Optional[Dict[str, Any]]:
         """Get a SOW entry by ID"""
@@ -277,6 +294,7 @@ class DatabaseClient:
         lesson_plan: Dict[str, Any],
         textbook_id: Optional[int] = None,
         sow_entry_id: Optional[int] = None,
+        created_by_id: Optional[str] = None,
         generation_time: Optional[float] = None,
         cost: Optional[float] = None,
         input_tokens: Optional[int] = None,
@@ -310,6 +328,7 @@ class DatabaseClient:
             "lesson_plan": json.dumps(lesson_plan) if isinstance(lesson_plan, dict) else lesson_plan,
             "textbook_id": textbook_id,
             "sow_entry_id": sow_entry_id,
+            "created_by_id": created_by_id,
             "metadata": json.dumps(metadata) if metadata else json.dumps({})
         }
 
@@ -318,6 +337,35 @@ class DatabaseClient:
         if result.data:
             return result.data[0]["id"]
         return None
+
+    def count_weekly_lesson_plans(self, user_id: str) -> int:
+        """
+        Count lesson plans created by a user in the last 7 days.
+        Used for weekly rate limiting (20 per week per teacher).
+        """
+        if not self.client:
+            return 0
+
+        try:
+            from datetime import datetime, timedelta, timezone
+
+            # Calculate date 7 days ago
+            week_ago = datetime.now(timezone.utc) - timedelta(days=7)
+            week_ago_iso = week_ago.isoformat()
+
+            # Count lesson plans created by this user in the last 7 days
+            result = self.client.table("lesson_plans").select(
+                "id", count="exact"
+            ).eq(
+                "created_by_id", user_id
+            ).gte(
+                "created_at", week_ago_iso
+            ).execute()
+
+            return result.count if result.count is not None else 0
+        except Exception as e:
+            print(f"Error counting weekly lesson plans: {e}")
+            return 0
     def get_lesson_plan(self, plan_id: int) -> Optional[Dict[str, Any]]:
         """Get a lesson plan by ID"""
         if not self.client:
