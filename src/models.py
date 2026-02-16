@@ -54,6 +54,7 @@ class GenerateRequest(BaseModel):
     unit_number: Optional[int] = None
     course_book_pages: Optional[str] = None  # e.g., "145" or "145-150"
     workbook_pages: Optional[str] = None  # Optional, e.g., "80" or "80-85"
+    book_types: Optional[List[str]] = ['CB', 'AB']  # Default both book types (CB=Course Book, AB=Activity Book)
 
 
 class TextbookUpload(BaseModel):
