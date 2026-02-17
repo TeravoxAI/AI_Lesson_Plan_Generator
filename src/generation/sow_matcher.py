@@ -125,22 +125,13 @@ def get_lesson_context_by_number(
 
     slos = section.get("slos", [])
     skills = section.get("skills", [])
-    teaching_sequence = section.get("teaching_sequence", [])
+    full_teaching_sequence = section.get("teaching_sequence", [])
 
-    # Apply page filtering if requested
-    pages_found_in_sow = True
-    if filter_pages:
-        filtered = filter_teaching_sequence_by_pages(teaching_sequence, filter_pages)
-        if filtered:
-            teaching_sequence = filtered
-        else:
-            # No matches found — use full sequence and flag it
-            pages_found_in_sow = False
-
-    # Extract audio tracks and YouTube URLs from teaching sequence for resource display
+    # Extract audio/video resources from the FULL sequence BEFORE page filtering
+    # so that resources (audio tracks, YouTube links) are never dropped by the page filter
     external_resources = []
     seen_refs: Set = set()
-    for step in teaching_sequence:
+    for step in full_teaching_sequence:
         content = step.get("content", "")
         # Audio tracks: "Audio Track 70", "audio track 70"
         for m in re.finditer(r'[Aa]udio [Tt]rack\s+(\d+)', content):
@@ -162,6 +153,20 @@ def get_lesson_context_by_number(
                     "type": "video",
                     "reference": url
                 })
+
+    # Apply page filtering to the teaching sequence for the LLM prompt.
+    # Only narrow down if 3+ steps match — avoids losing the whole lesson context
+    # when only one incidental page reference is found.
+    teaching_sequence = full_teaching_sequence
+    pages_found_in_sow = True
+    if filter_pages:
+        filtered = filter_teaching_sequence_by_pages(full_teaching_sequence, filter_pages)
+        if len(filtered) >= 3:
+            teaching_sequence = filtered
+        elif len(filtered) == 0:
+            # No matches at all — use full sequence and flag it
+            pages_found_in_sow = False
+        # 1-2 matches: fall back to full sequence (too little context to narrow)
 
     # For ORT: also expose vocabulary and book info
     ort_meta = {}
