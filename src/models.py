@@ -55,6 +55,11 @@ class GenerateRequest(BaseModel):
     course_book_pages: Optional[str] = None  # e.g., "145" or "145-150"
     workbook_pages: Optional[str] = None  # Optional, e.g., "80" or "80-85"
     book_types: Optional[List[str]] = None  # e.g., ["CB", "AB"] - which books to include
+    # English per-book page inputs
+    lb_pages: Optional[str] = None       # e.g. "110-111" or "110"
+    ab_pages: Optional[str] = None       # e.g. "88-89"
+    ort_pages: Optional[str] = None      # e.g. "109-112"
+    is_club_period: bool = False          # True = 70 min, False = 35 min
 
 
 class TextbookUpload(BaseModel):
@@ -158,38 +163,40 @@ class BookInfo(BaseModel):
     has_content: bool = False  # Whether content_text is populated
 
 
-# ============= SOW Models (New Format) =============
+# ============= SOW Models (English Format) =============
 
-class SOWBookReference(BaseModel):
-    """Book reference within a lesson plan type"""
-    book_type: str = Field(..., description="Book type code: LB, AB, TR, ORT")
-    book_name: str = Field(default="", description="Full book name")
-    pages: List[int] = Field(default_factory=list, description="List of page numbers")
-
-
-class SOWExternalResource(BaseModel):
-    """External resource reference"""
-    title: str = Field(..., description="Resource title")
-    type: str = Field(..., description="Resource type: audio, video, document, interactive")
-    reference: str = Field(default="", description="Track number or URL")
+class SOWTeachingStep(BaseModel):
+    """A single teaching strategy entry in the teaching sequence"""
+    strategy: str = Field(..., description="Exact bold heading/section name from Column 2 of SoW")
+    content: str = Field(default="", description="Full verbatim text of the strategy's description from Column 2")
+    afl: List[str] = Field(default_factory=list, description="AFL strategy names from Column 3 aligned with this strategy")
 
 
-class SOWLessonPlanType(BaseModel):
-    """A lesson plan type within a lesson"""
-    type: str = Field(..., description="Lesson plan type: recall_review, reading, comprehension, etc.")
-    content: str = Field(default="", description="Extracted SoW content relevant to this LP type")
-    learning_strategies: List[str] = Field(default_factory=list, description="Strategies from SoW")
-    student_learning_outcomes: List[str] = Field(default_factory=list, description="Grade-appropriate SLOs")
-    skills: List[str] = Field(default_factory=list, description="Skills: Listening, Speaking, Reading, Writing, Thinking")
-    book_references: List[SOWBookReference] = Field(default_factory=list, description="Book references with pages")
-    external_resources: List[SOWExternalResource] = Field(default_factory=list, description="External resources")
+class SOWLbAbSection(BaseModel):
+    """LB + AB (Learner's Book / Activity Book) section of a lesson"""
+    slos: List[str] = Field(default_factory=list, description="Exact SLO bullet texts from 'Students will be able to:'")
+    skills: List[str] = Field(default_factory=list, description="Exact skill names listed in Content column")
+    teaching_sequence: List[SOWTeachingStep] = Field(default_factory=list, description="Ordered teaching strategies from Column 2")
+
+
+class SOWOrtSection(BaseModel):
+    """Oxford Reading Tree section of a lesson (separate from LB/AB)"""
+    book_title: str = Field(default="", description="Full ORT book title e.g. 'Oxford Reading Tree Reader Level 8'")
+    story_title: str = Field(default="", description="Story title e.g. 'Victorian Adventure'")
+    pages: List[int] = Field(default_factory=list, description="Page numbers covered e.g. [109,110,111,112]")
+    slos: List[str] = Field(default_factory=list, description="Exact SLO bullet texts from ORT section")
+    skills: List[str] = Field(default_factory=list, description="Exact skill names from ORT section")
+    vocabulary: List[str] = Field(default_factory=list, description="Vocabulary words from ORT vocabulary table")
+    teaching_sequence: List[SOWTeachingStep] = Field(default_factory=list, description="ORT teaching strategies from Column 2")
 
 
 class SOWLesson(BaseModel):
     """A lesson within a unit"""
     lesson_number: int = Field(..., description="Lesson number")
     lesson_title: str = Field(..., description="Lesson title")
-    lesson_plan_types: List[SOWLessonPlanType] = Field(default_factory=list, description="Lesson plan types")
+    lb_ab: SOWLbAbSection = Field(default_factory=SOWLbAbSection, description="LB/AB main lesson section")
+    ort: SOWOrtSection = Field(default_factory=SOWOrtSection, description="Oxford Reading Tree section")
+    classwork_homework: List[str] = Field(default_factory=list, description="Each classwork/homework bullet verbatim")
 
 
 class SOWUnit(BaseModel):

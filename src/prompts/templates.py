@@ -103,6 +103,11 @@ TASK: Generate a comprehensive Daily Lesson Plan for {grade} {subject}.
 
 LESSON TYPE: {lesson_type}
 
+LESSON DURATION: {period_time}
+Plan all activities, pacing, and content volume for this exact duration.
+
+{club_period_note}
+
 DATA PROVIDED:
 
 <TEXTBOOK_CONTENT>
@@ -139,7 +144,7 @@ GENERATE A COMPLETE LESSON PLAN WITH THESE SECTIONS:
 
 ## 2. Methodology
 - Follow teaching approaches from SOW's "learning_strategies"
-- Include step-by-step approach appropriate for a 30-minute class
+- Include step-by-step approach appropriate for {period_time}
 - Reference specific textbook content
 
 ## 3. Brainstorming Activity
@@ -181,16 +186,6 @@ Make it practical and ready-to-use for a teacher in the classroom."""
 
 LESSON_TYPE_PROMPTS = {
     # English lesson types (in order as per design)
-    "recall": """
-ADDITIONAL FOCUS FOR RECALL LESSON:
-- Start with quick recall questions from previous lessons (Bloom's: Remember, Understand)
-- Include a brief review of key concepts and vocabulary from SOW
-- Design quick check activities to assess retention
-- Use games or interactive activities for engagement (use SOW activities if specified)
-- Connect previous learning to upcoming content
-- Differentiation: Visual cues for struggling; application questions for advanced
-- AFL: Traffic lights (red/yellow/green understanding), mini-whiteboards, entrance slips""",
-
     "vocabulary": """
 ADDITIONAL FOCUS FOR VOCABULARY LESSON:
 - Introduce new words with context and visuals from SOW
@@ -280,7 +275,28 @@ ADDITIONAL FOCUS FOR MATHEMATICS PRACTICE LESSON:
 
 ENG_SYSTEM_PROMPT = """You are an expert English curriculum designer for Pakistani schools. Generate CONCISE, practical lesson plans that STRICTLY follow the Scheme of Work (SOW).
 
-⚠️ LESSON DURATION: This lesson plan is for a 30-minute class. Plan all activities and content volume accordingly. Do NOT include time durations in any section headers or content.
+⚠️ LESSON DURATION: This lesson plan is for a 35-minute class. Plan all activities and content volume accordingly. Do NOT include time durations in any section headers or content.
+
+⚠️ STARTER ACTIVITY (MANDATORY):
+Every lesson MUST begin with a Starter Activity (5 min for single period, 8 min for club period).
+- Use the FIRST teaching_sequence step from the SOW (typically the unit review or warm-up step)
+- This is the hook/opening that recalls prior concepts and bridges to today's lesson
+- Keep it brief and engaging
+Add <h2>Starter Activity:</h2> as the FIRST section after Resources.
+
+⚠️ AFL FROM SOW:
+The AFL section MUST use the exact AFL strategy names provided in the SOW teaching sequence.
+Do not invent AFL strategies. Use what the SOW specifies (e.g., "RSQC2", "Think-Pair-Share",
+"Picture Description", "Quick Write", "Brainstorming").
+
+⚠️ SKILLS CONSTRAINT:
+List ONLY 2-4 skills. Take them EXACTLY as written in the SOW.
+Do NOT list every skill mentioned — pick only those directly exercised in this specific lesson type.
+
+⚠️ SLO CONSTRAINT:
+Extract 2-3 SLOs from the SOW. Keep wording as close to SOW as possible.
+You may break one SOW SLO into sub-points but do not rephrase substantially.
+Grade 2 students: SLOs must be achievable in one lesson, simple action verbs only.
 
 ⚠️ CRITICAL REQUIREMENT - SOW ALIGNMENT:
 You MUST use the SOW data provided in the prompt as the PRIMARY source for ALL lesson plan components:
@@ -332,6 +348,9 @@ OUTPUT FORMAT - Return HTML with ALL sections (including NEW sections):
 
   <h2>Resources:</h2>
   <p>LB pg.XX, AB pg.XX, [materials from SOW], [digital resources from SOW if any]</p>
+
+  <h2>Starter Activity:</h2>
+  <p>[Use the FIRST teaching_sequence step from the SOW. Brief warm-up/hook that recalls prior knowledge and bridges to today's lesson — keep it to 5 minutes.]</p>
 
   <h2>Methodology:</h2>
   <p>[Extract from SOW's "learning_strategies": Brainstorming, Explanation, Think-Pair-Share, etc.]</p>

@@ -55,7 +55,10 @@ class ContextRouter:
         page_start: int,  # This is actually lesson_number now
         page_end: Optional[int] = None,
         topic: Optional[str] = None,
-        book_type: Optional[str] = None
+        book_type: Optional[str] = None,
+        lb_pages: Optional[str] = None,
+        ab_pages: Optional[str] = None,
+        ort_pages: Optional[str] = None
     ) -> Dict[str, Any]:
         """
         Retrieve all context needed for lesson generation.
@@ -125,50 +128,92 @@ class ContextRouter:
             print(f"   🔍 Curriculum has {len(curriculum.get('units', []))} units")
             if curriculum.get("units"):
                 first_unit = curriculum["units"][0]
+                print(f"   🔍 First unit: {first_unit.get('unit_number')} '{first_unit.get('unit_title')}'")
                 print(f"   🔍 First unit has {len(first_unit.get('lessons', []))} lessons")
                 if first_unit.get("lessons"):
                     first_lesson = first_unit["lessons"][0]
-                    print(f"   🔍 First lesson has {len(first_lesson.get('lesson_plan_types', []))} lesson_plan_types")
-                    if first_lesson.get("lesson_plan_types"):
-                        types = [lpt.get("type") for lpt in first_lesson["lesson_plan_types"]]
-                        print(f"   🔍 First lesson types: {types}")
+                    lb_ab = first_lesson.get("lb_ab", {})
+                    ort = first_lesson.get("ort", {})
+                    print(f"   🔍 First lesson: Lesson {first_lesson.get('lesson_number')} '{first_lesson.get('lesson_title')}'")
+                    print(f"   🔍 lb_ab teaching_sequence steps: {len(lb_ab.get('teaching_sequence', []))}")
+                    print(f"   🔍 ort pages: {ort.get('pages', [])}")
 
-        # Step 2: Get lesson context by lesson number
+        # Step 2: Parse user-supplied page strings
+        lb_page_list = parse_page_range(lb_pages) if lb_pages else []
+        ab_page_list = parse_page_range(ab_pages) if ab_pages else []
+        ort_page_list = parse_page_range(ort_pages) if ort_pages else []
+
+        has_lb_ab = bool(lb_pages or ab_pages)
+        has_ort = bool(ort_pages)
+
         print(f"   🔍 Looking for lesson_type: '{lesson_type.value}'")
+        print(f"   📄 User pages — LB: {lb_pages}, AB: {ab_pages}, ORT: {ort_pages}")
 
-        # First, get the lesson without filtering to see what types are available
+        # Debug: get lesson without filter to see available types
         lesson_debug = get_lesson_context_by_number(
             sow_data=extraction,
             lesson_number=lesson_number,
-            lesson_type=None  # No filter to see all types
+            lesson_type=None
         )
-
         if lesson_debug.get("found"):
-            available_types = [lpt.get("type") for lpt in lesson_debug.get("lesson_plan_types", [])]
-            print(f"   📋 Available lesson_plan_types in SOW: {available_types}")
+            section = lesson_debug.get("section_name", "N/A")
+            seq_count = len(lesson_debug.get("teaching_sequence", []))
+            print(f"   📋 Found lesson — section: {section}, teaching steps: {seq_count}")
 
-        # Now get with the filter (uses partial matching)
-        sow_context = get_lesson_context_by_number(
-            sow_data=extraction,
-            lesson_number=lesson_number,
-            lesson_type=lesson_type.value
-        )
+        # Select SOW section and apply page filter based on which books the user selected
+        if has_ort and not has_lb_ab:
+            # ORT only — use reading section, filter by ORT pages
+            sow_context = get_lesson_context_by_number(
+                extraction, lesson_number, "reading", filter_pages=ort_page_list
+            )
+            strategy_str = format_lesson_context_for_prompt(sow_context)
 
-        # Show what was matched after filtering
+        elif has_lb_ab and not has_ort:
+            # LB/AB only — use requested lesson_type, filter by combined LB+AB pages
+            combined_pages = lb_page_list + ab_page_list
+            sow_context = get_lesson_context_by_number(
+                extraction, lesson_number, lesson_type.value, filter_pages=combined_pages
+            )
+            strategy_str = format_lesson_context_for_prompt(sow_context)
+
+        elif has_lb_ab and has_ort:
+            # Both LB/AB and ORT — get both contexts and combine
+            lb_ab_ctx = get_lesson_context_by_number(
+                extraction, lesson_number, lesson_type.value,
+                filter_pages=lb_page_list + ab_page_list
+            )
+            ort_ctx = get_lesson_context_by_number(
+                extraction, lesson_number, "reading", filter_pages=ort_page_list
+            )
+            sow_context = lb_ab_ctx  # Use lb_ab as the primary context for metadata
+            strategy_str = (
+                format_lesson_context_for_prompt(lb_ab_ctx)
+                + "\n\n--- ORT SECTION ---\n\n"
+                + format_lesson_context_for_prompt(ort_ctx)
+            )
+
+        else:
+            # No page info provided — fall back to lesson_type-based section selection
+            sow_context = get_lesson_context_by_number(
+                extraction, lesson_number, lesson_type.value
+            )
+            strategy_str = format_lesson_context_for_prompt(sow_context)
+
         if sow_context.get("found"):
-            matched_types = [lpt.get("type") for lpt in sow_context.get("lesson_plan_types", [])]
-            print(f"   ✓ Matched lesson_plan_types: {matched_types}")
+            print(f"   ✓ Using section: {sow_context.get('section_name')} with {len(sow_context.get('teaching_sequence', []))} strategy steps")
+            print(f"   📋 pages_found_in_sow: {sow_context.get('pages_found_in_sow', 'N/A')}")
 
         context["sow_context"] = sow_context
 
-        # Debug: Print full lesson context
         if sow_context.get("found"):
             print(f"\n   📘 [DEBUG] Lesson context extracted:")
             print(f"      - Unit: {sow_context.get('unit')}")
             print(f"      - Lesson title: {sow_context.get('lesson_title')}")
-            print(f"      - Content: {sow_context.get('content', '')[:300]}...")
-            print(f"      - External resources: {len(sow_context.get('external_resources', []))}")
-            print(f"      - Book references: {len(sow_context.get('book_references', []))}")
+            print(f"      - Section: {sow_context.get('section_name')}")
+            print(f"      - SLOs: {len(sow_context.get('student_learning_outcomes', []))}")
+            print(f"      - Teaching steps: {len(sow_context.get('teaching_sequence', []))}")
+            if sow_context.get("ort_pages"):
+                print(f"      - ORT pages: {sow_context.get('ort_pages')}")
             print()
 
         if not sow_context.get("found"):
@@ -178,87 +223,60 @@ class ContextRouter:
 
         print(f"   ✓ Found: {sow_context.get('unit')} - {sow_context.get('lesson_title')}")
 
-        # Step 3: Get book references from the lesson
-        book_refs = sow_context.get("book_references", [])
-        print(f"   📖 Book references found: {len(book_refs)}")
-        if book_refs:
-            for ref in book_refs:
-                print(f"      - {ref.get('book_type')}: pages {ref.get('pages')}")
-        else:
-            print(f"      ⚠ No book references extracted (likely lesson_type mismatch)")
-            print(f"      💡 Hint: Check if SOW lesson_plan_types match the requested type '{lesson_type.value}'")
-
-        # Step 4: Fetch textbook pages for each book reference
+        # Step 3-4: Fetch textbook pages from user-supplied page strings (per book)
         all_content = []
 
-        for ref in book_refs:
-            book_type_code = ref.get("book_type", "").upper()
-            pages = ref.get("pages", [])
-
-            if not book_type_code or not pages:
+        for book_code, page_str in [("LB", lb_pages), ("AB", ab_pages), ("ORT", ort_pages)]:
+            if not page_str:
+                continue
+            pages = parse_page_range(page_str)
+            if not pages:
                 continue
 
-            print(f"     - {book_type_code}: pages {pages}")
-            print(f"       🔍 Searching DB: grade='{db_grade_textbooks}', subject='{subject.value}', book_tag='{book_type_code}'")
+            print(f"\n   📖 Fetching {book_code} pages {pages}...")
 
-            # Try to find the book by book_tag first, then by book_type (use normalized grade for textbooks)
-            book = db.get_textbook_by_tag(db_grade_textbooks, subject.value, book_type_code)
-
+            # Try by book_tag first, then by mapped book_type
+            book = db.get_textbook_by_tag(db_grade_textbooks, subject.value, book_code)
             if not book:
-                # Fallback: map short code to db book_type
-                db_book_type = map_book_type_to_db(book_type_code)
+                db_book_type = map_book_type_to_db(book_code)
                 book = db.get_textbook(db_grade_textbooks, subject.value, db_book_type)
 
             if not book:
-                print(f"       ⚠ Book not found for {book_type_code}")
+                print(f"       ⚠ Book not found for {book_code}")
                 continue
 
-            # Fetch specific pages
             fetched_pages = db.get_pages_by_numbers(book["id"], pages)
-
             print(f"       📖 Found book ID: {book['id']}, title: '{book.get('title', '')}'")
             print(f"       📖 Fetched {len(fetched_pages)} pages from {len(pages)} requested")
 
             if fetched_pages:
                 context["metadata"]["textbook_ids"].append(book["id"])
                 context["metadata"]["books_fetched"].append({
-                    "book_type": book_type_code,
+                    "book_type": book_code,
                     "book_id": book["id"],
                     "title": book.get("title", ""),
                     "pages_requested": pages,
                     "pages_found": len(fetched_pages)
                 })
-
-                # Debug: Print sample of book content
-                if fetched_pages:
-                    first_page = fetched_pages[0]
-                    content_preview = (first_page.get("book_text") or first_page.get("content", ""))[:200]
-                    print(f"       📄 Sample content from page {first_page.get('page_no', '?')}: {content_preview}...")
-
-
                 for page in fetched_pages:
                     page_no = page.get("page_no") or page.get("book_page_no")
                     content_text = page.get("book_text") or page.get("content", "")
-
                     all_content.append({
                         "book_type": book.get("book_type", ""),
-                        "book_type_short": book_type_code,
+                        "book_type_short": book_code,
                         "title": book.get("title", ""),
                         "page_no": page_no,
                         "content": content_text,
                         "book_id": book["id"]
                     })
-
-                    # Show preview of fetched content
                     content_preview = content_text[:150].replace('\n', ' ') if content_text else '[No content]'
                     print(f"         Page {page_no}: {content_preview}...")
-
                 print(f"       ✓ Fetched {len(fetched_pages)} pages from '{book.get('title', 'Unknown')}'")
             else:
-                print(f"       ⚠ No pages found for {book_type_code} pages {pages}")
+                print(f"       ⚠ No pages found for {book_code} pages {pages}")
 
         context["book_content"] = all_content
-        context["sow_strategy"] = format_lesson_context_for_prompt(sow_context)
+        context["sow_strategy"] = strategy_str
 
         # Summary
         print(f"\n   📝 Context Summary:")

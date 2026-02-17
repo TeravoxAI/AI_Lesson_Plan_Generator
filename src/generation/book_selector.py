@@ -8,7 +8,6 @@ from src.models import LessonType, Subject, BookType
 # Define available lesson types per subject (in order as per design)
 LESSON_TYPES_BY_SUBJECT = {
     Subject.ENGLISH: [
-        LessonType.RECALL,
         LessonType.VOCABULARY,
         LessonType.LISTENING,
         LessonType.READING,

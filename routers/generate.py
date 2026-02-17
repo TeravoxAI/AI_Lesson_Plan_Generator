@@ -167,6 +167,10 @@ async def generate_lesson_plan(
             page_start=request.page_start,
             page_end=request.page_end,
             topic=request.topic,
+            lb_pages=request.lb_pages,
+            ab_pages=request.ab_pages,
+            ort_pages=request.ort_pages,
+            is_club_period=request.is_club_period,
             created_by_id=user_id
         )
 
