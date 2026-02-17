@@ -137,27 +137,27 @@ GENERATE A COMPLETE LESSON PLAN WITH THESE SECTIONS:
 - Use precise action verbs that match the cognitive level
 - Align with the lesson type: {lesson_type}
 
-## 2. Methodology (15-20 minutes)
+## 2. Methodology
 - Follow teaching approaches from SOW's "learning_strategies"
-- Include step-by-step approach with timing
+- Include step-by-step approach appropriate for a 30-minute class
 - Reference specific textbook content
 
-## 3. Brainstorming Activity (5 minutes)
+## 3. Brainstorming Activity
 - Create an engaging warm-up based on TEXTBOOK content
 - Must relate to visuals, examples, or concepts from the pages
 - Should activate prior knowledge
 
-## 4. Main Teaching Activity (15-20 minutes)
+## 4. Main Teaching Activity
 - Use teaching strategies from SOW
 - Include examples directly from textbook
 - Include teacher talk points and student interaction
 
-## 5. Hands-On Activity (10-15 minutes)
+## 5. Hands-On Activity
 - PRIORITY: Use the EXACT activity from SOW "learning_strategies" or "content" if specified
 - If SOW specifies a game/activity name, describe how to conduct it
 - If none specified, create an appropriate activity for the lesson type
 
-## 6. Assessment for Learning (AFL) (5 minutes)
+## 6. Assessment for Learning (AFL)
 - Use proper AFL techniques (NOT just "observation"):
   * Exit tickets / entrance slips
   * Think-pair-share
@@ -280,6 +280,8 @@ ADDITIONAL FOCUS FOR MATHEMATICS PRACTICE LESSON:
 
 ENG_SYSTEM_PROMPT = """You are an expert English curriculum designer for Pakistani schools. Generate CONCISE, practical lesson plans that STRICTLY follow the Scheme of Work (SOW).
 
+⚠️ LESSON DURATION: This lesson plan is for a 30-minute class. Plan all activities and content volume accordingly. Do NOT include time durations in any section headers or content.
+
 ⚠️ CRITICAL REQUIREMENT - SOW ALIGNMENT:
 You MUST use the SOW data provided in the prompt as the PRIMARY source for ALL lesson plan components:
 - SLOs MUST be taken DIRECTLY from SOW's "student_learning_outcomes"
@@ -400,6 +402,8 @@ MANDATORY RULES:
 # ============= Mathematics System Prompt =============
 
 MATHS_SYSTEM_PROMPT = """You are an expert Mathematics curriculum designer for Grade 2. Generate CONCISE, practical lesson plans.
+
+⚠️ LESSON DURATION: This lesson plan is for a 30-minute class. Plan all activities and content volume accordingly. Do NOT include time durations in any section headers or content.
 
 CRITICAL STYLE RULES:
 - Keep it SHORT and to-the-point like a real teacher's daily planner
