@@ -35,7 +35,9 @@ class LessonGenerator:
         book_content: str,
         sow_strategy: str,
         page_start: int,
-        page_end: int
+        page_end: int,
+        period_time: str = "35 minutes",
+        club_period_note: str = ""
     ) -> str:
         """Build the complete prompt for lesson generation"""
         # Start with the main prompt
@@ -44,7 +46,9 @@ class LessonGenerator:
             subject=subject,
             lesson_type=lesson_type,
             book_content=book_content,
-            sow_strategy=sow_strategy or "No SOW strategy found. Generate based on textbook content."
+            sow_strategy=sow_strategy or "No SOW strategy found. Generate based on textbook content.",
+            period_time=period_time,
+            club_period_note=club_period_note
         )
         
         # Add lesson-type-specific additions
@@ -74,7 +78,8 @@ class LessonGenerator:
         """
         headers = {
             "Authorization": f"Bearer {self.api_key}",
-            "Content-Type": "application/json"
+            "Content-Type": "application/json",
+            "X-Title": "LP Generator"
         }
 
         # Select subject-specific system prompt
@@ -313,6 +318,10 @@ class LessonGenerator:
         page_start: int,
         page_end: Optional[int] = None,
         topic: Optional[str] = None,
+        lb_pages: Optional[str] = None,
+        ab_pages: Optional[str] = None,
+        ort_pages: Optional[str] = None,
+        is_club_period: bool = False,
         created_by_id: Optional[str] = None,
         save_to_db: bool = True
     ) -> GenerateResponse:
@@ -349,7 +358,10 @@ class LessonGenerator:
                 lesson_type=lesson_type,
                 page_start=page_start,
                 page_end=page_end,
-                topic=topic
+                topic=topic,
+                lb_pages=lb_pages,
+                ab_pages=ab_pages,
+                ort_pages=ort_pages
             )
 
             print(f"\n📝 [GENERATE] Building prompt for {subject} lesson plan...")
@@ -399,6 +411,18 @@ class LessonGenerator:
             book_content_str = router.format_book_content(context["book_content"])
             sow_strategy_str = context.get("sow_strategy", "")
 
+            # Compute period duration for the prompt
+            if is_club_period:
+                period_time = "70 minutes (Club Period — 2 consecutive periods)"
+                club_period_note = (
+                    "NOTE: This is a CLUB PERIOD (2 consecutive lessons). Structure the plan in two phases:\n"
+                    "  Phase 1 (~35 min): Introduction, teaching, guided practice\n"
+                    "  Phase 2 (~35 min): Independent practice, extension activity, assessment"
+                )
+            else:
+                period_time = "35 minutes"
+                club_period_note = ""
+
             # Build prompt
             prompt = self._build_prompt(
                 grade=grade,
@@ -407,7 +431,9 @@ class LessonGenerator:
                 book_content=book_content_str,
                 sow_strategy=sow_strategy_str,
                 page_start=page_start,
-                page_end=page_end
+                page_end=page_end,
+                period_time=period_time,
+                club_period_note=club_period_note
             )
 
             # Generate lesson plan (HTML) - use subject-specific system prompt

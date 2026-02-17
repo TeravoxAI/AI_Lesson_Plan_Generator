@@ -81,7 +81,8 @@ class BookDigitizationAgent:
     def __init__(self, model="openai/gpt-5.1"):
         self.client = OpenAI(
             base_url="https://openrouter.ai/api/v1",
-            api_key=os.getenv("OPENROUTER_API_KEY")
+            api_key=os.getenv("OPENROUTER_API_KEY"),
+            default_headers={"X-Title": "SOW OCR"}
         )
         self.model = model
 
