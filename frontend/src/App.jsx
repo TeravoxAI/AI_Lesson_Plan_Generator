@@ -173,7 +173,8 @@ function App() {
         // Math-specific fields
         unit_number: null,
         course_book_pages: '',
-        workbook_pages: ''
+        workbook_pages: '',
+        book_types: ['CB', 'AB']  // Default to both books selected
     })
 
     const [uploadForm, setUploadForm] = useState({
@@ -222,7 +223,8 @@ function App() {
                 ...prev,
                 unit_number: null,
                 course_book_pages: '',
-                workbook_pages: ''
+                workbook_pages: '',
+                book_types: ['CB', 'AB']  // Reset to both when leaving Mathematics
             }))
         }
     }, [generateForm.subject, generateForm.grade])
@@ -278,6 +280,19 @@ function App() {
         })
     }
 
+    const toggleBookType = (bookType) => {
+        setGenerateForm(prev => {
+            const types = prev.book_types
+            if (types.includes(bookType)) {
+                // Don't allow deselecting the last remaining book type
+                if (types.length === 1) return prev
+                return { ...prev, book_types: types.filter(t => t !== bookType) }
+            } else {
+                return { ...prev, book_types: [...types, bookType] }
+            }
+        })
+    }
+
     const handleGenerate = async (e) => {
         e.preventDefault()
         setLoading(true)
@@ -296,8 +311,18 @@ function App() {
                     setLoading(false)
                     return
                 }
-                if (!generateForm.course_book_pages) {
-                    setStatus({ type: 'error', message: 'Please enter course book page numbers' })
+                if (!generateForm.book_types || generateForm.book_types.length === 0) {
+                    setStatus({ type: 'error', message: 'Please select at least one book type' })
+                    setLoading(false)
+                    return
+                }
+                if (generateForm.book_types.includes('CB') && !generateForm.course_book_pages) {
+                    setStatus({ type: 'error', message: 'Please enter Course Book page numbers' })
+                    setLoading(false)
+                    return
+                }
+                if (generateForm.book_types.includes('AB') && !generateForm.workbook_pages) {
+                    setStatus({ type: 'error', message: 'Please enter Activity Book page numbers' })
                     setLoading(false)
                     return
                 }
@@ -306,8 +331,9 @@ function App() {
                     grade: generateForm.grade,
                     subject: generateForm.subject,
                     unit_number: generateForm.unit_number,
-                    course_book_pages: generateForm.course_book_pages,
-                    workbook_pages: generateForm.workbook_pages || null
+                    course_book_pages: generateForm.book_types.includes('CB') ? generateForm.course_book_pages : null,
+                    workbook_pages: generateForm.book_types.includes('AB') ? (generateForm.workbook_pages || null) : null,
+                    book_types: generateForm.book_types
                 }
             } else {
                 // English flow: send lesson_type and lesson_number
@@ -657,32 +683,60 @@ function App() {
                                                 )}
                                             </div>
 
-                                            {/* Course Book Pages for Math */}
+                                            {/* Book Type Selection for Math */}
                                             <div className="form-field">
-                                                <label className="form-label">Course Book Pages</label>
-                                                <input
-                                                    type="text"
-                                                    className="form-input"
-                                                    value={generateForm.course_book_pages}
-                                                    onChange={e => setGenerateForm({ ...generateForm, course_book_pages: e.target.value })}
-                                                    placeholder="e.g., 145 or 145-150"
-                                                    required
-                                                />
-                                                <p className="form-hint">Enter a single page (145) or a range (145-150)</p>
+                                                <label className="form-label">Book Type</label>
+                                                <p className="form-hint">Select which books to include</p>
+                                                <div className="lesson-type-options">
+                                                    {[
+                                                        { code: 'CB', label: 'Course Book' },
+                                                        { code: 'AB', label: 'Activity Book' }
+                                                    ].map(({ code, label }) => (
+                                                        <div
+                                                            key={code}
+                                                            className={`lesson-type-option ${generateForm.book_types.includes(code) ? 'selected' : ''}`}
+                                                            onClick={() => toggleBookType(code)}
+                                                        >
+                                                            <div className="lesson-type-checkbox">
+                                                                <CheckIcon />
+                                                            </div>
+                                                            <span className="lesson-type-label">{label}</span>
+                                                        </div>
+                                                    ))}
+                                                </div>
                                             </div>
 
-                                            {/* Practice Workbook Pages for Math (Optional) */}
-                                            <div className="form-field">
-                                                <label className="form-label">Practice Workbook Pages <span style={{ color: '#9ca3af', fontWeight: 'normal' }}>(Optional)</span></label>
-                                                <input
-                                                    type="text"
-                                                    className="form-input"
-                                                    value={generateForm.workbook_pages}
-                                                    onChange={e => setGenerateForm({ ...generateForm, workbook_pages: e.target.value })}
-                                                    placeholder="e.g., 80 or 80-85"
-                                                />
-                                                <p className="form-hint">Optional: Enter workbook pages for additional practice</p>
-                                            </div>
+                                            {/* Course Book Pages for Math (only shown when CB is selected) */}
+                                            {generateForm.book_types.includes('CB') && (
+                                                <div className="form-field">
+                                                    <label className="form-label">Course Book Pages</label>
+                                                    <input
+                                                        type="text"
+                                                        className="form-input"
+                                                        value={generateForm.course_book_pages}
+                                                        onChange={e => setGenerateForm({ ...generateForm, course_book_pages: e.target.value })}
+                                                        placeholder="e.g., 145 or 145-150"
+                                                        required
+                                                    />
+                                                    <p className="form-hint">Enter a single page (145) or a range (145-150)</p>
+                                                </div>
+                                            )}
+
+                                            {/* Activity Book Pages for Math (only shown when AB is selected) */}
+                                            {generateForm.book_types.includes('AB') && (
+                                                <div className="form-field">
+                                                    <label className="form-label">Activity Book Pages</label>
+                                                    <input
+                                                        type="text"
+                                                        className="form-input"
+                                                        value={generateForm.workbook_pages}
+                                                        onChange={e => setGenerateForm({ ...generateForm, workbook_pages: e.target.value })}
+                                                        placeholder="e.g., 80 or 80-85"
+                                                        required
+                                                    />
+                                                    <p className="form-hint">Enter a single page (80) or a range (80-85)</p>
+                                                </div>
+                                            )}
                                         </>
                                     ) : (
                                         <>

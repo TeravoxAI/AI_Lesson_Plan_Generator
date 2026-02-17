@@ -425,7 +425,7 @@ OUTPUT FORMAT - Return HTML with ALL sections:
   <p>problem solving, critical thinking, calculation, mental maths</p>
 
   <h2>Resources:</h2>
-  <p>CB pg.XX, WB pg.XX, counters, number cards, whiteboard, marker</p>
+  <p>[Only list page references for books that were provided], counters, number cards, whiteboard, marker</p>
 
   <h2>Methodology:</h2>
   <p>Brainstorming, Explanation, Demonstration, Peer learning</p>
@@ -460,7 +460,7 @@ OUTPUT FORMAT - Return HTML with ALL sections:
   <p>Brainstorming, practical work, show-me boards</p>
 
   <h2>Classwork (C.W):</h2>
-  <p>WB pg.XX, exercise X</p>
+  <p>[Only reference pages from the book(s) that were provided], exercise X</p>
 
   <h2>Homework (H.W):</h2>
   <p>Practice problems or "None"</p>

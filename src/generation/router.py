@@ -297,8 +297,9 @@ class ContextRouter:
         self,
         grade: str,
         unit_number: int,
-        course_book_pages: str,
-        workbook_pages: Optional[str] = None
+        course_book_pages: Optional[str] = None,
+        workbook_pages: Optional[str] = None,
+        book_types: Optional[List[str]] = None
     ) -> Dict[str, Any]:
         """
         Retrieve all context needed for Math lesson generation.
@@ -306,7 +307,7 @@ class ContextRouter:
         Flow:
         1. Find unit in Math SOW by unit_number
         2. Parse page numbers from course_book_pages and workbook_pages
-        3. Fetch textbook pages based on those page numbers
+        3. Fetch textbook pages based on those page numbers, filtered by book_types
         4. Format for LLM
 
         Args:
@@ -314,10 +315,15 @@ class ContextRouter:
             unit_number: The chapter/unit number from Math SOW
             course_book_pages: Course book pages (e.g., "145" or "145-150")
             workbook_pages: Optional workbook pages (e.g., "80" or "80-85")
+            book_types: List of book type codes to fetch. "CB" = Course Book, "AB" = Activity Book.
+                        Defaults to ["CB", "AB"] if not provided.
 
         Returns:
             Dict with context for lesson generation
         """
+        # Default to both books if not specified
+        if book_types is None:
+            book_types = ["CB", "AB"]
         subject = "Mathematics"
         db_grade = normalize_grade(grade)
 
@@ -368,92 +374,107 @@ class ContextRouter:
             context["sow_strategy"] = format_math_unit_for_prompt(unit)
 
         # Step 3: Parse page numbers
-        cb_pages = parse_page_range(course_book_pages)
+        cb_pages = parse_page_range(course_book_pages) if course_book_pages else []
         wb_pages = parse_page_range(workbook_pages) if workbook_pages else []
 
-        print(f"   📖 Course Book pages to fetch: {cb_pages}")
+        print(f"   📖 Selected book types: {book_types}")
+        if cb_pages:
+            print(f"   📖 Course Book pages to fetch: {cb_pages}")
         if wb_pages:
-            print(f"   📖 Workbook pages to fetch: {wb_pages}")
+            print(f"   📖 Activity Book pages to fetch: {wb_pages}")
 
-        # Step 4: Fetch textbook pages
+        # Step 4: Fetch textbook pages based on selected book_types
         all_content = []
 
-        # Fetch Course Book pages
-        if cb_pages:
-            print(f"\n   📘 Fetching Course Book pages...")
-            # Try to find by book_tag first
-            book = db.get_textbook_by_tag(db_grade, subject, "CB")
-            if not book:
-                book = db.get_textbook(db_grade, subject, "course_book")
+        # Fetch Course Book pages (only if "CB" is in book_types)
+        if "CB" in book_types:
+            if cb_pages:
+                print(f"\n   📘 Fetching Course Book pages...")
+                # Try to find by book_tag first
+                book = db.get_textbook_by_tag(db_grade, subject, "CB")
+                if not book:
+                    book = db.get_textbook(db_grade, subject, "course_book")
 
-            if book:
-                fetched_pages = db.get_pages_by_numbers(book["id"], cb_pages)
-                if fetched_pages:
-                    context["metadata"]["textbook_ids"].append(book["id"])
-                    context["metadata"]["books_fetched"].append({
-                        "book_type": "CB",
-                        "book_id": book["id"],
-                        "title": book.get("title", ""),
-                        "pages_requested": cb_pages,
-                        "pages_found": len(fetched_pages)
-                    })
-
-                    for page in fetched_pages:
-                        page_no = page.get("page_no") or page.get("book_page_no")
-                        content_text = page.get("book_text") or page.get("content", "")
-
-                        all_content.append({
-                            "book_type": "course_book",
-                            "book_type_short": "CB",
+                if book:
+                    fetched_pages = db.get_pages_by_numbers(book["id"], cb_pages)
+                    if fetched_pages:
+                        context["metadata"]["textbook_ids"].append(book["id"])
+                        context["metadata"]["books_fetched"].append({
+                            "book_type": "CB",
+                            "book_id": book["id"],
                             "title": book.get("title", ""),
-                            "page_no": page_no,
-                            "content": content_text,
-                            "book_id": book["id"]
+                            "pages_requested": cb_pages,
+                            "pages_found": len(fetched_pages)
                         })
 
-                    print(f"      ✓ Fetched {len(fetched_pages)} Course Book pages")
+                        for page in fetched_pages:
+                            page_no = page.get("page_no") or page.get("book_page_no")
+                            content_text = page.get("book_text") or page.get("content", "")
+
+                            all_content.append({
+                                "book_type": "course_book",
+                                "book_type_short": "CB",
+                                "title": book.get("title", ""),
+                                "page_no": page_no,
+                                "content": content_text,
+                                "book_id": book["id"]
+                            })
+
+                        print(f"      ✓ Fetched {len(fetched_pages)} Course Book pages")
+                    else:
+                        print(f"      ⚠ No pages found for Course Book pages {cb_pages}")
                 else:
-                    print(f"      ⚠ No pages found for Course Book pages {cb_pages}")
+                    print(f"      ⚠ Course Book not found in database")
             else:
-                print(f"      ⚠ Course Book not found in database")
+                print(f"\n   📘 Course Book selected but no pages provided - skipping.")
+        else:
+            print(f"\n   📘 Course Book (CB) not selected in book_types - skipping.")
 
-        # Fetch Workbook pages (optional)
-        if wb_pages:
-            print(f"\n   📗 Fetching Workbook pages...")
-            book = db.get_textbook_by_tag(db_grade, subject, "WB")
-            if not book:
-                book = db.get_textbook(db_grade, subject, "workbook")
+        # Fetch Activity Book pages (only if "AB" is in book_types)
+        if "AB" in book_types:
+            if wb_pages:
+                print(f"\n   📗 Fetching Activity Book pages...")
+                # Try to find by book_tag "AB" first, then "WB" (legacy), then by book_type
+                book = db.get_textbook_by_tag(db_grade, subject, "AB")
+                if not book:
+                    book = db.get_textbook_by_tag(db_grade, subject, "WB")
+                if not book:
+                    book = db.get_textbook(db_grade, subject, "workbook")
 
-            if book:
-                fetched_pages = db.get_pages_by_numbers(book["id"], wb_pages)
-                if fetched_pages:
-                    context["metadata"]["textbook_ids"].append(book["id"])
-                    context["metadata"]["books_fetched"].append({
-                        "book_type": "WB",
-                        "book_id": book["id"],
-                        "title": book.get("title", ""),
-                        "pages_requested": wb_pages,
-                        "pages_found": len(fetched_pages)
-                    })
-
-                    for page in fetched_pages:
-                        page_no = page.get("page_no") or page.get("book_page_no")
-                        content_text = page.get("book_text") or page.get("content", "")
-
-                        all_content.append({
-                            "book_type": "workbook",
-                            "book_type_short": "WB",
+                if book:
+                    fetched_pages = db.get_pages_by_numbers(book["id"], wb_pages)
+                    if fetched_pages:
+                        context["metadata"]["textbook_ids"].append(book["id"])
+                        context["metadata"]["books_fetched"].append({
+                            "book_type": "AB",
+                            "book_id": book["id"],
                             "title": book.get("title", ""),
-                            "page_no": page_no,
-                            "content": content_text,
-                            "book_id": book["id"]
+                            "pages_requested": wb_pages,
+                            "pages_found": len(fetched_pages)
                         })
 
-                    print(f"      ✓ Fetched {len(fetched_pages)} Workbook pages")
+                        for page in fetched_pages:
+                            page_no = page.get("page_no") or page.get("book_page_no")
+                            content_text = page.get("book_text") or page.get("content", "")
+
+                            all_content.append({
+                                "book_type": "workbook",
+                                "book_type_short": "AB",
+                                "title": book.get("title", ""),
+                                "page_no": page_no,
+                                "content": content_text,
+                                "book_id": book["id"]
+                            })
+
+                        print(f"      ✓ Fetched {len(fetched_pages)} Activity Book pages")
+                    else:
+                        print(f"      ⚠ No pages found for Activity Book pages {wb_pages}")
                 else:
-                    print(f"      ⚠ No pages found for Workbook pages {wb_pages}")
+                    print(f"      ⚠ Activity Book not found in database")
             else:
-                print(f"      ⚠ Workbook not found in database")
+                print(f"\n   📗 Activity Book selected but no pages provided - skipping.")
+        else:
+            print(f"\n   📗 Activity Book (AB) not selected in book_types - skipping.")
 
         context["book_content"] = all_content
 
