@@ -165,8 +165,9 @@ class LessonGenerator:
         self,
         grade: str,
         unit_number: int,
-        course_book_pages: str,
+        course_book_pages: Optional[str] = None,
         workbook_pages: Optional[str] = None,
+        book_types: Optional[list] = None,
         created_by_id: Optional[str] = None,
         save_to_db: bool = True
     ) -> GenerateResponse:
@@ -178,6 +179,7 @@ class LessonGenerator:
             unit_number: Unit/chapter number from Math SOW
             course_book_pages: Course book pages (e.g., "145" or "145-150")
             workbook_pages: Optional workbook pages (e.g., "80" or "80-85")
+            book_types: List of book type codes to include, e.g. ["CB", "AB"]. Defaults to both.
             created_by_id: User ID of the teacher creating this lesson plan
             save_to_db: Whether to save the generated plan to database
 
@@ -188,12 +190,16 @@ class LessonGenerator:
         start_time = time.time()
 
         try:
+            # Resolve book_types: default to both if not specified
+            resolved_book_types = book_types if book_types else ["CB", "AB"]
+
             # Retrieve Math context using unit and page numbers
             context = router.retrieve_math_context(
                 grade=grade,
                 unit_number=unit_number,
                 course_book_pages=course_book_pages,
-                workbook_pages=workbook_pages
+                workbook_pages=workbook_pages,
+                book_types=resolved_book_types
             )
 
             print(f"\n📝 [GENERATE] Building prompt for Math lesson plan...")
@@ -230,6 +236,12 @@ class LessonGenerator:
                 page_start=0,  # Not used for Math
                 page_end=0
             )
+
+            # Append book availability constraint so LLM only references provided books
+            if "CB" in resolved_book_types and "AB" not in resolved_book_types:
+                prompt += "\n\nIMPORTANT: Only Course Book (CB) content has been provided. Reference ONLY CB pages in Resources and Classwork. Do NOT reference WB, AB, or any workbook pages."
+            elif "AB" in resolved_book_types and "CB" not in resolved_book_types:
+                prompt += "\n\nIMPORTANT: Only Activity Book (AB) content has been provided. Reference ONLY AB pages in Resources and Classwork. Do NOT reference CB or course book pages."
 
             # Generate lesson plan (HTML)
             html_content, usage_data = self._call_llm(prompt, subject)

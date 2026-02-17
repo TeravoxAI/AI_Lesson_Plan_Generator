@@ -93,10 +93,39 @@ async def generate_lesson_plan(
                 status_code=400,
                 detail="Mathematics requires unit_number to be specified"
             )
-        if not request.course_book_pages:
+
+        # Resolve and validate book_types (default to both if not provided)
+        book_types = request.book_types if request.book_types else ["CB", "AB"]
+        valid_book_types = {"CB", "AB"}
+        invalid = [bt for bt in book_types if bt not in valid_book_types]
+        if invalid:
             raise HTTPException(
                 status_code=400,
-                detail="Mathematics requires course_book_pages to be specified"
+                detail=f"Invalid book_types: {invalid}. Must be 'CB' (Course Book) or 'AB' (Activity Book)."
+            )
+        if not book_types:
+            raise HTTPException(
+                status_code=400,
+                detail="At least one book type must be selected ('CB' or 'AB')."
+            )
+
+        # Validate that required page fields are present for selected book types
+        if "CB" in book_types and not request.course_book_pages:
+            raise HTTPException(
+                status_code=400,
+                detail="Course Book pages are required when Course Book is selected."
+            )
+        if "AB" in book_types and not request.workbook_pages:
+            raise HTTPException(
+                status_code=400,
+                detail="Activity Book pages are required when Activity Book is selected."
+            )
+
+        # Require at least one page input
+        if not request.course_book_pages and not request.workbook_pages:
+            raise HTTPException(
+                status_code=400,
+                detail="Mathematics requires at least course_book_pages or workbook_pages to be specified"
             )
 
         # Generate Math lesson plan
@@ -105,6 +134,7 @@ async def generate_lesson_plan(
             unit_number=request.unit_number,
             course_book_pages=request.course_book_pages,
             workbook_pages=request.workbook_pages,
+            book_types=book_types,
             created_by_id=user_id
         )
     else:
