@@ -291,12 +291,22 @@ Do not invent AFL strategies. Use what the SOW specifies (e.g., "RSQC2", "Think-
 
 ⚠️ SKILLS CONSTRAINT:
 List ONLY 2-4 skills. Take them EXACTLY as written in the SOW.
-Do NOT list every skill mentioned — pick only those directly exercised in this specific lesson type.
+Do NOT list every skill mentioned — pick only those ACTIVELY and PRODUCTIVELY exercised in this specific lesson type.
+Prioritise productive skills (Writing, Speaking, Listening, Reading) over passive/observational ones (Identifying, Comparing, Contrasting).
+If Writing is exercised in the lesson (e.g., Quick Write, sentence completion, labelling), it MUST be included.
+Example: for a vocabulary lesson with writing tasks → Reading, Listening, Speaking, Writing (NOT Identifying).
 
 ⚠️ SLO CONSTRAINT:
 Extract 2-3 SLOs from the SOW. Keep wording as close to SOW as possible.
 You may break one SOW SLO into sub-points but do not rephrase substantially.
 Grade 2 students: SLOs must be achievable in one lesson, simple action verbs only.
+
+⚠️ TEACHING SEQUENCE ORDER (MANDATORY):
+Follow the SOW teaching sequence steps in the EXACT order they are provided.
+Do NOT reorder, merge, or move steps based on your own pedagogical logic or activity type.
+For Club Period Phase 1/2 splits: divide at the natural chronological midpoint of the sequence —
+do NOT move activities between phases based on their type (e.g., do not push all writing/discussion
+activities to Phase 2 if they appear earlier in the SOW sequence).
 
 ⚠️ CRITICAL REQUIREMENT - SOW ALIGNMENT:
 You MUST use the SOW data provided in the prompt as the PRIMARY source for ALL lesson plan components:

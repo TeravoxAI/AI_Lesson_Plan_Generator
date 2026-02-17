@@ -170,9 +170,9 @@ function App() {
         grade: 'Grade 2',
         subject: 'English',
         lesson_number: 1,
-        selected_types: ['vocabulary'],  // Default to vocabulary for English
+        selected_types: [],  // No default selection
         // English book selection fields
-        selected_books: ['LB', 'AB'],
+        selected_books: [],  // No default selection
         lb_pages: '',
         ab_pages: '',
         ort_pages: '',
@@ -181,7 +181,7 @@ function App() {
         unit_number: null,
         course_book_pages: '',
         workbook_pages: '',
-        book_types: ['CB', 'AB']  // Default to both books selected
+        book_types: []  // No default selection
     })
 
     const [uploadForm, setUploadForm] = useState({
@@ -212,7 +212,7 @@ function App() {
                     types.find(lt => lt.type === t)
                 )
                 if (validTypes.length === 0) {
-                    setGenerateForm(prev => ({ ...prev, selected_types: [types[0].type] }))
+                    setGenerateForm(prev => ({ ...prev, selected_types: [] }))
                 } else {
                     setGenerateForm(prev => ({ ...prev, selected_types: validTypes }))
                 }
@@ -231,7 +231,7 @@ function App() {
                 unit_number: null,
                 course_book_pages: '',
                 workbook_pages: '',
-                book_types: ['CB', 'AB']  // Reset to both when leaving Mathematics
+                book_types: []  // Reset when leaving Mathematics
             }))
         }
     }, [generateForm.subject, generateForm.grade])
@@ -278,8 +278,6 @@ function App() {
         setGenerateForm(prev => {
             const types = prev.selected_types
             if (types.includes(type)) {
-                // Don't allow deselecting if it's the only one
-                if (types.length === 1) return prev
                 return { ...prev, selected_types: types.filter(t => t !== type) }
             } else {
                 return { ...prev, selected_types: [...types, type] }
@@ -291,8 +289,6 @@ function App() {
         setGenerateForm(prev => {
             const types = prev.book_types
             if (types.includes(bookType)) {
-                // Don't allow deselecting the last remaining book type
-                if (types.length === 1) return prev
                 return { ...prev, book_types: types.filter(t => t !== bookType) }
             } else {
                 return { ...prev, book_types: [...types, bookType] }
@@ -304,7 +300,6 @@ function App() {
         setGenerateForm(prev => {
             const books = prev.selected_books
             if (books.includes(bookCode)) {
-                if (books.length === 1) return prev  // Don't allow deselecting all
                 return { ...prev, selected_books: books.filter(b => b !== bookCode) }
             } else {
                 return { ...prev, selected_books: [...books, bookCode] }
@@ -559,6 +554,10 @@ function App() {
 
     const currentLessonTypes = lessonTypes[generateForm.subject] || []
 
+    const canGenerate = generateForm.subject === 'Mathematics'
+        ? !!(generateForm.unit_number && generateForm.book_types.length > 0)
+        : generateForm.selected_books.length > 0 && generateForm.selected_types.length > 0
+
     const formatTypeName = (type) => {
         return type.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase())
     }
@@ -689,6 +688,19 @@ function App() {
                                     {/* Conditional fields based on subject */}
                                     {generateForm.subject === 'Mathematics' ? (
                                         <>
+                                            {/* Unit restriction notice for Math */}
+                                            <div style={{
+                                                background: '#fef3c7',
+                                                border: '1px solid #f59e0b',
+                                                borderRadius: '6px',
+                                                padding: '8px 12px',
+                                                marginBottom: '12px',
+                                                fontSize: '13px',
+                                                color: '#92400e'
+                                            }}>
+                                                ⚠️ LP generation is currently available for <strong>Unit 13</strong> only.
+                                            </div>
+
                                             {/* Chapter/Unit Selection for Math */}
                                             <div className="form-field">
                                                 <label className="form-label">Chapter/Unit</label>
@@ -769,6 +781,19 @@ function App() {
                                         </>
                                     ) : (
                                         <>
+                                            {/* Unit restriction notice for English */}
+                                            <div style={{
+                                                background: '#fef3c7',
+                                                border: '1px solid #f59e0b',
+                                                borderRadius: '6px',
+                                                padding: '8px 12px',
+                                                marginBottom: '12px',
+                                                fontSize: '13px',
+                                                color: '#92400e'
+                                            }}>
+                                                ⚠️ LP generation is currently available for <strong>Unit 8</strong> only.
+                                            </div>
+
                                             {/* Lesson Number for English (used for SOW lookup) */}
                                             <div className="form-field">
                                                 <label className="form-label">Lesson Number (for SOW)</label>
@@ -789,19 +814,27 @@ function App() {
                                                 <p className="form-hint">Select which books to include</p>
                                                 <div className="lesson-type-options">
                                                     {[
-                                                        { code: 'LB', label: "Learner's Book" },
-                                                        { code: 'AB', label: 'Activity Book' },
-                                                        { code: 'ORT', label: 'Oxford Reading Tree' }
-                                                    ].map(({ code, label }) => (
+                                                        { code: 'LB', label: "Learner's Book", disabled: false },
+                                                        { code: 'AB', label: 'Activity Book', disabled: false },
+                                                        { code: 'ORT', label: 'Oxford Reading Tree', disabled: true }
+                                                    ].map(({ code, label, disabled }) => (
                                                         <div
                                                             key={code}
-                                                            className={`lesson-type-option ${generateForm.selected_books.includes(code) ? 'selected' : ''}`}
-                                                            onClick={() => toggleEnglishBook(code)}
+                                                            className={`lesson-type-option ${generateForm.selected_books.includes(code) ? 'selected' : ''} ${disabled ? 'disabled' : ''}`}
+                                                            onClick={() => !disabled && toggleEnglishBook(code)}
+                                                            style={disabled ? { opacity: 0.45, cursor: 'not-allowed' } : {}}
                                                         >
                                                             <div className="lesson-type-checkbox">
                                                                 <CheckIcon />
                                                             </div>
-                                                            <span className="lesson-type-label">{label}</span>
+                                                            <span className="lesson-type-label">
+                                                                {label}
+                                                                {disabled && (
+                                                                    <span style={{ fontSize: '11px', color: '#9ca3af', marginLeft: '6px' }}>
+                                                                        (book not available)
+                                                                    </span>
+                                                                )}
+                                                            </span>
                                                         </div>
                                                     ))}
                                                 </div>
@@ -885,8 +918,17 @@ function App() {
                                         </>
                                     )}
 
+                                    {/* Validation message */}
+                                    {!canGenerate && !loading && (
+                                        <p style={{ color: '#f59e0b', fontSize: '13px', marginBottom: '8px', textAlign: 'center' }}>
+                                            {generateForm.subject === 'Mathematics'
+                                                ? 'Select a chapter and at least one book type to generate LP.'
+                                                : 'Select at least one book and one lesson plan type to generate LP.'}
+                                        </p>
+                                    )}
+
                                     {/* Generate Button */}
-                                    <button type="submit" className="generate-btn" disabled={loading}>
+                                    <button type="submit" className="generate-btn" disabled={loading || !canGenerate}>
                                         {loading ? (
                                             <>
                                                 <span className="spinner"></span>
