@@ -79,6 +79,7 @@ class LessonGenerator:
         headers = {
             "Authorization": f"Bearer {self.api_key}",
             "Content-Type": "application/json",
+            "HTTP-Referer": "https://www.ai-lp-generator.teravox.ai/",
             "X-Title": "LP Generator"
         }
 
