@@ -135,28 +135,23 @@ async def generate_lesson_plan(
             course_book_pages=request.course_book_pages,
             workbook_pages=request.workbook_pages,
             book_types=book_types,
+            teacher_instructions=request.teacher_instructions,
             created_by_id=user_id
         )
     else:
-        # English flow: requires lesson_type and page_start (lesson_number)
-        if not request.lesson_type:
-            raise HTTPException(
-                status_code=400,
-                detail="English requires lesson_type to be specified"
-            )
+        # English flow
         if request.page_start is None:
-            raise HTTPException(
-                status_code=400,
-                detail="English requires page_start (lesson_number) to be specified"
-            )
+            raise HTTPException(status_code=400, detail="English requires page_start (lesson_number) to be specified")
 
-        # Validate lesson type for subject
-        if not is_valid_lesson_type(request.subject, request.lesson_type):
-            valid_types = get_available_lesson_types(request.subject)
+        # Require at least one exercise selected
+        has_sections = (
+            request.selected_sections is not None
+            and len(request.selected_sections.get("exercise_ids", [])) > 0
+        )
+        if not has_sections:
             raise HTTPException(
                 status_code=400,
-                detail=f"Invalid lesson type '{request.lesson_type.value}' for {request.subject.value}. "
-                       f"Valid types: {[t.value for t in valid_types]}"
+                detail="English requires at least one exercise to be selected"
             )
 
         # Generate English lesson plan
@@ -171,6 +166,9 @@ async def generate_lesson_plan(
             ab_pages=request.ab_pages,
             ort_pages=request.ort_pages,
             is_club_period=request.is_club_period,
+            selected_sections=request.selected_sections,
+            exercises=None,
+            teacher_instructions=request.teacher_instructions,
             created_by_id=user_id
         )
 
@@ -230,6 +228,31 @@ async def get_math_units_for_grade(grade: str):
             for u in units
         ]
     )
+
+
+@router.get("/lesson-sections")
+async def get_lesson_sections(
+    grade: str,
+    lesson_number: int,
+    subject: str = "English",
+    current_user: Dict[str, Any] = Depends(get_current_user)
+):
+    """
+    Return the available sections (recall, vocabulary, warm-up, exercises, etc.)
+    for a given lesson in the new-format SOW. Used by the frontend to populate checkboxes.
+    """
+    from src.models import Subject as SubjectEnum
+    from src.generation.router import router as ctx_router
+    try:
+        subject_enum = SubjectEnum(subject)
+    except ValueError:
+        raise HTTPException(status_code=400, detail=f"Invalid subject: {subject}")
+
+    sections = ctx_router.get_sections_for_lesson(grade, subject_enum, lesson_number)
+    if sections is None:
+        return {"success": False, "sections": None, "message": "No new-format SOW found for this lesson"}
+
+    return {"success": True, "sections": sections}
 
 
 @router.get("/lesson-types/{subject}", response_model=LessonTypesResponse)

@@ -7,6 +7,7 @@ from src.models import Subject, LessonType
 from src.db.client import db
 from src.generation.sow_matcher import (
     get_lesson_context_by_number,
+    get_lesson_sections_summary,
     format_lesson_context_for_prompt,
     map_book_type_to_db,
     # Math functions
@@ -51,14 +52,16 @@ class ContextRouter:
         self,
         grade: str,
         subject: Subject,
-        lesson_type: LessonType,
-        page_start: int,  # This is actually lesson_number now
+        lesson_type: Optional[LessonType] = None,
+        page_start: int = 1,
         page_end: Optional[int] = None,
         topic: Optional[str] = None,
         book_type: Optional[str] = None,
         lb_pages: Optional[str] = None,
         ab_pages: Optional[str] = None,
-        ort_pages: Optional[str] = None
+        ort_pages: Optional[str] = None,
+        selected_sections: Optional[Dict] = None,  # NEW: structured section selection
+        exercises: Optional[str] = None             # LEGACY
     ) -> Dict[str, Any]:
         """
         Retrieve all context needed for lesson generation.
@@ -79,7 +82,7 @@ class ContextRouter:
         context = {
             "grade": grade,
             "subject": subject.value,
-            "lesson_type": lesson_type.value,
+            "lesson_type": lesson_type.value if lesson_type else None,
             "lesson_number": lesson_number,
             "book_content": [],
             "sow_strategy": None,
@@ -146,8 +149,14 @@ class ContextRouter:
         has_lb_ab = bool(lb_pages or ab_pages)
         has_ort = bool(ort_pages)
 
-        print(f"   🔍 Looking for lesson_type: '{lesson_type.value}'")
+        lt_value = lesson_type.value if lesson_type else None
+        print(f"   🔍 Looking for lesson_type: '{lt_value}'")
         print(f"   📄 User pages — LB: {lb_pages}, AB: {ab_pages}, ORT: {ort_pages}")
+        if selected_sections:
+            ex_ids = selected_sections.get("exercise_ids", [])
+            print(f"   📝 Selected sections — exercises: {ex_ids}, recall: {selected_sections.get('recall')}, vocab: {selected_sections.get('vocabulary')}, warmup: {selected_sections.get('warmup')}")
+        elif exercises:
+            print(f"   📝 Exercises (legacy): '{exercises}'")
 
         # Debug: get lesson without filter to see available types
         lesson_debug = get_lesson_context_by_number(
@@ -160,32 +169,44 @@ class ContextRouter:
             seq_count = len(lesson_debug.get("teaching_sequence", []))
             print(f"   📋 Found lesson — section: {section}, teaching steps: {seq_count}")
 
+        # Embed has_ort into selected_sections so the formatter can filter CW/HW accordingly
+        effective_sections = dict(selected_sections) if selected_sections else {}
+        effective_sections['_has_ort'] = has_ort
+
         # Select SOW section and apply page filter based on which books the user selected
         if has_ort and not has_lb_ab:
-            # ORT only — use reading section, filter by ORT pages
             sow_context = get_lesson_context_by_number(
-                extraction, lesson_number, "reading", filter_pages=ort_page_list
+                extraction, lesson_number, "reading",
+                filter_pages=ort_page_list,
+                selected_sections=effective_sections,
+                exercises_text=exercises
             )
             strategy_str = format_lesson_context_for_prompt(sow_context)
 
         elif has_lb_ab and not has_ort:
-            # LB/AB only — use requested lesson_type, filter by combined LB+AB pages
             combined_pages = lb_page_list + ab_page_list
             sow_context = get_lesson_context_by_number(
-                extraction, lesson_number, lesson_type.value, filter_pages=combined_pages
+                extraction, lesson_number, lt_value,
+                filter_pages=combined_pages,
+                selected_sections=effective_sections,
+                exercises_text=exercises
             )
             strategy_str = format_lesson_context_for_prompt(sow_context)
 
         elif has_lb_ab and has_ort:
-            # Both LB/AB and ORT — get both contexts and combine
             lb_ab_ctx = get_lesson_context_by_number(
-                extraction, lesson_number, lesson_type.value,
-                filter_pages=lb_page_list + ab_page_list
+                extraction, lesson_number, lt_value,
+                filter_pages=lb_page_list + ab_page_list,
+                selected_sections=effective_sections,
+                exercises_text=exercises
             )
             ort_ctx = get_lesson_context_by_number(
-                extraction, lesson_number, "reading", filter_pages=ort_page_list
+                extraction, lesson_number, "reading",
+                filter_pages=ort_page_list,
+                selected_sections=effective_sections,
+                exercises_text=exercises
             )
-            sow_context = lb_ab_ctx  # Use lb_ab as the primary context for metadata
+            sow_context = lb_ab_ctx
             strategy_str = (
                 format_lesson_context_for_prompt(lb_ab_ctx)
                 + "\n\n--- ORT SECTION ---\n\n"
@@ -193,9 +214,10 @@ class ContextRouter:
             )
 
         else:
-            # No page info provided — fall back to lesson_type-based section selection
             sow_context = get_lesson_context_by_number(
-                extraction, lesson_number, lesson_type.value
+                extraction, lesson_number, lt_value,
+                selected_sections=effective_sections,
+                exercises_text=exercises
             )
             strategy_str = format_lesson_context_for_prompt(sow_context)
 
@@ -230,6 +252,8 @@ class ContextRouter:
             if not page_str:
                 continue
             pages = parse_page_range(page_str)
+            if not pages:
+                print(f"       ⚠ Could not parse page range '{page_str}' for {book_code} — check for typos (e.g. '110-11' instead of '110-111')")
             if not pages:
                 continue
 
@@ -310,6 +334,16 @@ class ContextRouter:
         print("="*80 + "\n")
 
         return context
+
+    def get_sections_for_lesson(self, grade: str, subject: Subject, lesson_number: int) -> Optional[Dict[str, Any]]:
+        """Return available section checkboxes for a lesson (new-format SOW only)."""
+        sow_entries = self.db.get_sow_by_subject(subject.value, grade)
+        if not sow_entries:
+            return None
+        extraction = sow_entries[0].get("extraction", {})
+        if not extraction:
+            return None
+        return get_lesson_sections_summary(extraction, lesson_number)
 
     def retrieve_math_context(
         self,

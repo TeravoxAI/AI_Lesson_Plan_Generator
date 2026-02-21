@@ -60,6 +60,18 @@ class GenerateRequest(BaseModel):
     ab_pages: Optional[str] = None       # e.g. "88-89"
     ort_pages: Optional[str] = None      # e.g. "109-112"
     is_club_period: bool = False          # True = 70 min, False = 35 min
+    # English section selections (new structured approach)
+    selected_sections: Optional[Dict[str, Any]] = None
+    teacher_instructions: Optional[str] = None  # freeform teacher notes appended to prompt
+    # selected_sections structure:
+    # {
+    #   "recall": bool,
+    #   "vocabulary": bool,
+    #   "warmup": bool,
+    #   "exercise_ids": List[str],   # e.g. ["1", "3", "4"]
+    #   "differentiated": bool,
+    #   "extension": bool
+    # }
 
 
 class TextbookUpload(BaseModel):
