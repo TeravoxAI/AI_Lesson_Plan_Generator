@@ -180,6 +180,219 @@ body {
   padding-right: 40px;
 }
 
+/* Book Chips */
+.book-chips {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.book-chip {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  height: 36px;
+  padding: 0 16px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  background: var(--background-light);
+  color: var(--text-secondary);
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  font-family: inherit;
+}
+
+.book-chip:hover:not(.disabled) {
+  border-color: var(--primary-light);
+  color: var(--primary);
+}
+
+.book-chip.selected {
+  background: var(--primary);
+  border-color: var(--primary);
+  color: white;
+}
+
+.book-chip.disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.book-chip-soon {
+  font-size: 10px;
+  font-weight: 500;
+  opacity: 0.75;
+  margin-left: 2px;
+}
+
+/* Pages Row */
+.pages-row {
+  display: flex;
+  gap: 10px;
+}
+
+.pages-col {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.pages-col-label {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.pages-input {
+  height: 40px !important;
+  font-size: 13px !important;
+}
+
+/* Club Period Toggle */
+.club-period-toggle {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 16px;
+  background: var(--background-light);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.club-period-toggle:hover {
+  border-color: var(--primary-light);
+}
+
+.club-period-toggle.selected {
+  border-color: var(--primary);
+  background: rgba(39, 84, 65, 0.05);
+}
+
+.club-period-check {
+  width: 20px;
+  height: 20px;
+  border: 2px solid var(--border);
+  border-radius: 4px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  transition: all 0.2s ease;
+}
+
+.club-period-check.checked {
+  background: var(--primary);
+  border-color: var(--primary);
+}
+
+.club-period-check svg {
+  width: 12px;
+  height: 12px;
+  color: white;
+}
+
+.club-period-info {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.club-period-title {
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--text-primary);
+}
+
+.club-period-subtitle {
+  font-size: 12px;
+  color: var(--text-muted);
+}
+
+/* Textarea override */
+textarea.form-input {
+  height: auto;
+  padding: 12px 16px;
+  resize: none;
+  line-height: 1.5;
+}
+
+/* Section Checkboxes */
+.section-checkboxes {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+
+.section-checkbox-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 12px;
+  border-radius: var(--radius-md);
+  border: 1px solid var(--border-light);
+  background: var(--background-light);
+  cursor: pointer;
+  transition: border-color 0.15s ease, background 0.15s ease;
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--text-primary);
+  user-select: none;
+}
+
+.section-checkbox-row:hover {
+  border-color: var(--primary-light);
+  background: rgba(39, 84, 65, 0.03);
+}
+
+/* Checked state — green tint + green border, matching Pencil design */
+.section-checkbox-row:has(input:checked) {
+  border-color: var(--primary);
+  background: rgba(39, 84, 65, 0.05);
+}
+
+.section-checkbox-row input[type="checkbox"] {
+  width: 15px;
+  height: 15px;
+  accent-color: var(--primary);
+  flex-shrink: 0;
+  cursor: pointer;
+}
+
+.section-checkbox-hint {
+  font-size: 11px;
+  color: var(--text-muted);
+  font-weight: 400;
+  margin-left: auto;
+}
+
+.section-checkbox-group {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.section-checkbox-group-label {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  margin: 2px 0 1px 2px;
+}
+
+.section-checkbox-indented {
+  margin-left: 12px;
+  padding: 7px 12px 7px 24px;
+  font-size: 12px;
+}
+
 /* Lesson Type Checkboxes */
 .lesson-type-options {
   display: flex;

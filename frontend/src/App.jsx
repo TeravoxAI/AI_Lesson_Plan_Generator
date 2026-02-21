@@ -170,19 +170,30 @@ function App() {
         grade: 'Grade 2',
         subject: 'English',
         lesson_number: 1,
-        selected_types: [],  // No default selection
+        selected_types: [],
         // English book selection fields
-        selected_books: [],  // No default selection
+        selected_books: [],
         lb_pages: '',
         ab_pages: '',
         ort_pages: '',
+        // English section selections
+        include_recall: false,
+        include_vocabulary: false,
+        include_warmup: false,
+        selected_exercise_ids: [],
+        include_differentiated: false,
+        include_extension: false,
         is_club_period: false,
+        teacher_instructions: '',
         // Math-specific fields
         unit_number: null,
         course_book_pages: '',
         workbook_pages: '',
-        book_types: []  // No default selection
+        book_types: []
     })
+
+    const [lessonSections, setLessonSections] = useState(null)
+    const [sectionsLoading, setSectionsLoading] = useState(false)
 
     const [uploadForm, setUploadForm] = useState({
         grade: 'Grade 2',
@@ -219,6 +230,16 @@ function App() {
             }
         }
     }, [generateForm.subject, lessonTypes])
+
+    // Fetch lesson sections when lesson_number or grade changes (English only)
+    useEffect(() => {
+        if (generateForm.subject === 'English' && session) {
+            const timer = setTimeout(() => {
+                fetchLessonSections(generateForm.grade, generateForm.lesson_number)
+            }, 400)  // debounce
+            return () => clearTimeout(timer)
+        }
+    }, [generateForm.lesson_number, generateForm.grade, generateForm.subject, session])
 
     // Fetch Math units when subject changes to Mathematics
     useEffect(() => {
@@ -307,6 +328,50 @@ function App() {
         })
     }
 
+    const toggleExercise = (exerciseId) => {
+        setGenerateForm(prev => {
+            const ids = prev.selected_exercise_ids
+            if (ids.includes(exerciseId)) {
+                return { ...prev, selected_exercise_ids: ids.filter(i => i !== exerciseId) }
+            } else {
+                return { ...prev, selected_exercise_ids: [...ids, exerciseId] }
+            }
+        })
+    }
+
+    const fetchLessonSections = async (grade, lessonNumber) => {
+        if (!lessonNumber || !grade || !session?.access_token) return
+        setSectionsLoading(true)
+        setLessonSections(null)
+        // Reset section selections when lesson changes
+        setGenerateForm(prev => ({
+            ...prev,
+            include_recall: false,
+            include_vocabulary: false,
+            include_warmup: false,
+            selected_exercise_ids: [],
+            include_differentiated: false,
+            include_extension: false
+        }))
+        try {
+            const res = await fetch(
+                `${API_BASE}/generate/lesson-sections?grade=${encodeURIComponent(grade)}&lesson_number=${lessonNumber}`,
+                { headers: { 'Authorization': `Bearer ${session?.access_token}` } }
+            )
+            const data = await res.json()
+            if (data.success && data.sections) {
+                setLessonSections(data.sections)
+            } else {
+                setLessonSections(null)
+            }
+        } catch (err) {
+            console.error('Failed to fetch lesson sections:', err)
+            setLessonSections(null)
+        } finally {
+            setSectionsLoading(false)
+        }
+    }
+
     const handleGenerate = async (e) => {
         e.preventDefault()
         setLoading(true)
@@ -347,22 +412,62 @@ function App() {
                     unit_number: generateForm.unit_number,
                     course_book_pages: generateForm.book_types.includes('CB') ? generateForm.course_book_pages : null,
                     workbook_pages: generateForm.book_types.includes('AB') ? (generateForm.workbook_pages || null) : null,
-                    book_types: generateForm.book_types
+                    book_types: generateForm.book_types,
+                    teacher_instructions: generateForm.teacher_instructions.trim() || null
                 }
             } else {
-                // English flow: send lesson_type and lesson_number, plus per-book pages
-                const primaryType = generateForm.selected_types[0]
+                // English flow
+                if (generateForm.selected_exercise_ids.length === 0) {
+                    setStatus({ type: 'error', message: 'Please select at least one exercise.' })
+                    setLoading(false)
+                    return
+                }
+                const validatePages = (label, pagesStr) => {
+                    if (!pagesStr) return `Please enter ${label} page numbers`
+                    const trimmed = pagesStr.trim()
+                    if (trimmed.includes('-')) {
+                        const parts = trimmed.split('-')
+                        if (parts.length === 2) {
+                            const start = parseInt(parts[0])
+                            const end = parseInt(parts[1])
+                            if (!isNaN(start) && !isNaN(end) && start > end) {
+                                return `${label} page range is invalid: ${trimmed} — start (${start}) is greater than end (${end}). Did you mean ${start}-${start + (end.toString().length === 3 ? 100 : 10) + end}?`
+                            }
+                        }
+                    }
+                    return null
+                }
+                if (generateForm.selected_books.includes('LB')) {
+                    const err = validatePages("Learner's Book", generateForm.lb_pages)
+                    if (err) { setStatus({ type: 'error', message: err }); setLoading(false); return }
+                }
+                if (generateForm.selected_books.includes('AB')) {
+                    const err = validatePages("Activity Book", generateForm.ab_pages)
+                    if (err) { setStatus({ type: 'error', message: err }); setLoading(false); return }
+                }
+                if (generateForm.selected_books.includes('ORT')) {
+                    const err = validatePages("ORT", generateForm.ort_pages)
+                    if (err) { setStatus({ type: 'error', message: err }); setLoading(false); return }
+                }
 
                 requestBody = {
                     grade: generateForm.grade,
                     subject: generateForm.subject,
-                    lesson_type: primaryType,
                     page_start: generateForm.lesson_number,
                     page_end: generateForm.lesson_number,
                     lb_pages: generateForm.selected_books.includes('LB') ? (generateForm.lb_pages || null) : null,
                     ab_pages: generateForm.selected_books.includes('AB') ? (generateForm.ab_pages || null) : null,
                     ort_pages: generateForm.selected_books.includes('ORT') ? (generateForm.ort_pages || null) : null,
-                    is_club_period: generateForm.is_club_period
+                    is_club_period: generateForm.is_club_period,
+                    selected_sections: {
+                        recall: generateForm.include_recall,
+                        vocabulary: generateForm.include_vocabulary,
+                        warmup: generateForm.include_warmup,
+                        exercise_ids: generateForm.selected_exercise_ids,
+                        differentiated: generateForm.include_differentiated,
+                        extension: generateForm.include_extension
+                    },
+                    teacher_instructions: generateForm.teacher_instructions.trim() || null
                 }
             }
 
@@ -556,7 +661,7 @@ function App() {
 
     const canGenerate = generateForm.subject === 'Mathematics'
         ? !!(generateForm.unit_number && generateForm.book_types.length > 0)
-        : generateForm.selected_books.length > 0 && generateForm.selected_types.length > 0
+        : generateForm.selected_books.length > 0 && generateForm.selected_exercise_ids.length > 0
 
     const formatTypeName = (type) => {
         return type.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase())
@@ -724,58 +829,57 @@ function App() {
                                                 )}
                                             </div>
 
-                                            {/* Book Type Selection for Math */}
+                                            {/* Book Type Selection for Math — chip style */}
                                             <div className="form-field">
-                                                <label className="form-label">Book Type</label>
-                                                <p className="form-hint">Select which books to include</p>
-                                                <div className="lesson-type-options">
+                                                <label className="form-label">Book Types</label>
+                                                <div className="book-chips">
                                                     {[
-                                                        { code: 'CB', label: 'Course Book' },
-                                                        { code: 'AB', label: 'Activity Book' }
-                                                    ].map(({ code, label }) => (
-                                                        <div
+                                                        { code: 'CB', label: 'CB', fullName: 'Course Book' },
+                                                        { code: 'AB', label: 'AB', fullName: 'Activity Book' }
+                                                    ].map(({ code, label, fullName }) => (
+                                                        <button
                                                             key={code}
-                                                            className={`lesson-type-option ${generateForm.book_types.includes(code) ? 'selected' : ''}`}
+                                                            type="button"
+                                                            className={`book-chip ${generateForm.book_types.includes(code) ? 'selected' : ''}`}
                                                             onClick={() => toggleBookType(code)}
+                                                            title={fullName}
                                                         >
-                                                            <div className="lesson-type-checkbox">
-                                                                <CheckIcon />
-                                                            </div>
-                                                            <span className="lesson-type-label">{label}</span>
-                                                        </div>
+                                                            {label}
+                                                        </button>
                                                     ))}
                                                 </div>
                                             </div>
 
-                                            {/* Course Book Pages for Math (only shown when CB is selected) */}
-                                            {generateForm.book_types.includes('CB') && (
+                                            {/* Math pages — side-by-side compact row */}
+                                            {generateForm.book_types.length > 0 && (
                                                 <div className="form-field">
-                                                    <label className="form-label">Course Book Pages</label>
-                                                    <input
-                                                        type="text"
-                                                        className="form-input"
-                                                        value={generateForm.course_book_pages}
-                                                        onChange={e => setGenerateForm({ ...generateForm, course_book_pages: e.target.value })}
-                                                        placeholder="e.g., 145 or 145-150"
-                                                        required
-                                                    />
-                                                    <p className="form-hint">Enter a single page (145) or a range (145-150)</p>
-                                                </div>
-                                            )}
-
-                                            {/* Activity Book Pages for Math (only shown when AB is selected) */}
-                                            {generateForm.book_types.includes('AB') && (
-                                                <div className="form-field">
-                                                    <label className="form-label">Activity Book Pages</label>
-                                                    <input
-                                                        type="text"
-                                                        className="form-input"
-                                                        value={generateForm.workbook_pages}
-                                                        onChange={e => setGenerateForm({ ...generateForm, workbook_pages: e.target.value })}
-                                                        placeholder="e.g., 80 or 80-85"
-                                                        required
-                                                    />
-                                                    <p className="form-hint">Enter a single page (80) or a range (80-85)</p>
+                                                    <label className="form-label">Pages</label>
+                                                    <div className="pages-row">
+                                                        {generateForm.book_types.includes('CB') && (
+                                                            <div className="pages-col">
+                                                                <span className="pages-col-label">Course Book</span>
+                                                                <input
+                                                                    type="text"
+                                                                    className="form-input pages-input"
+                                                                    value={generateForm.course_book_pages}
+                                                                    onChange={e => setGenerateForm({ ...generateForm, course_book_pages: e.target.value })}
+                                                                    placeholder="e.g. 145-150"
+                                                                />
+                                                            </div>
+                                                        )}
+                                                        {generateForm.book_types.includes('AB') && (
+                                                            <div className="pages-col">
+                                                                <span className="pages-col-label">Activity Book</span>
+                                                                <input
+                                                                    type="text"
+                                                                    className="form-input pages-input"
+                                                                    value={generateForm.workbook_pages}
+                                                                    onChange={e => setGenerateForm({ ...generateForm, workbook_pages: e.target.value })}
+                                                                    placeholder="e.g. 80-85"
+                                                                />
+                                                            </div>
+                                                        )}
+                                                    </div>
                                                 </div>
                                             )}
                                         </>
@@ -808,122 +912,197 @@ function App() {
                                                 />
                                             </div>
 
-                                            {/* Book Selection for English */}
+                                            {/* Book Selection for English — chip style */}
                                             <div className="form-field">
-                                                <label className="form-label">Books</label>
-                                                <p className="form-hint">Select which books to include</p>
-                                                <div className="lesson-type-options">
+                                                <label className="form-label">Textbooks</label>
+                                                <div className="book-chips">
                                                     {[
-                                                        { code: 'LB', label: "Learner's Book", disabled: false },
-                                                        { code: 'AB', label: 'Activity Book', disabled: false },
-                                                        { code: 'ORT', label: 'Oxford Reading Tree', disabled: true }
-                                                    ].map(({ code, label, disabled }) => (
-                                                        <div
+                                                        { code: 'LB', label: 'LB', fullName: "Learner's Book", disabled: false },
+                                                        { code: 'AB', label: 'AB', fullName: 'Activity Book', disabled: false },
+                                                        { code: 'ORT', label: 'ORT', fullName: 'Oxford Reading Tree', disabled: true }
+                                                    ].map(({ code, label, fullName, disabled }) => (
+                                                        <button
                                                             key={code}
-                                                            className={`lesson-type-option ${generateForm.selected_books.includes(code) ? 'selected' : ''} ${disabled ? 'disabled' : ''}`}
+                                                            type="button"
+                                                            className={`book-chip ${generateForm.selected_books.includes(code) ? 'selected' : ''} ${disabled ? 'disabled' : ''}`}
                                                             onClick={() => !disabled && toggleEnglishBook(code)}
-                                                            style={disabled ? { opacity: 0.45, cursor: 'not-allowed' } : {}}
+                                                            title={fullName}
                                                         >
-                                                            <div className="lesson-type-checkbox">
-                                                                <CheckIcon />
+                                                            {label}
+                                                            {disabled && <span className="book-chip-soon">soon</span>}
+                                                        </button>
+                                                    ))}
+                                                </div>
+                                            </div>
+
+                                            {/* Pages — side-by-side compact row */}
+                                            {generateForm.selected_books.length > 0 && (
+                                                <div className="form-field">
+                                                    <label className="form-label">Pages</label>
+                                                    <div className="pages-row">
+                                                        {generateForm.selected_books.includes('LB') && (
+                                                            <div className="pages-col">
+                                                                <span className="pages-col-label">LB</span>
+                                                                <input
+                                                                    type="text"
+                                                                    className="form-input pages-input"
+                                                                    value={generateForm.lb_pages}
+                                                                    onChange={e => setGenerateForm({ ...generateForm, lb_pages: e.target.value })}
+                                                                    placeholder="e.g. 110-111"
+                                                                />
                                                             </div>
-                                                            <span className="lesson-type-label">
-                                                                {label}
-                                                                {disabled && (
-                                                                    <span style={{ fontSize: '11px', color: '#9ca3af', marginLeft: '6px' }}>
-                                                                        (book not available)
+                                                        )}
+                                                        {generateForm.selected_books.includes('AB') && (
+                                                            <div className="pages-col">
+                                                                <span className="pages-col-label">AB</span>
+                                                                <input
+                                                                    type="text"
+                                                                    className="form-input pages-input"
+                                                                    value={generateForm.ab_pages}
+                                                                    onChange={e => setGenerateForm({ ...generateForm, ab_pages: e.target.value })}
+                                                                    placeholder="e.g. 88-89"
+                                                                />
+                                                            </div>
+                                                        )}
+                                                        {generateForm.selected_books.includes('ORT') && (
+                                                            <div className="pages-col">
+                                                                <span className="pages-col-label">ORT</span>
+                                                                <input
+                                                                    type="text"
+                                                                    className="form-input pages-input"
+                                                                    value={generateForm.ort_pages}
+                                                                    onChange={e => setGenerateForm({ ...generateForm, ort_pages: e.target.value })}
+                                                                    placeholder="e.g. 109-112"
+                                                                />
+                                                            </div>
+                                                        )}
+                                                    </div>
+                                                </div>
+                                            )}
+
+                                            {/* Lesson Sections */}
+                                            <div className="form-field">
+                                                <label className="form-label">
+                                                    Lesson Sections <span style={{color:'#ef4444'}}>*</span>
+                                                </label>
+                                                {sectionsLoading && (
+                                                    <p className="form-hint">Loading sections...</p>
+                                                )}
+                                                {!sectionsLoading && !lessonSections && (
+                                                    <p className="form-hint" style={{color:'#f59e0b'}}>
+                                                        No SOW sections found for this lesson number.
+                                                    </p>
+                                                )}
+                                                {lessonSections && (
+                                                    <div className="section-checkboxes">
+                                                        {/* Recall */}
+                                                        {lessonSections.recall?.available && (
+                                                            <label className="section-checkbox-row">
+                                                                <input type="checkbox" checked={generateForm.include_recall}
+                                                                    onChange={() => setGenerateForm(prev => ({...prev, include_recall: !prev.include_recall}))} />
+                                                                <span>Recap / Recall</span>
+                                                            </label>
+                                                        )}
+                                                        {/* Vocabulary */}
+                                                        {lessonSections.vocabulary?.available && (
+                                                            <label className="section-checkbox-row">
+                                                                <input type="checkbox" checked={generateForm.include_vocabulary}
+                                                                    onChange={() => setGenerateForm(prev => ({...prev, include_vocabulary: !prev.include_vocabulary}))} />
+                                                                <span>Vocabulary</span>
+                                                                {lessonSections.vocabulary.words?.length > 0 && (
+                                                                    <span className="section-checkbox-hint">
+                                                                        {lessonSections.vocabulary.words.slice(0, 3).join(', ')}{lessonSections.vocabulary.words.length > 3 ? '…' : ''}
                                                                     </span>
                                                                 )}
-                                                            </span>
-                                                        </div>
-                                                    ))}
-                                                </div>
-                                            </div>
-
-                                            {/* LB Pages input */}
-                                            {generateForm.selected_books.includes('LB') && (
-                                                <div className="form-field">
-                                                    <label className="form-label">Learner's Book Pages</label>
-                                                    <input
-                                                        type="text"
-                                                        className="form-input"
-                                                        value={generateForm.lb_pages}
-                                                        onChange={e => setGenerateForm({ ...generateForm, lb_pages: e.target.value })}
-                                                        placeholder="e.g. 110-111"
-                                                    />
-                                                </div>
-                                            )}
-
-                                            {/* AB Pages input */}
-                                            {generateForm.selected_books.includes('AB') && (
-                                                <div className="form-field">
-                                                    <label className="form-label">Activity Book Pages</label>
-                                                    <input
-                                                        type="text"
-                                                        className="form-input"
-                                                        value={generateForm.ab_pages}
-                                                        onChange={e => setGenerateForm({ ...generateForm, ab_pages: e.target.value })}
-                                                        placeholder="e.g. 88-89"
-                                                    />
-                                                </div>
-                                            )}
-
-                                            {/* ORT Pages input */}
-                                            {generateForm.selected_books.includes('ORT') && (
-                                                <div className="form-field">
-                                                    <label className="form-label">ORT Pages</label>
-                                                    <input
-                                                        type="text"
-                                                        className="form-input"
-                                                        value={generateForm.ort_pages}
-                                                        onChange={e => setGenerateForm({ ...generateForm, ort_pages: e.target.value })}
-                                                        placeholder="e.g. 109-112"
-                                                    />
-                                                </div>
-                                            )}
-
-                                            {/* Lesson Plan Type for English */}
-                                            <div className="form-field">
-                                                <label className="form-label">Lesson Plan Type</label>
-                                                <p className="form-hint">Select one or more plan types</p>
-                                                <div className="lesson-type-options">
-                                                    {currentLessonTypes.map(lt => (
-                                                        <div
-                                                            key={lt.type}
-                                                            className={`lesson-type-option ${generateForm.selected_types.includes(lt.type) ? 'selected' : ''}`}
-                                                            onClick={() => toggleLessonType(lt.type)}
-                                                        >
-                                                            <div className="lesson-type-checkbox">
-                                                                <CheckIcon />
+                                                            </label>
+                                                        )}
+                                                        {/* Warm-up */}
+                                                        {lessonSections.warmup?.available && (
+                                                            <label className="section-checkbox-row">
+                                                                <input type="checkbox" checked={generateForm.include_warmup}
+                                                                    onChange={() => setGenerateForm(prev => ({...prev, include_warmup: !prev.include_warmup}))} />
+                                                                <span>Warm-up</span>
+                                                            </label>
+                                                        )}
+                                                        {/* Exercises */}
+                                                        {lessonSections.exercises?.length > 0 && (
+                                                            <div className="section-checkbox-group">
+                                                                <p className="section-checkbox-group-label">Exercises</p>
+                                                                {lessonSections.exercises.map(ex => (
+                                                                    <label key={ex.exercise_id} className="section-checkbox-row section-checkbox-indented">
+                                                                        <input type="checkbox"
+                                                                            checked={generateForm.selected_exercise_ids.includes(ex.exercise_id)}
+                                                                            onChange={() => toggleExercise(ex.exercise_id)} />
+                                                                        <span>{ex.title}</span>
+                                                                    </label>
+                                                                ))}
                                                             </div>
-                                                            <span className="lesson-type-label">{formatTypeName(lt.type)}</span>
-                                                        </div>
-                                                    ))}
-                                                </div>
+                                                        )}
+                                                        {/* Differentiated */}
+                                                        <label className="section-checkbox-row">
+                                                            <input type="checkbox" checked={generateForm.include_differentiated}
+                                                                onChange={() => setGenerateForm(prev => ({...prev, include_differentiated: !prev.include_differentiated}))} />
+                                                            <span>Differentiated Instruction</span>
+                                                            {lessonSections.differentiated?.available && (
+                                                                <span className="section-checkbox-hint">from SOW</span>
+                                                            )}
+                                                        </label>
+                                                        {/* Extension */}
+                                                        <label className="section-checkbox-row">
+                                                            <input type="checkbox" checked={generateForm.include_extension}
+                                                                onChange={() => setGenerateForm(prev => ({...prev, include_extension: !prev.include_extension}))} />
+                                                            <span>Extension Activity</span>
+                                                            {lessonSections.extension?.available && (
+                                                                <span className="section-checkbox-hint">from SOW</span>
+                                                            )}
+                                                        </label>
+                                                    </div>
+                                                )}
                                             </div>
 
-                                            {/* Club Period checkbox */}
-                                            <div className="form-field">
-                                                <div
-                                                    className={`lesson-type-option ${generateForm.is_club_period ? 'selected' : ''}`}
-                                                    onClick={() => setGenerateForm(prev => ({ ...prev, is_club_period: !prev.is_club_period }))}
-                                                    style={{ width: 'auto' }}
-                                                >
-                                                    <div className="lesson-type-checkbox">
-                                                        <CheckIcon />
-                                                    </div>
-                                                    <span className="lesson-type-label">Club Period (2 consecutive periods — 70 min)</span>
+                                            {/* Club Period toggle */}
+                                            <div
+                                                className={`club-period-toggle ${generateForm.is_club_period ? 'selected' : ''}`}
+                                                onClick={() => setGenerateForm(prev => ({ ...prev, is_club_period: !prev.is_club_period }))}
+                                            >
+                                                <div className={`club-period-check ${generateForm.is_club_period ? 'checked' : ''}`}>
+                                                    {generateForm.is_club_period && <CheckIcon />}
+                                                </div>
+                                                <div className="club-period-info">
+                                                    <span className="club-period-title">Club Period</span>
+                                                    <span className="club-period-subtitle">2 consecutive periods — 70 min</span>
                                                 </div>
                                             </div>
                                         </>
                                     )}
+
+                                    {/* Teacher Instructions */}
+                                    <div className="form-field" style={{ marginTop: '4px' }}>
+                                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
+                                            <label className="form-label" style={{ margin: 0 }}>Additional Instructions</label>
+                                            <span style={{ fontSize: '12px', color: '#9ca3af' }}>optional</span>
+                                        </div>
+                                        <textarea
+                                            className="form-input"
+                                            rows={2}
+                                            maxLength={300}
+                                            value={generateForm.teacher_instructions}
+                                            onChange={e => setGenerateForm({ ...generateForm, teacher_instructions: e.target.value.replace(/<[^>]*>/g, '').slice(0, 300) })}
+                                            placeholder="e.g. Add a more creative differentiated activity"
+                                        />
+                                        {generateForm.teacher_instructions.length > 0 && (
+                                            <p className="form-hint" style={{ textAlign: 'right', color: '#9ca3af' }}>
+                                                {generateForm.teacher_instructions.length}/300
+                                            </p>
+                                        )}
+                                    </div>
 
                                     {/* Validation message */}
                                     {!canGenerate && !loading && (
                                         <p style={{ color: '#f59e0b', fontSize: '13px', marginBottom: '8px', textAlign: 'center' }}>
                                             {generateForm.subject === 'Mathematics'
                                                 ? 'Select a chapter and at least one book type to generate LP.'
-                                                : 'Select at least one book and one lesson plan type to generate LP.'}
+                                                : 'Select at least one book and at least one exercise to generate LP.'}
                                         </p>
                                     )}
 
