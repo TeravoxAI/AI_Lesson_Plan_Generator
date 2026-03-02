@@ -381,9 +381,12 @@ export function downloadLessonPlanPDF(htmlContent, meta) {
 
     // ── Footer ────────────────────────────────────────────────────────────────
     const tableEndY = doc.lastAutoTable.finalY + 5
+    doc.setFont(FONT, 'bold')
+    doc.setFontSize(SZ)
+    doc.text('Sign / Name & Date:  Subject Coordinator: _________________________', pageW / 2, tableEndY, { align: 'center' })
     doc.setFont(FONT, 'normal')
     doc.setFontSize(SZ - 1)
-    doc.text('Designed by Teravox', pageW / 2, tableEndY, { align: 'center' })
+    doc.text('Designed by Teravox', pageW / 2, tableEndY + 5, { align: 'center' })
 
     // ── Save ──────────────────────────────────────────────────────────────────
     const fname = `LP_${(grade || 'Grade').replace(/\s+/g, '_')}_${subject}_Lesson${lessonNo || ''}.pdf`
