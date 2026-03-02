@@ -183,6 +183,7 @@ function App() {
         selected_exercise_ids: [],
         include_differentiated: false,
         include_extension: false,
+        include_classwork: false,
         is_club_period: false,
         teacher_instructions: '',
         // Math-specific fields
@@ -351,7 +352,8 @@ function App() {
             include_warmup: false,
             selected_exercise_ids: [],
             include_differentiated: false,
-            include_extension: false
+            include_extension: false,
+            include_classwork: false
         }))
         try {
             const res = await fetch(
@@ -465,7 +467,8 @@ function App() {
                         warmup: generateForm.include_warmup,
                         exercise_ids: generateForm.selected_exercise_ids,
                         differentiated: generateForm.include_differentiated,
-                        extension: generateForm.include_extension
+                        extension: generateForm.include_extension,
+                        classwork: generateForm.include_classwork
                     },
                     teacher_instructions: generateForm.teacher_instructions.trim() || null
                 }
@@ -1055,6 +1058,12 @@ function App() {
                                                             {lessonSections.extension?.available && (
                                                                 <span className="section-checkbox-hint">from SOW</span>
                                                             )}
+                                                        </label>
+                                                        {/* Classwork */}
+                                                        <label className="section-checkbox-row">
+                                                            <input type="checkbox" checked={generateForm.include_classwork}
+                                                                onChange={() => setGenerateForm(prev => ({...prev, include_classwork: !prev.include_classwork}))} />
+                                                            <span>Include C.W</span>
                                                         </label>
                                                     </div>
                                                 )}

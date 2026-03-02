@@ -241,7 +241,8 @@ def _format_new_structure_for_prompt(lesson: Dict[str, Any], lb_ab: Dict[str, An
     else:
         sel_parts.append("Exercises: none selected")
     sel_parts.append("✓ Differentiated" if ss.get("differentiated") else "✗ Differentiated (LLM will create)")
-    sel_parts.append("✓ Extension" if ss.get("extension") else "✗ Extension (LLM will create)")
+    sel_parts.append("✓ Extension" if ss.get("extension") else "✗ Extension (do NOT include)")
+    sel_parts.append("✓ Classwork" if ss.get("classwork") else "✗ Classwork (do NOT include C.W section)")
     parts.append("TEACHER SELECTIONS: " + " | ".join(sel_parts))
     parts.append("")
 
@@ -317,31 +318,31 @@ def _format_new_structure_for_prompt(lesson: Dict[str, Any], lb_ab: Dict[str, An
                 parts.append(f"  Exercise AFL: {', '.join(ex['afl_strategies'])}")
             parts.append("")
 
-    # DIFFERENTIATED INSTRUCTION
-    parts.append("## DIFFERENTIATED INSTRUCTION")
-    if ss.get("differentiated") and diff and diff.get("description"):
-        parts.append("(From SOW — use this content:)")
-        parts.append(diff.get("description", ""))
-    else:
-        parts.append("(Not selected or not in SOW — create appropriate 3-level activity based on lesson content:)")
-        parts.append("  Struggling: scaffold with sentence frames / word banks / picture support")
-        parts.append("  On-level: standard lesson activity")
-        parts.append("  Advanced: challenge extension or higher-order task")
-    parts.append("")
+    # DIFFERENTIATED INSTRUCTION (struggling learners only)
+    if ss.get("differentiated"):
+        parts.append("## DIFFERENTIATED INSTRUCTION")
+        if diff and diff.get("description"):
+            parts.append("(From SOW — use this content for struggling learners:)")
+            parts.append(diff.get("description", ""))
+        else:
+            parts.append("(Not in SOW — create an appropriate scaffold for struggling learners:)")
+            parts.append("  Struggling: sentence frames / word banks / picture support")
+        parts.append("")
 
     # EXTENSION ACTIVITY
-    parts.append("## EXTENSION ACTIVITY")
-    if ss.get("extension") and ext and ext.get("description"):
-        parts.append("(From SOW — use this content:)")
-        parts.append(ext.get("description", ""))
-    else:
-        parts.append("(Not selected or not in SOW — create an appropriate extension based on lesson content)")
-    parts.append("")
+    if ss.get("extension"):
+        parts.append("## EXTENSION ACTIVITY")
+        if ext and ext.get("description"):
+            parts.append("(From SOW — use this content:)")
+            parts.append(ext.get("description", ""))
+        else:
+            parts.append("(Not in SOW — create an appropriate extension based on lesson content)")
+        parts.append("")
 
-    # CLASSWORK / HOMEWORK — filter ORT items when ORT not selected
+    # CLASSWORK / HOMEWORK — only include if teacher selected C.W, filter ORT items when ORT not selected
     include_ort_cwhw = ss.get("_has_ort", True)
     cw_hw = lesson.get("classwork_homework", [])
-    if cw_hw:
+    if cw_hw and ss.get("classwork"):
         filtered_cw_hw = []
         for item in cw_hw:
             item_lower = item.lower()

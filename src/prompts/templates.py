@@ -223,12 +223,14 @@ LP SECTION ORDER — follow EXACTLY, no reordering
  5. Recap / Recall            — ONLY if marked ✓ in SOW context
  6. Vocabulary                — ONLY if marked ✓ (appears after Recall, before Warm-up)
  7. Warm-up                   — ONLY if marked ✓
+    → If Warm-up included, always add this fixed line after it:
+      "Introduce the topic and share the SLOs with the students."
  8. [One <h2> per selected exercise, in order] — ONLY selected exercises
- 9. Differentiated Instruction — ALWAYS (3 levels)
-10. Extension Activity         — ALWAYS
-11. Success Criteria           — ALWAYS (2-3 measurable criteria)
+ 9. Differentiated Instruction — ONLY if marked ✓ (struggling learners only — one level)
+10. Extension Activity         — ONLY if marked ✓
+11. Success Criteria           — ALWAYS
 12. AFL Strategies             — ALWAYS
-13. Classwork (C.W)            — ALWAYS
+13. Classwork (C.W)            — ONLY if marked ✓ Classwork
 14. Homework (H.W)             — ALWAYS
 15. Online Assignment          — ALWAYS
 16. Wrap Up                    — ALWAYS — ONE sentence only
@@ -255,7 +257,7 @@ EXERCISE SECTIONS — strict rule
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 - Each exercise in the SOW context under "EXERCISES TO COVER" gets its own <h2>
 - Use the EXACT exercise title from the SOW as the <h2> heading
-- Base content on the SOW sub-activities; add classroom delivery language ("Teacher says…", "Students will…")
+- Base content on the SOW sub-activities; give direct classroom instructions (e.g. "Ask students to…", "Write on board…") — avoid quoted phrases like "Teacher says…"
 - Audio tracks and digital resources mentioned MUST be referenced
 - Do NOT reorder exercises
 
@@ -272,23 +274,26 @@ MUST follow SOW exactly (zero invention allowed):
   • Classwork/Homework — only items from the SOW CW/HW list
 
 MAY create (LLM has latitude here):
-  • Differentiated Instruction (if SOW doesn't specify or is inapplicable)
-  • Extension Activity (if SOW doesn't specify)
+  • Differentiated Instruction content (if SOW doesn't specify) — struggling learners only
+  • Extension Activity content (if SOW doesn't specify)
   • Success Criteria (always — not directly in SOW)
   • Methodology label (infer from AFL/activity names in SOW)
-  • Classroom delivery language within exercise sections ("Teacher will say...", "Students will...")
+  • Delivery instructions within exercise sections (give direct instructions, not quoted phrases)
 
-DIFFERENTIATED INSTRUCTION — always include 3 levels:
-  • Struggling Learners: scaffold (sentence frames, word banks, picture support)
-  • On-Level Learners: standard activity
-  • Advanced Learners: challenge or higher-order task
-  If SOW provides specific diff content → use it. Otherwise → create appropriate ones.
+DIFFERENTIATED INSTRUCTION — include ONLY if marked ✓:
+  • Struggling Learners ONLY: scaffold (sentence frames, word banks, picture support)
+  • Do NOT include On-Level or Advanced levels — only struggling learners
+  If SOW provides specific diff content → use it. Otherwise → create one appropriate scaffold.
 
-EXTENSION ACTIVITY — always include.
+EXTENSION ACTIVITY — include ONLY if marked ✓.
   If SOW provides → use it. Otherwise → create one that extends the lesson content.
 
-SUCCESS CRITERIA — always create 2-3 student-facing criteria ("I can…" or "Students can…")
-  aligned with the selected SLOs. LLM creates these — not verbatim from SOW.
+SUCCESS CRITERIA — always create 2-3 measurable criteria.
+  Format: Start with "Remember to:" then list criteria as bullets.
+  Criteria must be measurable instructions (e.g., "Use capital letters at the start of each sentence.")
+  NEVER start criteria with "I can". NEVER use affective language.
+
+METHODOLOGY — must include Explanation and Discussion as methods.
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 AFL STRATEGIES
@@ -296,6 +301,8 @@ AFL STRATEGIES
 - Use strategy NAMES from the SOW (e.g., RSQC2, Picture Description, Quick Write, Think-Pair-Share)
 - For each, add a brief HOW (one line describing its use in this lesson)
 - Do NOT just list names without context
+- CRITICAL: Do NOT mention AFL strategies inside exercise sections or any other section.
+  AFL strategies MUST appear ONLY in the dedicated AFL Strategies section.
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 STYLE
@@ -325,26 +332,33 @@ OUTPUT FORMAT — return HTML only, no markdown blocks
   <p>LB pg.XX[, AB pg.XX][, Audio Track XX][, Video: URL][, whiteboard, markers]</p>
 
   <h2>Methodology:</h2>
-  <p>[Brainstorming, Explanation, Think-Pair-Share, etc. — from AFL/activity names in SOW]</p>
+  <p>[Brainstorming, Explanation, Discussion, Think-Pair-Share, etc. — must include Explanation and Discussion; infer others from AFL/activity names in SOW]</p>
 
   <!-- Include ONLY if ✓ Recall in SOW context -->
   <h2>Recap / Recall:</h2>
-  <p>[SOW recall activity — brief, 2-3 bullets]</p>
+  <ul>
+    <li>[SOW recall activity — direct instruction, 2-3 bullets]</li>
+  </ul>
 
   <!-- Include ONLY if ✓ Vocabulary in SOW context -->
   <h2>Vocabulary:</h2>
   <p>Words: [exact list from SOW vocabulary]</p>
-  <p>[Brief classroom activity from SOW vocabulary activities]</p>
+  <ul>
+    <li>[Direct instruction for vocabulary activity from SOW]</li>
+  </ul>
 
   <!-- Include ONLY if ✓ Warm-up in SOW context -->
   <h2>Warm-up:</h2>
-  <p>[SOW warm-up activity — brief, engaging]</p>
+  <ul>
+    <li>[SOW warm-up activity — direct instruction, brief, engaging]</li>
+  </ul>
+  <p>Introduce the topic and share the SLOs with the students.</p>
 
   <!-- One block per selected exercise — EXACT title as h2 -->
   <h2>[Exercise title from SOW e.g. "1. Read and listen:"]</h2>
   <ul>
-    <li>[Sub-activity 1 from SOW — teacher delivery + student task]</li>
-    <li>[Sub-activity 2 from SOW if applicable]</li>
+    <li>[Direct instruction for sub-activity 1 from SOW]</li>
+    <li>[Direct instruction for sub-activity 2 from SOW if applicable]</li>
   </ul>
 
   <h2>[Next exercise title]</h2>
@@ -352,26 +366,28 @@ OUTPUT FORMAT — return HTML only, no markdown blocks
     <li>...</li>
   </ul>
 
+  <!-- Include ONLY if ✓ Differentiated in SOW context -->
   <h2>Differentiated Instruction:</h2>
-  <p><strong>Struggling Learners:</strong> [scaffold]</p>
-  <p><strong>On-Level Learners:</strong> [standard]</p>
-  <p><strong>Advanced Learners:</strong> [challenge]</p>
+  <p><strong>Struggling Learners:</strong> [scaffold — sentence frames / word banks / picture support]</p>
 
+  <!-- Include ONLY if ✓ Extension in SOW context -->
   <h2>Extension Activity:</h2>
   <p>[SOW extension or LLM-created extension]</p>
 
   <h2>Success Criteria:</h2>
+  <p>Remember to:</p>
   <ul>
-    <li>I can [criterion 1 aligned with SLO]</li>
-    <li>I can [criterion 2 aligned with SLO]</li>
+    <li>[Measurable criterion 1 — direct instruction, e.g. "Use capital letters at the start of each sentence."]</li>
+    <li>[Measurable criterion 2 aligned with SLO]</li>
   </ul>
 
   <h2>AFL Strategies:</h2>
   <ul>
-    <li><strong>[Strategy name]:</strong> [how it is used in this lesson]</li>
-    <li><strong>[Strategy name]:</strong> [how it is used in this lesson]</li>
+    <li><strong>[Strategy name from SOW]:</strong> [how it is used in this lesson]</li>
+    <li><strong>[Strategy name from SOW]:</strong> [how it is used in this lesson]</li>
   </ul>
 
+  <!-- Include ONLY if ✓ Classwork in SOW context -->
   <h2>Classwork (C.W):</h2>
   <p>[From SOW classwork/homework — LB/AB page references]</p>
 
@@ -385,7 +401,7 @@ OUTPUT FORMAT — return HTML only, no markdown blocks
   <p>[ONE sentence — a quick recall question or key learning prompt]</p>
 </html>
 
-MANDATORY: Return ONLY HTML. No markdown. All 16 sections present."""
+MANDATORY: Return ONLY HTML. No markdown. Sections marked "ONLY if ✓" must be omitted if not selected."""
 
 
 # ============= Mathematics System Prompt =============
