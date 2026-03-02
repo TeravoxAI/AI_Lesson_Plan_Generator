@@ -3,6 +3,7 @@ import Login from './Login'
 import Signup from './Signup'
 import UsageIndicator from './UsageIndicator'
 import History from './History'
+import { downloadLessonPlanPDF } from './pdfExport'
 
 const API_BASE = ''  // Proxied through Vite
 
@@ -603,15 +604,7 @@ function App() {
 
     const handleDownload = () => {
         if (lessonPlan) {
-            const blob = new Blob([lessonPlan], { type: 'text/html' })
-            const url = URL.createObjectURL(blob)
-            const a = document.createElement('a')
-            a.href = url
-            a.download = `lesson-plan-${generateForm.grade}-${generateForm.subject}-L${generateForm.lesson_number}.html`
-            document.body.appendChild(a)
-            a.click()
-            document.body.removeChild(a)
-            URL.revokeObjectURL(url)
+            downloadLessonPlanPDF(lessonPlan, lessonMeta)
         }
     }
 
@@ -1161,6 +1154,10 @@ function App() {
                                                     </button>
                                                     <button className="action-btn" onClick={handleCopy} title="Copy to clipboard">
                                                         <CopyIcon />
+                                                    </button>
+                                                    <button className="action-btn" onClick={handleDownload} title="Download as PDF" style={{ display: 'flex', alignItems: 'center', gap: '4px', fontSize: '12px', fontWeight: '600' }}>
+                                                        <DownloadIcon />
+                                                        PDF
                                                     </button>
                                                 </>
                                             )}

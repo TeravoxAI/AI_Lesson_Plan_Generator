@@ -299,20 +299,39 @@ METHODOLOGY — must include Explanation and Discussion as methods.
 AFL STRATEGIES
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 - Use strategy NAMES from the SOW (e.g., RSQC2, Picture Description, Quick Write, Think-Pair-Share)
-- For each, add a brief HOW (one line describing its use in this lesson)
-- Do NOT just list names without context
+- List NAMES ONLY — do NOT add any description, explanation, or "how it is used" after the name
+- Format: comma-separated list of names, e.g. "RSQC2, Brainstorming, Think-Pair-Share"
 - CRITICAL: Do NOT mention AFL strategies inside exercise sections or any other section.
   AFL strategies MUST appear ONLY in the dedicated AFL Strategies section.
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-STYLE
+STYLE — STRICT LENGTH LIMITS (must fit on ONE A4 page)
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-- Bullet points, not paragraphs
-- 1-4 lines per section (exercises may be longer)
+The entire lesson plan MUST fit on a single A4 page when printed. Strictly follow these per-section limits:
+
+  SLO(s)                  — max 3 bullet points, max 10 words each
+  Skills Focused On       — 1 line, comma-separated
+  Resources               — 1 line
+  Methodology             — 1 line, comma-separated
+  Recap / Recall          — max 2 bullets, max 10 words each
+  Vocabulary              — words list on 1 line + max 1 bullet activity
+  Warm-up                 — max 2 bullets, max 10 words each
+  Each Exercise section   — max 3 bullets, max 12 words each
+  Differentiated Instr.   — max 1 bullet, max 12 words
+  Extension Activity      — max 1 bullet, max 12 words
+  Success Criteria        — max 2 bullets, max 12 words each
+  AFL Strategies          — 1 line, names only
+  C.W                     — 1 line
+  H.W                     — 1 line
+  Online Assignment       — 1 line
+  Wrap Up                 — 1 sentence
+
+- Every bullet must be a single SHORT sentence — no long explanations
 - No time durations in section headers
-- Total: under 1200 words
+- Total output: under 350 words
 - NEVER assign creative writing as homework
 - Use ONLY the CW/HW items listed in the SOW — do NOT add books, pages, or ORT tasks not present in the list
+- RESOURCES section: for book page references, include ONLY the books and page numbers the teacher explicitly entered. Do NOT invent or add page numbers for books not provided. Audio tracks, video URLs, and other classroom materials may be added as appropriate.
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 OUTPUT FORMAT — return HTML only, no markdown blocks
@@ -321,15 +340,14 @@ OUTPUT FORMAT — return HTML only, no markdown blocks
 <html>
   <h2>SLO(s): Students will be able to:</h2>
   <ul>
-    <li>[Bloom's verb] [specific outcome from SOW]</li>
-    <li>[Bloom's verb] [specific outcome from SOW]</li>
+    <li>[Bloom's verb] [outcome] (max 3 bullets, ≤10 words each)</li>
   </ul>
 
   <h2>Skills Focused On:</h2>
   <p>[2-4 skills from SOW, comma-separated]</p>
 
   <h2>Resources:</h2>
-  <p>LB pg.XX[, AB pg.XX][, Audio Track XX][, Video: URL][, whiteboard, markers]</p>
+  <p>[Book page references: list ONLY the books and page numbers explicitly provided by the teacher — e.g. "LB pg.110-111" if LB pages were given, "AB pg.88-89" if AB pages were given. Do NOT reference a book or page number not provided by the teacher. You may additionally include: Audio Track (if in SOW), Video URL (if in SOW), whiteboard, markers, or other relevant classroom materials.]</p>
 
   <h2>Methodology:</h2>
   <p>[Brainstorming, Explanation, Discussion, Think-Pair-Share, etc. — must include Explanation and Discussion; infer others from AFL/activity names in SOW]</p>
@@ -354,11 +372,11 @@ OUTPUT FORMAT — return HTML only, no markdown blocks
   </ul>
   <p>Introduce the topic and share the SLOs with the students.</p>
 
-  <!-- One block per selected exercise — EXACT title as h2 -->
+  <!-- One block per selected exercise — EXACT title as h2 — max 3 bullets, ≤12 words each -->
   <h2>[Exercise title from SOW e.g. "1. Read and listen:"]</h2>
   <ul>
-    <li>[Direct instruction for sub-activity 1 from SOW]</li>
-    <li>[Direct instruction for sub-activity 2 from SOW if applicable]</li>
+    <li>[Direct instruction — short, ≤12 words]</li>
+    <li>[Direct instruction — short, ≤12 words]</li>
   </ul>
 
   <h2>[Next exercise title]</h2>
@@ -382,10 +400,7 @@ OUTPUT FORMAT — return HTML only, no markdown blocks
   </ul>
 
   <h2>AFL Strategies:</h2>
-  <ul>
-    <li><strong>[Strategy name from SOW]:</strong> [how it is used in this lesson]</li>
-    <li><strong>[Strategy name from SOW]:</strong> [how it is used in this lesson]</li>
-  </ul>
+  <p>[Strategy1, Strategy2, Strategy3 — names only, comma-separated, no descriptions]</p>
 
   <!-- Include ONLY if ✓ Classwork in SOW context -->
   <h2>Classwork (C.W):</h2>
@@ -401,7 +416,8 @@ OUTPUT FORMAT — return HTML only, no markdown blocks
   <p>[ONE sentence — a quick recall question or key learning prompt]</p>
 </html>
 
-MANDATORY: Return ONLY HTML. No markdown. Sections marked "ONLY if ✓" must be omitted if not selected."""
+MANDATORY: Return ONLY HTML. No markdown. Sections marked "ONLY if ✓" must be omitted if not selected.
+MANDATORY: Total output must be under 350 words. Every section must respect its line/bullet limit. The plan must fit on one A4 page."""
 
 
 # ============= Mathematics System Prompt =============
