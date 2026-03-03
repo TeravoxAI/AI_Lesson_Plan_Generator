@@ -289,7 +289,8 @@ class LessonGenerator:
 
             # Save to database if enabled
             plan_id = None
-            math_topic = f"Chapter {unit_number}: {course_book_pages}"
+            unit_title = sow_context.get("unit_title", "") if sow_context else ""
+            math_topic = f"Chapter {unit_number}: {unit_title}" if unit_title else f"Chapter {unit_number}: {course_book_pages}"
             if save_to_db:
                 textbook_ids = context["metadata"].get("textbook_ids", [])
                 textbook_id = textbook_ids[0] if textbook_ids else None

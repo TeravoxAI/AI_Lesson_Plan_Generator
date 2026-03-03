@@ -191,7 +191,8 @@ function App() {
         unit_number: null,
         course_book_pages: '',
         workbook_pages: '',
-        book_types: []
+        book_types: [],
+        sow_pages: ''
     })
 
     const [lessonSections, setLessonSections] = useState(null)
@@ -502,6 +503,7 @@ function App() {
                     grade: generateForm.grade,
                     subject: generateForm.subject,
                     topic: data.topic || null,
+                    sowPages: generateForm.sow_pages.trim() || null,
                     teacherResources: data.teacher_resources || [],
                     // Usage metrics
                     generationTime: data.generation_time,
@@ -1098,6 +1100,21 @@ function App() {
                                                 {generateForm.teacher_instructions.length}/300
                                             </p>
                                         )}
+                                    </div>
+
+                                    {/* SOW Pages (decorative only — not sent to API) */}
+                                    <div className="form-group">
+                                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                                            <label className="form-label">SOW Pages:</label>
+                                            <span style={{ fontSize: '12px', color: '#9ca3af' }}>optional</span>
+                                        </div>
+                                        <input
+                                            type="text"
+                                            className="form-input"
+                                            value={generateForm.sow_pages}
+                                            onChange={e => setGenerateForm({ ...generateForm, sow_pages: e.target.value })}
+                                            placeholder="e.g. 45 or 45-47"
+                                        />
                                     </div>
 
                                     {/* Validation message */}

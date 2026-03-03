@@ -113,15 +113,17 @@ function calcCellHeight(doc, rawContent, innerW) {
     rawContent.split('\n').forEach((line, idx) => {
         if (!line) { lines++; return }
 
-        const colonIdx   = line.indexOf(':')
-        const hasColon   = colonIdx > 0
-        const normalAfter = hasColon ? line.substring(colonIdx + 1).trim() : ''
-        const boldWhole  = idx === 0 && ((hasColon && !normalAfter) || (!hasColon && /^(\d+\.|[A-Z])/.test(line)))
+        const colonIdx    = line.indexOf(':')
+        const hasColon    = colonIdx > 0
+        const normalAfter = hasColon ? line.substring(colonIdx + 1) : ''
+        const boldWhole   = idx === 0 && ((hasColon && !normalAfter.trim()) || (!hasColon && /^(\d+\.|[A-Z])/.test(line)))
+        // Only bold "Label: value" when colon is short prefix (≤40 chars) and not a bullet line
+        const isBoldLabel = hasColon && normalAfter.trim() && colonIdx <= 40 && !line.trimStart().startsWith('\u2022')
 
         if (boldWhole) {
             doc.setFont(FONT, 'bold'); doc.setFontSize(SZ)
             lines += doc.splitTextToSize(line, innerW).length
-        } else if (hasColon && normalAfter) {
+        } else if (isBoldLabel) {
             doc.setFont(FONT, 'bold'); doc.setFontSize(SZ)
             const boldW = doc.getTextWidth(line.substring(0, colonIdx + 1))
             doc.setFont(FONT, 'normal'); doc.setFontSize(SZ)
@@ -164,6 +166,8 @@ function drawCellContent(doc, cell, rawContent) {
             (hasColon && !normalAfter) ||           // "1. Read and listen:"  or "Lesson Evaluation:"
             (!hasColon && /^(\d+\.|[A-Z])/.test(line))  // "Talk about it" style (capitalised / numbered)
         )
+        // Only bold "Label: value" when colon is a short label prefix (≤40 chars) and not a bullet
+        const isBoldLabel = hasColon && normalAfter && colonIdx <= 40 && !line.trimStart().startsWith('\u2022')
 
         if (boldWholeLine) {
             // Entire first line bold (exercise heading or label with no body on same line)
@@ -172,7 +176,7 @@ function drawCellContent(doc, cell, rawContent) {
             const wrapped = doc.splitTextToSize(line, innerW)
             wrapped.forEach(wl => { doc.text(wl, x, y); y += lh })
 
-        } else if (hasColon && normalAfter) {
+        } else if (isBoldLabel) {
             // First line: bold "Label:" + normal rest on same line
             const boldPart   = line.substring(0, colonIdx + 1)
             const normalPart = line.substring(colonIdx + 1)
@@ -228,6 +232,18 @@ function buildPDF(htmlContent, meta) {
     const homework    = findSection(sections, 'Homework', 'H.W')
     const online      = findSection(sections, 'Online Assignment')
     const wrapup      = findSection(sections, 'Wrap Up', 'Plenary')
+
+    // Strip the fixed intro statement from all section content so it only
+    // appears once via the hardcoded row below.
+    const INTRO_STMT = 'introduce the topic and share the slos with the students'
+    const stripIntro = (text) => {
+        if (!text) return text
+        return text
+            .split('\n')
+            .filter(line => !line.toLowerCase().includes(INTRO_STMT))
+            .join('\n')
+    }
+    Object.keys(sections).forEach(k => { sections[k] = stripIntro(sections[k]) })
 
     // Exercise sections — anything not matching a fixed section key
     const knownTitles = [
@@ -294,9 +310,10 @@ function buildPDF(htmlContent, meta) {
         styles: { halign: 'left', ...extraStyles }
     }])
 
-    // Skills + Resources combined
+    // Skills + Resources combined (SOW Pages appended decoratively)
     const skillsResLine = skills ? `Skills focused on: ${skills}` : ''
-    const resourcesLine = resources ? `Resources: ${resources}` : ''
+    const sowPagesLine  = meta?.sowPages ? `SOW Pages: ${meta.sowPages}` : ''
+    const resourcesLine = [resources ? `Resources: ${resources}` : '', sowPagesLine].filter(Boolean).join('\n')
     const skillsResources = [skillsResLine, resourcesLine].filter(Boolean).join('\n')
 
     const tableRows = []
@@ -378,6 +395,7 @@ function buildPDF(htmlContent, meta) {
         tableWidth: tableW,
         margin: { left: marginL, right: marginR },
         theme: 'grid',
+        rowPageBreak: 'avoid',
         styles: {
             font: FONT,
             fontSize: SZ,
@@ -425,7 +443,7 @@ function buildPDF(htmlContent, meta) {
     const tableEndY = doc.lastAutoTable.finalY + 5
     doc.setFont(FONT, 'bold')
     doc.setFontSize(SZ)
-    doc.text('Sign / Name & Date:  Subject Coordinator: _________________________', marginL, tableEndY)
+    doc.text('Sign / Name & Date:  Subject Coordinator: _________________________', marginL, tableEndY + lineH() * 2)
 
     // ── "Designed by Teravox" fixed at bottom of every page ───────────────────
     const pageH      = doc.internal.pageSize.getHeight()
