@@ -289,6 +289,7 @@ class LessonGenerator:
 
             # Save to database if enabled
             plan_id = None
+            math_topic = f"Chapter {unit_number}: {course_book_pages}"
             if save_to_db:
                 textbook_ids = context["metadata"].get("textbook_ids", [])
                 textbook_id = textbook_ids[0] if textbook_ids else None
@@ -299,7 +300,7 @@ class LessonGenerator:
                     lesson_type=f"unit_{unit_number}",  # Store unit number as lesson type
                     page_start=0,
                     page_end=0,
-                    topic=f"Chapter {unit_number}: {course_book_pages}",
+                    topic=math_topic,
                     lesson_plan={"html_content": html_content},
                     textbook_id=textbook_id,
                     sow_entry_id=context["metadata"].get("sow_entry_id"),
@@ -315,6 +316,7 @@ class LessonGenerator:
                 success=True,
                 html_content=html_content,
                 plan_id=plan_id,
+                topic=math_topic,
                 teacher_resources=teacher_resources,
                 generation_time=generation_time,
                 cost=usage_data["cost"],
@@ -398,6 +400,8 @@ class LessonGenerator:
             # audio tracks / YouTube links may come from a completely different topic.
             teacher_resources = []
             sow_context = context.get("sow_context")
+            # Use lesson_title from SOW context as the resolved topic
+            resolved_topic = topic or (sow_context.get("lesson_title") if sow_context else None)
             if sow_context and sow_context.get("found"):
                 pages_found_in_sow = sow_context.get("pages_found_in_sow", True)
                 if not pages_found_in_sow:
@@ -508,7 +512,7 @@ class LessonGenerator:
                     lesson_type=db_lesson_type,
                     page_start=page_start,
                     page_end=page_end,
-                    topic=topic,
+                    topic=resolved_topic,
                     lesson_plan={"html_content": html_content},
                     textbook_id=textbook_id,
                     sow_entry_id=context["metadata"].get("sow_entry_id"),
@@ -524,6 +528,7 @@ class LessonGenerator:
                 success=True,
                 html_content=html_content,
                 plan_id=plan_id,
+                topic=resolved_topic,
                 teacher_resources=teacher_resources,
                 generation_time=generation_time,
                 cost=usage_data["cost"],

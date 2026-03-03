@@ -9,6 +9,40 @@
 import { jsPDF } from 'jspdf'
 import autoTable from 'jspdf-autotable'
 
+// ─── Roman numeral converter ──────────────────────────────────────────────────
+
+const ROMAN_MAP = [
+    [1000,'M'],[900,'CM'],[500,'D'],[400,'CD'],
+    [100,'C'],[90,'XC'],[50,'L'],[40,'XL'],
+    [10,'X'],[9,'IX'],[5,'V'],[4,'IV'],[1,'I']
+]
+function toRoman(n) {
+    if (!n || isNaN(n) || n < 1) return String(n)
+    let result = ''
+    for (const [val, sym] of ROMAN_MAP) {
+        while (n >= val) { result += sym; n -= val }
+    }
+    return result
+}
+
+/** Convert "Grade 2" → "Grade II", leaves other strings unchanged */
+function gradeToRoman(grade) {
+    if (!grade) return grade
+    return grade.replace(/(\d+)/, (_, num) => toRoman(parseInt(num, 10)))
+}
+
+// ─── Phase label stripper ─────────────────────────────────────────────────────
+
+/** Remove "Phase N:" / "Phase N -" prefixes and blank Phase-only lines */
+function stripPhaseLabels(text) {
+    if (!text) return text
+    return text
+        .split('\n')
+        .filter(line => !/^Phase\s+\d+\s*[:\-]?\s*$/i.test(line.trim()))
+        .map(line => line.replace(/^Phase\s+\d+\s*[:\-]\s*/i, ''))
+        .join('\n')
+}
+
 // ─── HTML parser ─────────────────────────────────────────────────────────────
 
 function parseLessonPlanHTML(html) {
@@ -58,7 +92,7 @@ function findSection(sections, ...keywords) {
 // ─── Manual cell text renderer ────────────────────────────────────────────────
 
 const FONT   = 'helvetica'
-const SZ     = 9        // pt
+const SZ     = 12       // pt
 const PAD_T  = 1.5      // cell padding top/bottom mm
 const PAD_LR = 2        // cell padding left/right mm
 
@@ -79,7 +113,7 @@ function calcCellHeight(doc, rawContent, innerW) {
     rawContent.split('\n').forEach((line, idx) => {
         if (!line) { lines++; return }
 
-        const colonIdx   = idx === 0 ? line.indexOf(':') : -1
+        const colonIdx   = line.indexOf(':')
         const hasColon   = colonIdx > 0
         const normalAfter = hasColon ? line.substring(colonIdx + 1).trim() : ''
         const boldWhole  = idx === 0 && ((hasColon && !normalAfter) || (!hasColon && /^(\d+\.|[A-Z])/.test(line)))
@@ -102,8 +136,7 @@ function calcCellHeight(doc, rawContent, innerW) {
 }
 
 /**
- * Draw cell content with the text before the first ":" on line 0 in bold,
- * rest in normal. Subsequent lines are all normal.
+ * Draw cell content with bold "Label:" on any line that has a colon.
  * Called from didDrawCell — autoTable text has already been suppressed.
  */
 function drawCellContent(doc, cell, rawContent) {
@@ -121,12 +154,10 @@ function drawCellContent(doc, cell, rawContent) {
     lines.forEach((line, idx) => {
         if (!line) { y += lh; return }
 
-        const colonIdx = (idx === 0) ? line.indexOf(':') : -1
+        const colonIdx = line.indexOf(':')
 
-        // Bold the first line when:
-        //  (a) it has a colon with text after it → bold "Label:" + normal rest
-        //  (b) it has a colon with nothing after → bold the whole line (e.g. exercise titles)
-        //  (c) it has no colon but looks like a heading (starts with digit+dot or all-alpha first word)
+        // Bold "Label:" pattern on every line that has a colon.
+        // Additionally bold the whole first line when it looks like a heading.
         const hasColon    = colonIdx > 0
         const normalAfter = hasColon ? line.substring(colonIdx + 1).trim() : ''
         const boldWholeLine = idx === 0 && (
@@ -153,7 +184,7 @@ function drawCellContent(doc, cell, rawContent) {
 
             doc.setFont(FONT, 'normal')
             doc.setFontSize(SZ)
-            const wrapped = doc.splitTextToSize(normalPart.trimStart(), innerW - boldW)
+            const wrapped = doc.splitTextToSize(normalPart, innerW - boldW)
             wrapped.forEach((wl, wi) => {
                 doc.text(wl, x + (wi === 0 ? boldW : 0), y + wi * lh)
             })
@@ -171,7 +202,7 @@ function drawCellContent(doc, cell, rawContent) {
 
 // ─── Main export ──────────────────────────────────────────────────────────────
 
-export function downloadLessonPlanPDF(htmlContent, meta) {
+function buildPDF(htmlContent, meta) {
     const doc = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' })
 
     const pageW  = doc.internal.pageSize.getWidth()   // 210
@@ -213,7 +244,8 @@ export function downloadLessonPlanPDF(htmlContent, meta) {
     const grade    = meta?.grade || ''
     const subject  = meta?.subject || ''
     const lessonNo = meta?.lessonNumber || ''
-    const topicStr = [grade, subject, lessonNo ? `Lesson ${lessonNo}` : ''].filter(Boolean).join(' \u2014 ')
+    const gradeRoman = gradeToRoman(grade)
+    const topicStr = meta?.topic || [grade, subject, lessonNo ? `Lesson ${lessonNo}` : ''].filter(Boolean).join(' \u2014 ')
 
     // AFL: strip descriptions — keep only the strategy name (text before first ":")
     const aflNames = aflRaw
@@ -234,9 +266,15 @@ export function downloadLessonPlanPDF(htmlContent, meta) {
     // ── Header (above table) ──────────────────────────────────────────────────
     let y = 12
     doc.setFont(FONT, 'bold')
+    doc.setFontSize(SZ + 4)
+    doc.text('Army Public Schools & Colleges System', pageW / 2, y, { align: 'center' })
+
+    y += 6
+    doc.setFont(FONT, 'bold')
     doc.setFontSize(SZ + 1)
     doc.text('Daily Lesson Plan', pageW / 2, y, { align: 'center' })
 
+    y += 6
     doc.setFont(FONT, 'normal')
     doc.setFontSize(SZ)
     doc.text('Week: ___________', marginL, y)
@@ -263,42 +301,46 @@ export function downloadLessonPlanPDF(htmlContent, meta) {
 
     const tableRows = []
 
-    // Row 1: Class | Subject
+    // Row 1: Class (roman numeral grade) | Subject
     tableRows.push([
-        { content: `Class: ${grade}`,    styles: { halign: 'left' } },
-        { content: `Subject: ${subject}`, styles: { halign: 'left' } }
+        { content: `Class: ${gradeRoman}`, styles: { halign: 'left' } },
+        { content: `Subject: ${subject}`,  styles: { halign: 'left' } }
     ])
-    // Row 2: Period | Topic
+    // Row 2: Period | Topic (lesson name)
     tableRows.push([
         { content: 'Period: 1',          styles: { halign: 'left' } },
         { content: `Topic: ${topicStr}`, styles: { halign: 'left' } }
     ])
 
     // SLOs
-    tableRows.push(fw(`SLO(s): Students will be able to\n${slos}`))
+    tableRows.push(fw(`SLO(s): Students will be able to\n${stripPhaseLabels(slos)}`))
 
     // Skills + Resources
-    if (skillsResources.trim()) tableRows.push(fw(skillsResources))
+    if (skillsResources.trim()) tableRows.push(fw(stripPhaseLabels(skillsResources)))
 
     // Methodology
-    if (methodology) tableRows.push(fw(`Methodology: ${methodology}`))
+    if (methodology) tableRows.push(fw(`Methodology: ${stripPhaseLabels(methodology)}`))
 
     // Recall
-    if (recall) tableRows.push(fw(`Recap / Recall: ${recall}`))
+    if (recall) tableRows.push(fw(`Recap / Recall: ${stripPhaseLabels(recall)}`))
 
     // Vocabulary
-    if (vocabulary) tableRows.push(fw(`Vocabulary: ${vocabulary}`))
+    if (vocabulary) tableRows.push(fw(`Vocabulary: ${stripPhaseLabels(vocabulary)}`))
 
     // Fixed intro statement
     tableRows.push(fw('Introduce the topic and share the SLOs with the students.'))
 
     // Warm-up
-    if (warmup) tableRows.push(fw(`Warm-up: ${warmup}`))
+    if (warmup) tableRows.push(fw(`Warm-up: ${stripPhaseLabels(warmup)}`))
 
-    // Exercises
-    exerciseSections.forEach(([title, content]) => {
-        tableRows.push(fw(content ? `${title}\n${content}` : title))
-    })
+    // Exercises — skip sections that are only a Phase label, strip Phase prefix from titles
+    exerciseSections
+        .filter(([title]) => !/^Phase\s+\d+\s*[:\-]?\s*$/i.test(title.trim()))
+        .forEach(([title, content]) => {
+            const cleanTitle = title.replace(/^Phase\s+\d+\s*[:\-]\s*/i, '').trim()
+            const cleanContent = stripPhaseLabels(content)
+            tableRows.push(fw(cleanContent ? `${cleanTitle}\n${cleanContent}` : cleanTitle))
+        })
 
     // Differentiated
     if (diffInstr) tableRows.push(fw(`Differentiated Instruction: ${diffInstr}`))
@@ -379,16 +421,29 @@ export function downloadLessonPlanPDF(htmlContent, meta) {
         }
     })
 
-    // ── Footer ────────────────────────────────────────────────────────────────
+    // ── Signature line (left-aligned, just below table) ───────────────────────
     const tableEndY = doc.lastAutoTable.finalY + 5
     doc.setFont(FONT, 'bold')
     doc.setFontSize(SZ)
-    doc.text('Sign / Name & Date:  Subject Coordinator: _________________________', pageW / 2, tableEndY, { align: 'center' })
-    doc.setFont(FONT, 'normal')
-    doc.setFontSize(SZ - 1)
-    doc.text('Designed by Teravox', pageW / 2, tableEndY + 5, { align: 'center' })
+    doc.text('Sign / Name & Date:  Subject Coordinator: _________________________', marginL, tableEndY)
 
-    // ── Save ──────────────────────────────────────────────────────────────────
+    // ── "Designed by Teravox" fixed at bottom of every page ───────────────────
+    const pageH      = doc.internal.pageSize.getHeight()
+    const footerY    = pageH - 6
+    const totalPages = doc.internal.getNumberOfPages()
+    for (let i = 1; i <= totalPages; i++) {
+        doc.setPage(i)
+        doc.setFont(FONT, 'normal')
+        doc.setFontSize(SZ - 3)
+        doc.text('Designed by Teravox', pageW / 2, footerY, { align: 'center' })
+    }
+
     const fname = `LP_${(grade || 'Grade').replace(/\s+/g, '_')}_${subject}_Lesson${lessonNo || ''}.pdf`
-    doc.save(fname)
+    return { doc, fname }
+}
+
+export function downloadLessonPlanPDF(htmlContent, meta) {
+    const { doc, fname } = buildPDF(htmlContent, meta)
+    doc.autoPrint()
+    window.open(doc.output('bloburl'), '_blank')
 }

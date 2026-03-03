@@ -501,6 +501,7 @@ function App() {
                     planId: data.plan_id,
                     grade: generateForm.grade,
                     subject: generateForm.subject,
+                    topic: data.topic || null,
                     teacherResources: data.teacher_resources || [],
                     // Usage metrics
                     generationTime: data.generation_time,
