@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react'
+import { downloadLessonPlanPDF } from './pdfExport'
 
 const API_BASE = ''  // Proxied through Vite
 
@@ -52,6 +53,14 @@ const XIcon = () => (
     <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
         <line x1="18" y1="6" x2="6" y2="18" />
         <line x1="6" y1="6" x2="18" y2="18" />
+    </svg>
+)
+
+const DownloadIcon = () => (
+    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+        <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+        <polyline points="7 10 12 15 17 10" />
+        <line x1="12" y1="15" x2="12" y2="3" />
     </svg>
 )
 
@@ -175,6 +184,24 @@ function History({ session }) {
         showNotification('Copied to clipboard!', 'success')
     }
 
+    const handleDownload = (plan) => {
+        try {
+            let lessonPlanData = plan.lesson_plan
+            if (typeof lessonPlanData === 'string') lessonPlanData = JSON.parse(lessonPlanData)
+            const html = lessonPlanData?.html_content
+            if (!html) { showNotification('No content to download', 'error'); return }
+            const meta = {
+                grade: plan.grade_level,
+                subject: plan.subject,
+                topic: plan.topic || null,
+                lessonNumber: plan.page_start
+            }
+            downloadLessonPlanPDF(html, meta)
+        } catch (e) {
+            showNotification('Failed to generate PDF', 'error')
+        }
+    }
+
     const showNotification = (message, type = 'success') => {
         setNotification({ message, type })
         setTimeout(() => setNotification(null), 3000)
@@ -265,6 +292,14 @@ function History({ session }) {
                                     <CopyIcon />
                                     Copy
                                 </button>
+                                <button
+                                    className="plan-action-btn copy-btn"
+                                    onClick={() => handleDownload(plan)}
+                                    title="Download as PDF"
+                                >
+                                    <DownloadIcon />
+                                    PDF
+                                </button>
                             </div>
                         </div>
                     ))}
@@ -306,6 +341,10 @@ function History({ session }) {
                             />
                         </div>
                         <div className="modal-footer">
+                            <button className="modal-action-btn" onClick={() => handleDownload(selectedPlan)}>
+                                <DownloadIcon />
+                                Download PDF
+                            </button>
                             <button className="modal-action-btn" onClick={() => handleCopy(selectedPlan)}>
                                 <CopyIcon />
                                 Copy Content

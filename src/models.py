@@ -143,6 +143,7 @@ class GenerateResponse(BaseModel):
     lesson_plan: Optional[LessonPlan] = None  # Legacy JSON format
     raw_content: Optional[str] = None
     plan_id: Optional[int] = None  # ID of saved lesson plan in database
+    topic: Optional[str] = None  # Lesson/unit title
     error: Optional[str] = None
     teacher_resources: Optional[List[TeacherResource]] = None  # External resources from SOW
     # Usage metrics
