@@ -400,8 +400,18 @@ class LessonGenerator:
             # audio tracks / YouTube links may come from a completely different topic.
             teacher_resources = []
             sow_context = context.get("sow_context")
-            # Use lesson_title from SOW context as the resolved topic
-            resolved_topic = topic or (sow_context.get("lesson_title") if sow_context else None)
+            # Build full topic string: "Unit 8: Lesson 1: What kind of homes do people and animals build?"
+            if sow_context and sow_context.get("found"):
+                unit_str   = sow_context.get("unit", "")            # "Unit 8: Home, sweet home"
+                unit_part  = unit_str.split(":")[0].strip()          # "Unit 8"
+                lesson_num = sow_context.get("lesson_number", page_start)
+                lesson_title = sow_context.get("lesson_title", "")
+                if unit_part and lesson_title:
+                    resolved_topic = f"{unit_part}: Lesson {lesson_num}: {lesson_title}"
+                else:
+                    resolved_topic = topic or lesson_title or None
+            else:
+                resolved_topic = topic or None
             if sow_context and sow_context.get("found"):
                 pages_found_in_sow = sow_context.get("pages_found_in_sow", True)
                 if not pages_found_in_sow:
