@@ -12,7 +12,7 @@ OPENROUTER_API_KEY = os.getenv("OPENROUTER_API_KEY")
 OPENROUTER_BASE_URL = "https://openrouter.ai/api/v1"
 
 # Model Configuration
-LLM_MODEL = "openai/gpt-5.1"  # For OCR and generation
+LLM_MODEL = "google/gemini-3.1-pro-preview"  # For OCR and generation
 
 # Supabase Configuration
 SUPABASE_URL = os.getenv("SUPABASE_URL")
