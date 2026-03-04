@@ -27,6 +27,69 @@ class LessonGenerator:
         self.base_url = OPENROUTER_BASE_URL
         self.model = LLM_MODEL
     
+    def _build_exercises_html(
+        self,
+        context: Dict[str, Any]
+    ) -> Optional[str]:
+        """
+        Build deterministic HTML for exercise sections from SOW data (new format only).
+        Returns None if not applicable (legacy/ORT/no exercises selected).
+        """
+        sow_format = context.get("sow_format", "legacy")
+        if sow_format != "new":
+            return None
+
+        lb_ab = context.get("lb_ab_raw", {})
+        selected_sections = context.get("selected_sections") or {}
+        selected_ex_ids = [str(i) for i in selected_sections.get("exercise_ids", [])]
+
+        if not selected_ex_ids:
+            return None
+
+        exercises_list = lb_ab.get("exercises", [])
+        html_parts = []
+
+        for ex in exercises_list:
+            if str(ex.get("exercise_id")) not in selected_ex_ids:
+                continue
+
+            title = ex.get("title", f"Exercise {ex.get('exercise_id', '')}")
+            html_parts.append(f"  <h2>{title}</h2>")
+            html_parts.append("  <ul>")
+
+            for sub in ex.get("sub_activities", []):
+                sub_title = sub.get("title", "")
+                desc = sub.get("description", "")
+                audio = sub.get("audio_track")
+                resource = sub.get("digital_resource", "")
+
+                # Build bullet: title + description (truncate long descriptions)
+                bullet = f"{sub_title}: {desc}".strip(": ") if sub_title else desc
+                if bullet:
+                    html_parts.append(f"    <li>{bullet}</li>")
+                if audio:
+                    html_parts.append(f"    <li>Play Audio Track {audio} for students.</li>")
+                if resource:
+                    # Only include YouTube/video links
+                    if "youtube" in resource or "youtu.be" in resource:
+                        html_parts.append(f"    <li>Show video resource: {resource}</li>")
+
+            html_parts.append("  </ul>")
+
+        return "\n".join(html_parts) if html_parts else None
+
+    def _inject_exercises(self, html_content: str, exercises_html: Optional[str]) -> str:
+        """Replace the EXERCISES_PLACEHOLDER comment with pre-built exercise HTML."""
+        placeholder = "<!-- EXERCISES_PLACEHOLDER -->"
+        if exercises_html and placeholder in html_content:
+            return html_content.replace(placeholder, exercises_html)
+        # If no placeholder found but we have exercises, insert before Differentiated or Success Criteria
+        if exercises_html and placeholder not in html_content:
+            for marker in ["<h2>Differentiated", "<h2>Success Criteria"]:
+                if marker in html_content:
+                    return html_content.replace(marker, exercises_html + "\n\n  " + marker, 1)
+        return html_content
+
     def _build_prompt(
         self,
         grade: str,
@@ -122,8 +185,8 @@ class LessonGenerator:
 
         try:
             print(f"\n🤖 [LLM] Calling {self.model}...")
-            # Increase timeout to 180 seconds (3 minutes) for slow API responses
-            with httpx.Client() as client:
+            # 180 second timeout for slow models (Gemini can be slow)
+            with httpx.Client(timeout=180.0) as client:
                 response = client.post(
                     f"{self.base_url}/chat/completions",
                     headers=headers,
@@ -486,14 +549,20 @@ class LessonGenerator:
                 teacher_instructions=teacher_instructions
             )
 
+            # Pre-build deterministic exercise HTML (new format only)
+            exercises_html = self._build_exercises_html(context.get("sow_context") or context)
+
             # Generate lesson plan (HTML) - use subject-specific system prompt
             html_content, usage_data = self._call_llm(prompt, subject)
-            
+
             # Clean up HTML if wrapped in code blocks
             html_content = html_content.strip()
             if html_content.startswith("```"):
                 lines = html_content.split("\n")
                 html_content = "\n".join(lines[1:-1])
+
+            # Inject deterministic exercise sections
+            html_content = self._inject_exercises(html_content, exercises_html)
 
             # Calculate time taken
             end_time = time.time()

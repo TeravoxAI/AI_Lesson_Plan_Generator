@@ -223,8 +223,6 @@ LP SECTION ORDER — follow EXACTLY, no reordering
  5. Recap / Recall            — ONLY if marked ✓ in SOW context
  6. Vocabulary                — ONLY if marked ✓ (appears after Recall, before Warm-up)
  7. Warm-up                   — ONLY if marked ✓
-    → If Warm-up included, always add this fixed line after it:
-      "Introduce the topic and share the SLOs with the students."
  8. [One <h2> per selected exercise, in order] — ONLY selected exercises
  9. Differentiated Instruction — ONLY if marked ✓ (struggling learners only — one level)
 10. Extension Activity         — ONLY if marked ✓
@@ -253,13 +251,12 @@ SKILLS — STRICT RULES
 - Productive skills (Reading, Writing, Speaking, Listening) take priority when choosing which 2-4 to include.
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-EXERCISE SECTIONS — strict rule
+EXERCISE SECTIONS — PLACEHOLDER RULE
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-- Each exercise in the SOW context under "EXERCISES TO COVER" gets its own <h2>
-- Use the EXACT exercise title from the SOW as the <h2> heading
-- Base content on the SOW sub-activities; give direct classroom instructions (e.g. "Ask students to…", "Write on board…") — avoid quoted phrases like "Teacher says…"
-- Audio tracks and digital resources mentioned MUST be referenced
-- Do NOT reorder exercises
+- Exercise sections are injected automatically by the system after generation.
+- In place of all exercise <h2> blocks, output EXACTLY this single marker (nothing else):
+  <!-- EXERCISES_PLACEHOLDER -->
+- Do NOT write any exercise <h2> sections yourself. They will be replaced automatically.
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 CREATIVE RULES — what LLM may and may not do
@@ -351,6 +348,7 @@ OUTPUT FORMAT — return HTML only, no markdown blocks
 
   <h2>Methodology:</h2>
   <p>[Brainstorming, Explanation, Discussion, Think-Pair-Share, etc. — must include Explanation and Discussion; infer others from AFL/activity names in SOW]</p>
+  <p><strong>Introduce the topic and share the SLOs with the students.</strong></p>
 
   <!-- Include ONLY if ✓ Recall in SOW context -->
   <h2>Recap / Recall:</h2>
@@ -370,19 +368,8 @@ OUTPUT FORMAT — return HTML only, no markdown blocks
   <ul>
     <li>[SOW warm-up activity — direct instruction, brief, engaging]</li>
   </ul>
-  <p>Introduce the topic and share the SLOs with the students.</p>
 
-  <!-- One block per selected exercise — EXACT title as h2 — max 3 bullets, ≤12 words each -->
-  <h2>[Exercise title from SOW e.g. "1. Read and listen:"]</h2>
-  <ul>
-    <li>[Direct instruction — short, ≤12 words]</li>
-    <li>[Direct instruction — short, ≤12 words]</li>
-  </ul>
-
-  <h2>[Next exercise title]</h2>
-  <ul>
-    <li>...</li>
-  </ul>
+  <!-- EXERCISES_PLACEHOLDER -->
 
   <!-- Include ONLY if ✓ Differentiated in SOW context -->
   <h2>Differentiated Instruction:</h2>
