@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef } from 'react'
+import { SpeedInsights } from '@vercel/speed-insights/react'
 import Login from './Login'
 import Signup from './Signup'
 import UsageIndicator from './UsageIndicator'
@@ -1611,6 +1612,7 @@ function App() {
             <footer className="app-footer">
                 <p>&copy; {new Date().getFullYear()} Teravox AI. All rights reserved.</p>
             </footer>
+            <SpeedInsights />
         </div>
     )
 }
