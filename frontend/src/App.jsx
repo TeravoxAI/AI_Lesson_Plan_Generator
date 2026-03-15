@@ -158,6 +158,8 @@ function App() {
     const [lessonPlan, setLessonPlan] = useState(null)
     const [lessonTypes, setLessonTypes] = useState({})
     const [mathUnits, setMathUnits] = useState([])
+    const [csUnits, setCsUnits] = useState([])
+    const [csLessons, setCsLessons] = useState([])
     const [lessonMeta, setLessonMeta] = useState(null)
     const [resourcesExpanded, setResourcesExpanded] = useState(true)
     const [resourceItemsExpanded, setResourceItemsExpanded] = useState({})
@@ -192,11 +194,19 @@ function App() {
         course_book_pages: '',
         workbook_pages: '',
         book_types: [],
-        sow_pages: ''
+        sow_pages: '',
+        // Computer Studies fields
+        cs_unit_number: null,
+        cs_lesson_number: null,
+        cs_selected_section_ids: [],
+        cs_include_classwork: false,
+        cs_include_online_assignment: false,
     })
 
     const [lessonSections, setLessonSections] = useState(null)
     const [sectionsLoading, setSectionsLoading] = useState(false)
+    const [csSections, setCsSections] = useState(null)
+    const [csSectionsLoading, setCsSectionsLoading] = useState(false)
 
     const [uploadForm, setUploadForm] = useState({
         grade: 'Grade 2',
@@ -260,6 +270,36 @@ function App() {
         }
     }, [generateForm.subject, generateForm.grade])
 
+    // Fetch CS units when subject changes to Computer Studies
+    useEffect(() => {
+        if (generateForm.subject === 'Computer Studies') {
+            fetchCsUnits(generateForm.grade)
+        } else {
+            setCsUnits([])
+            setCsLessons([])
+            setGenerateForm(prev => ({ ...prev, cs_unit_number: null, cs_lesson_number: null }))
+        }
+    }, [generateForm.subject, generateForm.grade])
+
+    // Fetch CS lessons when cs_unit_number changes
+    useEffect(() => {
+        if (generateForm.subject === 'Computer Studies' && generateForm.cs_unit_number) {
+            fetchCsLessons(generateForm.grade, generateForm.cs_unit_number)
+        } else {
+            setCsLessons([])
+            setGenerateForm(prev => ({ ...prev, cs_lesson_number: null }))
+        }
+    }, [generateForm.cs_unit_number, generateForm.subject])
+
+    // Fetch CS lesson sections when lesson changes
+    useEffect(() => {
+        if (generateForm.subject === 'Computer Studies' && generateForm.cs_unit_number && generateForm.cs_lesson_number && session) {
+            fetchCsLessonSections(generateForm.grade, generateForm.cs_unit_number, generateForm.cs_lesson_number)
+        } else {
+            setCsSections(null)
+        }
+    }, [generateForm.cs_lesson_number, generateForm.cs_unit_number, generateForm.subject, session])
+
     const fetchBooks = async () => {
         try {
             const res = await fetch(`${API_BASE}/ingest/books`)
@@ -296,6 +336,71 @@ function App() {
             console.error('Failed to fetch math units:', err)
             setMathUnits([])
         }
+    }
+
+    const fetchCsUnits = async (grade) => {
+        try {
+            const res = await fetch(`${API_BASE}/generate/cs-units/${encodeURIComponent(grade)}`)
+            const data = await res.json()
+            setCsUnits(data.units || [])
+            if (data.units && data.units.length > 0) {
+                setGenerateForm(prev => ({ ...prev, cs_unit_number: data.units[0].unit_number }))
+            }
+        } catch (err) {
+            console.error('Failed to fetch CS units:', err)
+            setCsUnits([])
+        }
+    }
+
+    const fetchCsLessons = async (grade, unitNumber) => {
+        try {
+            const res = await fetch(`${API_BASE}/generate/cs-lessons/${encodeURIComponent(grade)}/${unitNumber}`)
+            const data = await res.json()
+            setCsLessons(data.lessons || [])
+            if (data.lessons && data.lessons.length > 0) {
+                setGenerateForm(prev => ({ ...prev, cs_lesson_number: data.lessons[0].lesson_number }))
+            }
+        } catch (err) {
+            console.error('Failed to fetch CS lessons:', err)
+            setCsLessons([])
+        }
+    }
+
+    const fetchCsLessonSections = async (grade, unitNumber, lessonNumber) => {
+        if (!session?.access_token) return
+        setCsSectionsLoading(true)
+        setCsSections(null)
+        setGenerateForm(prev => ({
+            ...prev,
+            cs_selected_section_ids: [],
+            cs_include_classwork: false,
+            cs_include_online_assignment: false,
+        }))
+        try {
+            const res = await fetch(
+                `${API_BASE}/generate/cs-lesson-sections?grade=${encodeURIComponent(grade)}&unit_number=${unitNumber}&lesson_number=${lessonNumber}`,
+                { headers: { 'Authorization': `Bearer ${session.access_token}` } }
+            )
+            const data = await res.json()
+            if (data.success && data.sections) {
+                setCsSections(data.sections)
+            }
+        } catch (err) {
+            console.error('Failed to fetch CS lesson sections:', err)
+        } finally {
+            setCsSectionsLoading(false)
+        }
+    }
+
+    const toggleCsSection = (sectionId) => {
+        setGenerateForm(prev => {
+            const ids = prev.cs_selected_section_ids
+            if (ids.includes(sectionId)) {
+                return { ...prev, cs_selected_section_ids: ids.filter(i => i !== sectionId) }
+            } else {
+                return { ...prev, cs_selected_section_ids: [...ids, sectionId] }
+            }
+        })
     }
 
     const toggleLessonType = (type) => {
@@ -417,6 +522,29 @@ function App() {
                     course_book_pages: generateForm.book_types.includes('CB') ? generateForm.course_book_pages : null,
                     workbook_pages: generateForm.book_types.includes('AB') ? (generateForm.workbook_pages || null) : null,
                     book_types: generateForm.book_types,
+                    teacher_instructions: generateForm.teacher_instructions.trim() || null
+                }
+            } else if (generateForm.subject === 'Computer Studies') {
+                if (!generateForm.cs_unit_number || !generateForm.cs_lesson_number) {
+                    setStatus({ type: 'error', message: 'Please select a unit and lesson' })
+                    setLoading(false)
+                    return
+                }
+                if (generateForm.cs_selected_section_ids.length === 0) {
+                    setStatus({ type: 'error', message: 'Please select at least one activity.' })
+                    setLoading(false)
+                    return
+                }
+                requestBody = {
+                    grade: generateForm.grade,
+                    subject: generateForm.subject,
+                    cs_unit_number: generateForm.cs_unit_number,
+                    cs_lesson_number: generateForm.cs_lesson_number,
+                    cs_selected_sections: {
+                        section_ids: generateForm.cs_selected_section_ids,
+                        classwork: generateForm.cs_include_classwork,
+                        online_assignment: generateForm.cs_include_online_assignment,
+                    },
                     teacher_instructions: generateForm.teacher_instructions.trim() || null
                 }
             } else {
@@ -660,6 +788,8 @@ function App() {
 
     const canGenerate = generateForm.subject === 'Mathematics'
         ? !!(generateForm.unit_number && generateForm.book_types.length > 0)
+        : generateForm.subject === 'Computer Studies'
+        ? !!(generateForm.cs_unit_number && generateForm.cs_lesson_number && generateForm.cs_selected_section_ids.length > 0)
         : generateForm.selected_books.length > 0 && generateForm.selected_exercise_ids.length > 0
 
     const formatTypeName = (type) => {
@@ -786,11 +916,107 @@ function App() {
                                         >
                                             <option value="English">English</option>
                                             <option value="Mathematics">Mathematics</option>
+                                            <option value="Computer Studies">Computer Studies</option>
                                         </select>
                                     </div>
 
                                     {/* Conditional fields based on subject */}
-                                    {generateForm.subject === 'Mathematics' ? (
+                                    {generateForm.subject === 'Computer Studies' ? (
+                                        <>
+                                            {/* Unit Selection */}
+                                            <div className="form-field">
+                                                <label className="form-label">Unit</label>
+                                                <select
+                                                    className="form-select"
+                                                    value={generateForm.cs_unit_number || ''}
+                                                    onChange={e => setGenerateForm({ ...generateForm, cs_unit_number: parseInt(e.target.value) || null })}
+                                                    required
+                                                >
+                                                    <option value="">Select a unit</option>
+                                                    {csUnits.map(unit => (
+                                                        <option key={unit.unit_number} value={unit.unit_number}>
+                                                            Unit {unit.unit_number}: {unit.unit_title}
+                                                        </option>
+                                                    ))}
+                                                </select>
+                                                {csUnits.length === 0 && (
+                                                    <p className="form-hint" style={{ color: '#f59e0b', marginTop: '4px' }}>
+                                                        No Computer Studies SOW uploaded for this grade.
+                                                    </p>
+                                                )}
+                                            </div>
+
+                                            {/* Lesson Selection */}
+                                            {generateForm.cs_unit_number && (
+                                                <div className="form-field">
+                                                    <label className="form-label">Lesson</label>
+                                                    <select
+                                                        className="form-select"
+                                                        value={generateForm.cs_lesson_number || ''}
+                                                        onChange={e => setGenerateForm({ ...generateForm, cs_lesson_number: parseInt(e.target.value) || null })}
+                                                        required
+                                                    >
+                                                        <option value="">Select a lesson</option>
+                                                        {csLessons.map(lesson => (
+                                                            <option key={lesson.lesson_number} value={lesson.lesson_number}>
+                                                                Lesson {lesson.lesson_number}: {lesson.lesson_title}
+                                                                {lesson.sub_topic ? ` — ${lesson.sub_topic}` : ''}
+                                                            </option>
+                                                        ))}
+                                                    </select>
+                                                    {csLessons.length === 0 && (
+                                                        <p className="form-hint" style={{ color: '#f59e0b', marginTop: '4px' }}>
+                                                            No lessons found for this unit.
+                                                        </p>
+                                                    )}
+                                                </div>
+                                            )}
+
+                                            {/* CS Lesson Sections */}
+                                            {generateForm.cs_lesson_number && (
+                                                <div className="form-field">
+                                                    <label className="form-label">
+                                                        Lesson Sections <span style={{ color: '#ef4444' }}>*</span>
+                                                    </label>
+                                                    {csSectionsLoading && <p className="form-hint">Loading sections...</p>}
+                                                    {csSections && (
+                                                        <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                                                            {/* Flat activity list */}
+                                                            {csSections.sections?.map(s => (
+                                                                <label key={s.section_id} style={{ display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer', fontSize: '14px' }}>
+                                                                    <input type="checkbox"
+                                                                        checked={generateForm.cs_selected_section_ids.includes(s.section_id)}
+                                                                        onChange={() => toggleCsSection(s.section_id)} />
+                                                                    {s.title}
+                                                                </label>
+                                                            ))}
+                                                            {/* Classwork */}
+                                                            {csSections.classwork?.available && (
+                                                                <label style={{ display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer', fontSize: '14px', marginTop: '4px', borderTop: '1px solid #e5e7eb', paddingTop: '6px' }}>
+                                                                    <input type="checkbox" checked={generateForm.cs_include_classwork}
+                                                                        onChange={e => setGenerateForm(prev => ({ ...prev, cs_include_classwork: e.target.checked }))} />
+                                                                    Include Classwork (C.W)
+                                                                </label>
+                                                            )}
+                                                            {/* Online Assignment */}
+                                                            {csSections.online_assignment?.available && (
+                                                                <label style={{ display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer', fontSize: '14px' }}>
+                                                                    <input type="checkbox" checked={generateForm.cs_include_online_assignment}
+                                                                        onChange={e => setGenerateForm(prev => ({ ...prev, cs_include_online_assignment: e.target.checked }))} />
+                                                                    Include Online Assignment
+                                                                </label>
+                                                            )}
+                                                            {generateForm.cs_selected_section_ids.length === 0 && (
+                                                                <p style={{ color: '#ef4444', fontSize: '12px', marginTop: '4px' }}>
+                                                                    Select at least one activity.
+                                                                </p>
+                                                            )}
+                                                        </div>
+                                                    )}
+                                                </div>
+                                            )}
+                                        </>
+                                    ) : generateForm.subject === 'Mathematics' ? (
                                         <>
                                             {/* Unit restriction notice for Math */}
                                             <div style={{
@@ -1122,6 +1348,8 @@ function App() {
                                         <p style={{ color: '#f59e0b', fontSize: '13px', marginBottom: '8px', textAlign: 'center' }}>
                                             {generateForm.subject === 'Mathematics'
                                                 ? 'Select a chapter and at least one book type to generate LP.'
+                                                : generateForm.subject === 'Computer Studies'
+                                                ? 'Select a unit and lesson to generate LP.'
                                                 : 'Select at least one book and at least one exercise to generate LP.'}
                                         </p>
                                     )}
