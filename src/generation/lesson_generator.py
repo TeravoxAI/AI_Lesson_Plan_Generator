@@ -12,7 +12,8 @@ from src.prompts.templates import (
     LESSON_ARCHITECT_PROMPT,
     LESSON_TYPE_PROMPTS,
     ENG_SYSTEM_PROMPT,
-    MATHS_SYSTEM_PROMPT
+    MATHS_SYSTEM_PROMPT,
+    CS_SYSTEM_PROMPT
 )
 from src.generation.router import router
 from src.db.client import db
@@ -143,6 +144,8 @@ class LessonGenerator:
         """Get the appropriate system prompt based on subject"""
         if subject.lower() == "mathematics":
             return MATHS_SYSTEM_PROMPT
+        elif subject.lower() == "computer studies":
+            return CS_SYSTEM_PROMPT
         else:
             return ENG_SYSTEM_PROMPT  # Default to English
     
@@ -624,6 +627,110 @@ class LessonGenerator:
                 success=False,
                 error=str(e)
             )
+
+
+    def generate_cs(
+        self,
+        grade: str,
+        unit_number: int,
+        lesson_number: int,
+        selected_sections: Optional[Dict[str, Any]] = None,
+        teacher_instructions: Optional[str] = None,
+        created_by_id: Optional[str] = None,
+        save_to_db: bool = True
+    ) -> GenerateResponse:
+        """Generate a Computer Studies lesson plan from SOW (no textbook)."""
+        subject = "Computer Studies"
+        start_time = time.time()
+
+        try:
+            context = router.retrieve_cs_context(
+                grade=grade,
+                unit_number=unit_number,
+                lesson_number=lesson_number,
+                selected_sections=selected_sections,
+            )
+
+            lesson = context.get("sow_context")
+            sow_strategy_str = context.get("sow_strategy", "")
+
+            # Build topic string
+            if lesson:
+                topic = f"Unit {unit_number}: Lesson {lesson_number}: {lesson.get('lesson_title', '')}"
+            else:
+                topic = f"Unit {unit_number}: Lesson {lesson_number}"
+
+            # Extract digital resource URLs as teacher resources
+            teacher_resources = []
+            if lesson and lesson.get("digital_resources"):
+                for url in lesson["digital_resources"].get("urls", []):
+                    if "youtube" in url or "youtu.be" in url:
+                        teacher_resources.append({"title": "Video Resource", "type": "video", "reference": url})
+                    else:
+                        teacher_resources.append({"title": "Digital Resource", "type": "document", "reference": url})
+
+            prompt = LESSON_ARCHITECT_PROMPT.format(
+                grade=grade,
+                subject=subject,
+                exercises_label=f"Unit {unit_number} Lesson {lesson_number}",
+                book_content="No textbook — Computer Studies is SOW-only.",
+                sow_strategy=sow_strategy_str or "No SOW lesson found.",
+                period_time="35 minutes",
+                club_period_note=""
+            )
+
+            if teacher_instructions and teacher_instructions.strip():
+                import re as _re
+                clean = _re.sub(r'<[^>]+>', '', teacher_instructions).strip()[:300]
+                prompt += f"\n\nTEACHER'S ADDITIONAL INSTRUCTIONS (follow these):\n{clean}"
+
+            html_content, usage_data = self._call_llm(prompt, subject)
+
+            html_content = html_content.strip()
+            if html_content.startswith("```"):
+                lines = html_content.split("\n")
+                html_content = "\n".join(lines[1:-1])
+
+            end_time = time.time()
+            generation_time = round(end_time - start_time, 2)
+
+            plan_id = None
+            if save_to_db:
+                plan_id = db.insert_lesson_plan(
+                    grade_level=grade,
+                    subject=subject,
+                    lesson_type=f"u{unit_number}_l{lesson_number}",
+                    page_start=lesson_number,
+                    page_end=lesson_number,
+                    topic=topic,
+                    lesson_plan={"html_content": html_content},
+                    textbook_id=None,
+                    sow_entry_id=context["metadata"].get("sow_entry_id"),
+                    created_by_id=created_by_id,
+                    generation_time=generation_time,
+                    cost=usage_data["cost"],
+                    input_tokens=usage_data["input_tokens"],
+                    output_tokens=usage_data["output_tokens"],
+                    total_tokens=usage_data["total_tokens"]
+                )
+
+            return GenerateResponse(
+                success=True,
+                html_content=html_content,
+                plan_id=plan_id,
+                topic=topic,
+                teacher_resources=teacher_resources,
+                generation_time=generation_time,
+                cost=usage_data["cost"],
+                input_tokens=usage_data["input_tokens"],
+                output_tokens=usage_data["output_tokens"],
+                total_tokens=usage_data["total_tokens"]
+            )
+
+        except Exception as e:
+            import traceback
+            traceback.print_exc()
+            return GenerateResponse(success=False, error=str(e))
 
 
 # Singleton instance

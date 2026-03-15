@@ -14,7 +14,13 @@ from src.generation.sow_matcher import (
     get_math_units,
     get_math_unit_by_number,
     format_math_unit_for_prompt,
-    parse_page_range
+    parse_page_range,
+    # Computer Studies functions
+    get_cs_units,
+    get_cs_lessons_for_unit,
+    get_cs_lesson,
+    get_cs_lesson_sections,
+    format_cs_lesson_for_prompt,
 )
 
 
@@ -560,6 +566,79 @@ class ContextRouter:
         print("="*80 + "\n")
 
         return context
+
+    def get_cs_sections_for_lesson(self, grade: str, unit_number: int, lesson_number: int) -> Optional[Dict[str, Any]]:
+        sow_entries = self.db.get_sow_by_subject("Computer Studies", grade)
+        if not sow_entries:
+            return None
+        extraction = sow_entries[0].get("extraction", {})
+        return get_cs_lesson_sections(extraction, unit_number, lesson_number) if extraction else None
+
+    def retrieve_cs_context(
+        self,
+        grade: str,
+        unit_number: int,
+        lesson_number: int,
+        selected_sections: Optional[Dict] = None,
+    ) -> Dict[str, Any]:
+        """Retrieve Computer Studies lesson context from SOW (no textbook)."""
+        print(f"\n📚 [CS CONTEXT] Retrieving {grade} Unit {unit_number} Lesson {lesson_number}")
+
+        context = {
+            "grade": grade,
+            "subject": "Computer Studies",
+            "unit_number": unit_number,
+            "lesson_number": lesson_number,
+            "book_content": [],
+            "sow_strategy": None,
+            "sow_context": None,
+            "metadata": {"textbook_ids": [], "sow_entry_id": None, "books_fetched": []}
+        }
+
+        sow_entries = db.get_sow_by_subject("Computer Studies", grade)
+        if not sow_entries:
+            print(f"   ⚠ No SOW found for Computer Studies {grade}")
+            return context
+
+        sow_data = sow_entries[0]
+        context["metadata"]["sow_entry_id"] = sow_data.get("id")
+        extraction = sow_data.get("extraction", {})
+        if not extraction:
+            print(f"   ⚠ SOW entry has no extraction data")
+            return context
+
+        lesson = get_cs_lesson(extraction, unit_number, lesson_number)
+        context["sow_context"] = lesson
+
+        if not lesson:
+            print(f"   ⚠ Unit {unit_number} Lesson {lesson_number} not found in CS SOW")
+            context["sow_strategy"] = "No lesson found. Generate based on general Computer Studies guidelines."
+            return context
+
+        print(f"   ✓ Found: Unit {unit_number} Lesson {lesson_number}: {lesson.get('lesson_title')}")
+        context["sow_strategy"] = format_cs_lesson_for_prompt(lesson, selected_sections)
+
+        print("\n" + "="*80)
+        print("📋 CS SOW EXTRACTION USED IN PROMPT:")
+        print("="*80)
+        print(context["sow_strategy"])
+        print("="*80 + "\n")
+
+        return context
+
+    def get_cs_units_for_grade(self, grade: str) -> List[Dict[str, Any]]:
+        sow_entries = self.db.get_sow_by_subject("Computer Studies", grade)
+        if not sow_entries:
+            return []
+        extraction = sow_entries[0].get("extraction", {})
+        return get_cs_units(extraction) if extraction else []
+
+    def get_cs_lessons_for_unit(self, grade: str, unit_number: int) -> List[Dict[str, Any]]:
+        sow_entries = self.db.get_sow_by_subject("Computer Studies", grade)
+        if not sow_entries:
+            return []
+        extraction = sow_entries[0].get("extraction", {})
+        return get_cs_lessons_for_unit(extraction, unit_number) if extraction else []
 
     def format_book_content(self, book_content: List[Dict[str, Any]]) -> str:
         """Format book content into a readable string for the prompt"""

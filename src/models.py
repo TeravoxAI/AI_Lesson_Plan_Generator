@@ -37,6 +37,7 @@ class Subject(str, Enum):
     """Available subjects"""
     ENGLISH = "English"
     MATHEMATICS = "Mathematics"
+    COMPUTER_STUDIES = "Computer Studies"
 
 
 # ============= Request Models =============
@@ -63,6 +64,16 @@ class GenerateRequest(BaseModel):
     # English section selections (new structured approach)
     selected_sections: Optional[Dict[str, Any]] = None
     teacher_instructions: Optional[str] = None  # freeform teacher notes appended to prompt
+    # Computer Studies flow: unit_number + lesson_number (no textbook)
+    cs_unit_number: Optional[int] = None
+    cs_lesson_number: Optional[int] = None
+    cs_selected_sections: Optional[Dict[str, Any]] = None
+    # cs_selected_sections structure:
+    # {
+    #   "section_ids": List[str],   # flat ordered IDs e.g. ["0", "2", "3"]
+    #   "classwork": bool,
+    #   "online_assignment": bool
+    # }
     # selected_sections structure:
     # {
     #   "recall": bool,
