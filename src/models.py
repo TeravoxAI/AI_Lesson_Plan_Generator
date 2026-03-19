@@ -37,6 +37,7 @@ class Subject(str, Enum):
     """Available subjects"""
     ENGLISH = "English"
     MATHEMATICS = "Mathematics"
+    ART = "Art"
 
 
 # ============= Request Models =============

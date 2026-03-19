@@ -14,7 +14,11 @@ from src.generation.sow_matcher import (
     get_math_units,
     get_math_unit_by_number,
     format_math_unit_for_prompt,
-    parse_page_range
+    parse_page_range,
+    # Art functions
+    get_art_units,
+    get_art_unit_by_number,
+    format_art_unit_for_prompt,
 )
 
 
@@ -557,6 +561,134 @@ class ContextRouter:
         print("="*80)
         formatted_book_content = self.format_book_content(all_content)
         print(formatted_book_content)
+        print("="*80 + "\n")
+
+        return context
+
+    def retrieve_art_context(
+        self,
+        grade: str,
+        unit_number: int,
+        tb_pages: Optional[str] = None
+    ) -> Dict[str, Any]:
+        """
+        Retrieve context for Art lesson generation.
+
+        Flow:
+        1. Find unit in Art SOW by unit_number
+        2. Optionally fetch textbook pages if tb_pages provided
+        3. Format for LLM
+
+        Args:
+            grade: Grade level (e.g., "Grade 2")
+            unit_number: The unit number from Art SOW
+            tb_pages: Optional textbook pages (e.g., "21-22")
+
+        Returns:
+            Dict with context for lesson generation
+        """
+        subject = "Art"
+        db_grade = normalize_grade(grade)
+
+        print(f"\n📚 [ART CONTEXT] Retrieving content for {subject} {grade}, Unit {unit_number}")
+        if tb_pages:
+            print(f"   Textbook Pages: {tb_pages}")
+
+        context = {
+            "grade": grade,
+            "subject": subject,
+            "unit_number": unit_number,
+            "book_content": [],
+            "sow_strategy": None,
+            "sow_context": None,
+            "metadata": {
+                "textbook_ids": [],
+                "sow_entry_id": None,
+                "books_fetched": []
+            }
+        }
+
+        # Step 1: Fetch Art SOW and find the unit
+        print(f"\n📋 [SOW] Finding unit {unit_number} in Art SOW...")
+        sow_entries = db.get_sow_by_subject(subject, grade)
+
+        if not sow_entries:
+            print(f"   ⚠ No SOW entries found for {subject} {grade}")
+            return context
+
+        sow_data = sow_entries[0]
+        context["metadata"]["sow_entry_id"] = sow_data.get("id")
+
+        extraction = sow_data.get("extraction", {})
+        if not extraction:
+            print(f"   ⚠ SOW entry has no extraction data")
+            return context
+
+        # Step 2: Get unit content
+        unit = get_art_unit_by_number(extraction, unit_number)
+        context["sow_context"] = unit
+
+        if not unit:
+            print(f"   ⚠ No unit {unit_number} found in Art SOW")
+            context["sow_strategy"] = "No Art SOW unit found. Generate based on general Art guidelines."
+        else:
+            print(f"   ✓ Found: Unit {unit['unit_number']}: {unit['unit_title']}")
+            context["sow_strategy"] = format_art_unit_for_prompt(unit)
+
+        # Step 3: Optionally fetch textbook pages (Art textbook = "TB" tag)
+        if tb_pages:
+            pages = parse_page_range(tb_pages)
+            if pages:
+                print(f"\n   📖 Fetching Art Textbook pages {pages}...")
+                # Try by book_tag "TB" first, then by book_type "textbook"
+                book = db.get_textbook_by_tag(db_grade, subject, "TB")
+                if not book:
+                    book = db.get_textbook(db_grade, subject, "textbook")
+
+                if book:
+                    fetched_pages = db.get_pages_by_numbers(book["id"], pages)
+                    if fetched_pages:
+                        context["metadata"]["textbook_ids"].append(book["id"])
+                        context["metadata"]["books_fetched"].append({
+                            "book_type": "TB",
+                            "book_id": book["id"],
+                            "title": book.get("title", ""),
+                            "pages_requested": pages,
+                            "pages_found": len(fetched_pages)
+                        })
+                        for page in fetched_pages:
+                            page_no = page.get("page_no") or page.get("book_page_no")
+                            content_text = page.get("book_text") or page.get("content", "")
+                            context["book_content"].append({
+                                "book_type": "textbook",
+                                "book_type_short": "TB",
+                                "title": book.get("title", ""),
+                                "page_no": page_no,
+                                "content": content_text,
+                                "book_id": book["id"]
+                            })
+                        print(f"      ✓ Fetched {len(fetched_pages)} Art Textbook pages")
+                    else:
+                        print(f"      ⚠ No pages found for Art Textbook pages {pages}")
+                else:
+                    print(f"      ⚠ Art Textbook not found in database for Grade {db_grade}")
+            else:
+                print(f"   ⚠ Could not parse tb_pages: '{tb_pages}'")
+
+        # Summary
+        print(f"\n   📝 Context Summary:")
+        if unit:
+            print(f"      - Unit: Unit {unit['unit_number']}: {unit['unit_title']}")
+            print(f"      - SLOs: {len(unit.get('slos', []))}")
+            print(f"      - Sub-activities: {len(unit.get('teaching_strategies', []))}")
+            print(f"      - STREAM: {unit.get('stream', False)}")
+        print(f"      - Book pages loaded: {len(context['book_content'])}")
+
+        # Print complete SOW extraction being used
+        print("\n" + "="*80)
+        print("📋 COMPLETE ART SOW EXTRACTION USED IN PROMPT:")
+        print("="*80)
+        print(context["sow_strategy"])
         print("="*80 + "\n")
 
         return context

@@ -7,12 +7,13 @@ import time
 from typing import Dict, Any, Optional, Tuple
 import httpx
 
-from src.models import LessonType, GenerateResponse, LessonPlan
+from src.models import LessonType, GenerateResponse, LessonPlan, TeacherResource
 from src.prompts.templates import (
     LESSON_ARCHITECT_PROMPT,
     LESSON_TYPE_PROMPTS,
     ENG_SYSTEM_PROMPT,
-    MATHS_SYSTEM_PROMPT
+    MATHS_SYSTEM_PROMPT,
+    ART_SYSTEM_PROMPT
 )
 from src.generation.router import router
 from src.db.client import db
@@ -143,6 +144,8 @@ class LessonGenerator:
         """Get the appropriate system prompt based on subject"""
         if subject.lower() == "mathematics":
             return MATHS_SYSTEM_PROMPT
+        elif subject.lower() == "art":
+            return ART_SYSTEM_PROMPT
         else:
             return ENG_SYSTEM_PROMPT  # Default to English
     
@@ -382,6 +385,149 @@ class LessonGenerator:
                 plan_id=plan_id,
                 topic=math_topic,
                 teacher_resources=teacher_resources,
+                generation_time=generation_time,
+                cost=usage_data["cost"],
+                input_tokens=usage_data["input_tokens"],
+                output_tokens=usage_data["output_tokens"],
+                total_tokens=usage_data["total_tokens"]
+            )
+
+        except Exception as e:
+            import traceback
+            traceback.print_exc()
+            return GenerateResponse(
+                success=False,
+                error=str(e)
+            )
+
+    def generate_art(
+        self,
+        grade: str,
+        unit_number: int,
+        tb_pages: Optional[str] = None,
+        teacher_instructions: Optional[str] = None,
+        created_by_id: Optional[str] = None,
+        save_to_db: bool = True
+    ) -> GenerateResponse:
+        """
+        Generate an Art lesson plan using unit-based SOW context.
+
+        Args:
+            grade: Grade level (e.g., "Grade 2")
+            unit_number: Unit number from Art SOW
+            tb_pages: Optional Art textbook pages (e.g., "21-22")
+            teacher_instructions: Optional freeform teacher notes
+            created_by_id: User ID of the teacher
+            save_to_db: Whether to save the generated plan to database
+
+        Returns:
+            GenerateResponse with the lesson plan, cost, and time taken
+        """
+        subject = "Art"
+        start_time = time.time()
+
+        try:
+            # Retrieve Art context
+            context = router.retrieve_art_context(
+                grade=grade,
+                unit_number=unit_number,
+                tb_pages=tb_pages
+            )
+
+            print(f"\n📝 [GENERATE] Building prompt for Art lesson plan...")
+
+            # Extract video resources from SOW sub-activities
+            teacher_resources = []
+            unit = context.get("sow_context")
+            if unit:
+                seen_urls = set()
+                for strategy in unit.get("teaching_strategies", []):
+                    for url in strategy.get("digital_resources", []):
+                        if url and ("youtube" in url or "youtu.be" in url) and url not in seen_urls:
+                            seen_urls.add(url)
+                            teacher_resources.append({
+                                "title": "Video Resource",
+                                "type": "video",
+                                "reference": url
+                            })
+
+            if teacher_resources:
+                print(f"\n📹 [RESOURCES] Found {len(teacher_resources)} video(s)")
+                for res in teacher_resources:
+                    print(f"   📹 {res['title']}: {res['reference'][:60]}...")
+
+            # Format content for prompt
+            book_content_str = router.format_book_content(context["book_content"])
+            sow_strategy_str = context.get("sow_strategy", "")
+
+            # Build prompt using LESSON_ARCHITECT_PROMPT template
+            prompt = self._build_prompt(
+                grade=grade,
+                subject=subject,
+                lesson_type="general",
+                book_content=book_content_str,
+                sow_strategy=sow_strategy_str,
+                page_start=0,
+                page_end=0,
+                period_time="35 minutes",
+                club_period_note="",
+                teacher_instructions=teacher_instructions
+            )
+
+            # Generate lesson plan (HTML) using Art system prompt
+            html_content, usage_data = self._call_llm(prompt, subject)
+
+            # Clean up HTML if wrapped in code blocks
+            html_content = html_content.strip()
+            if html_content.startswith("```"):
+                lines = html_content.split("\n")
+                html_content = "\n".join(lines[1:-1])
+
+            # Calculate time taken
+            end_time = time.time()
+            generation_time = round(end_time - start_time, 2)
+
+            print(f"   ✓ Art lesson plan generated successfully!")
+            print(f"   HTML length: {len(html_content)} chars")
+            print(f"   ⏱️  Time: {generation_time}s")
+
+            # Build topic string
+            unit_title = unit.get("unit_title", "") if unit else ""
+            art_topic = f"Unit {unit_number}: {unit_title}" if unit_title else f"Unit {unit_number}"
+
+            # Save to database if enabled
+            plan_id = None
+            if save_to_db:
+                textbook_ids = context["metadata"].get("textbook_ids", [])
+                textbook_id = textbook_ids[0] if textbook_ids else None
+
+                plan_id = db.insert_lesson_plan(
+                    grade_level=grade,
+                    subject=subject,
+                    lesson_type=f"unit_{unit_number}",
+                    page_start=0,
+                    page_end=0,
+                    topic=art_topic,
+                    lesson_plan={"html_content": html_content},
+                    textbook_id=textbook_id,
+                    sow_entry_id=context["metadata"].get("sow_entry_id"),
+                    created_by_id=created_by_id,
+                    generation_time=generation_time,
+                    cost=usage_data["cost"],
+                    input_tokens=usage_data["input_tokens"],
+                    output_tokens=usage_data["output_tokens"],
+                    total_tokens=usage_data["total_tokens"]
+                )
+
+            return GenerateResponse(
+                success=True,
+                html_content=html_content,
+                plan_id=plan_id,
+                topic=art_topic,
+                teacher_resources=[
+                    TeacherResource(title=r["title"], type=r["type"], reference=r["reference"])
+                    for r in teacher_resources
+                ],
                 generation_time=generation_time,
                 cost=usage_data["cost"],
                 input_tokens=usage_data["input_tokens"],

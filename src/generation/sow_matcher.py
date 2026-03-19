@@ -675,6 +675,105 @@ def format_math_unit_for_prompt(unit: Dict[str, Any]) -> str:
     return "\n".join(parts)
 
 
+# ============ ART SOW FUNCTIONS ============
+
+def get_art_units(sow_data: Dict[str, Any]) -> List[Dict[str, Any]]:
+    """Get list of Art units for UI display."""
+    curriculum = sow_data.get("curriculum", sow_data)
+    return [
+        {
+            "unit_number": u.get("unit_number", 0),
+            "unit_title": u.get("unit_title", ""),
+            "stream": u.get("stream", False)
+        }
+        for u in curriculum.get("units", [])
+    ]
+
+
+def get_art_unit_by_number(sow_data: Dict[str, Any], unit_number: int) -> Optional[Dict[str, Any]]:
+    """Get a specific Art unit by unit_number."""
+    curriculum = sow_data.get("curriculum", sow_data)
+    for unit in curriculum.get("units", []):
+        if unit.get("unit_number") == unit_number:
+            return unit
+    return None
+
+
+def format_art_unit_for_prompt(unit: Dict[str, Any]) -> str:
+    """Format Art SOW unit into a string for the LLM prompt."""
+    if not unit:
+        return "No Art SOW unit found. Generate based on general Art guidelines."
+
+    parts = []
+
+    # Header
+    parts.append(f"**Unit {unit.get('unit_number', '')}: {unit.get('unit_title', '')}**")
+    parts.append("")
+
+    # STREAM flag
+    if unit.get("stream"):
+        parts.append("STREAM UNIT: Yes — include a STREAM Connection section in the lesson plan.")
+        parts.append("")
+
+    # SLOs
+    slos = unit.get("slos", [])
+    if slos:
+        parts.append("AVAILABLE SLOs (include ALL in the lesson plan):")
+        for slo in slos:
+            parts.append(f"  • {slo}")
+        parts.append("")
+
+    # Skills
+    skills = unit.get("skills", [])
+    if skills:
+        parts.append("AVAILABLE SKILLS (select 2-4 most actively exercised):")
+        parts.append(f"  {', '.join(skills)}")
+        parts.append("")
+
+    # Sub-activities
+    teaching_strategies = unit.get("teaching_strategies", [])
+    if teaching_strategies:
+        parts.append("SUB-ACTIVITIES TO COVER (each must become its own <h2> section, in this order):")
+        parts.append("")
+        for strategy in teaching_strategies:
+            title = strategy.get("title", "")
+            description = strategy.get("description", "")
+            digital_resources = strategy.get("digital_resources", [])
+            afl = strategy.get("afl_strategies", [])
+
+            parts.append(f'  --- ACTIVITY: "{title}" ---')
+            if description:
+                for line in description.split("\n"):
+                    line = line.strip()
+                    if line:
+                        parts.append(f"  {line}")
+            if digital_resources:
+                for url in digital_resources:
+                    parts.append(f"  [Digital resource: {url}]")
+            if afl:
+                parts.append(f"  AFL: {', '.join(afl)}")
+            parts.append("")
+
+    # Classwork
+    classwork = unit.get("classwork", [])
+    if classwork:
+        parts.append("CLASSWORK (from SOW — use verbatim for C.W section):")
+        for item in classwork:
+            parts.append(f"  • {item}")
+        parts.append("")
+
+    # Unit-level AFL strategies
+    afl_strategies = unit.get("afl_strategies", [])
+    if afl_strategies:
+        afl_names = [a.get("name", "") for a in afl_strategies if a.get("name")]
+        if afl_names:
+            parts.append("UNIT AFL STRATEGIES (use these exact names in the AFL Strategies section):")
+            parts.append(f"  {', '.join(afl_names)}")
+            parts.append("")
+
+    return "\n".join(parts)
+
+
 # ============ LEGACY SUPPORT ============
 
 def filter_teaching_sequence_by_pages(steps: list, pages: list) -> list:

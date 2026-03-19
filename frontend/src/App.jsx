@@ -158,6 +158,7 @@ function App() {
     const [lessonPlan, setLessonPlan] = useState(null)
     const [lessonTypes, setLessonTypes] = useState({})
     const [mathUnits, setMathUnits] = useState([])
+    const [artUnits, setArtUnits] = useState([])
     const [lessonMeta, setLessonMeta] = useState(null)
     const [resourcesExpanded, setResourcesExpanded] = useState(true)
     const [resourceItemsExpanded, setResourceItemsExpanded] = useState({})
@@ -192,7 +193,10 @@ function App() {
         course_book_pages: '',
         workbook_pages: '',
         book_types: [],
-        sow_pages: ''
+        sow_pages: '',
+        // Art-specific fields
+        art_unit_number: null,
+        art_tb_pages: ''
     })
 
     const [lessonSections, setLessonSections] = useState(null)
@@ -260,6 +264,20 @@ function App() {
         }
     }, [generateForm.subject, generateForm.grade])
 
+    // Fetch Art units when subject changes to Art
+    useEffect(() => {
+        if (generateForm.subject === 'Art') {
+            fetchArtUnits(generateForm.grade)
+        } else {
+            setArtUnits([])
+            setGenerateForm(prev => ({
+                ...prev,
+                art_unit_number: null,
+                art_tb_pages: ''
+            }))
+        }
+    }, [generateForm.subject, generateForm.grade])
+
     const fetchBooks = async () => {
         try {
             const res = await fetch(`${API_BASE}/ingest/books`)
@@ -295,6 +313,23 @@ function App() {
         } catch (err) {
             console.error('Failed to fetch math units:', err)
             setMathUnits([])
+        }
+    }
+
+    const fetchArtUnits = async (grade) => {
+        try {
+            const res = await fetch(`${API_BASE}/generate/art-units/${encodeURIComponent(grade)}`)
+            const data = await res.json()
+            setArtUnits(data.units || [])
+            if (data.units && data.units.length > 0) {
+                setGenerateForm(prev => ({
+                    ...prev,
+                    art_unit_number: data.units[0].unit_number
+                }))
+            }
+        } catch (err) {
+            console.error('Failed to fetch art units:', err)
+            setArtUnits([])
         }
     }
 
@@ -419,6 +454,19 @@ function App() {
                     book_types: generateForm.book_types,
                     teacher_instructions: generateForm.teacher_instructions.trim() || null
                 }
+            } else if (generateForm.subject === 'Art') {
+                if (!generateForm.art_unit_number) {
+                    setStatus({ type: 'error', message: 'Please select a unit' })
+                    setLoading(false)
+                    return
+                }
+                requestBody = {
+                    grade: generateForm.grade,
+                    subject: generateForm.subject,
+                    unit_number: generateForm.art_unit_number,
+                    course_book_pages: generateForm.art_tb_pages.trim() || null,
+                    teacher_instructions: generateForm.teacher_instructions.trim() || null
+                }
             } else {
                 // English flow
                 if (generateForm.selected_exercise_ids.length === 0) {
@@ -520,6 +568,10 @@ function App() {
                     // Find unit title for display
                     const unit = mathUnits.find(u => u.unit_number === generateForm.unit_number)
                     meta.unitTitle = unit?.unit_title || `Chapter ${generateForm.unit_number}`
+                } else if (generateForm.subject === 'Art') {
+                    meta.unitNumber = generateForm.art_unit_number
+                    const unit = artUnits.find(u => u.unit_number === generateForm.art_unit_number)
+                    meta.unitTitle = unit?.unit_title || `Unit ${generateForm.art_unit_number}`
                 } else {
                     meta.lessonNumber = generateForm.lesson_number
                     meta.types = generateForm.selected_types
@@ -660,7 +712,9 @@ function App() {
 
     const canGenerate = generateForm.subject === 'Mathematics'
         ? !!(generateForm.unit_number && generateForm.book_types.length > 0)
-        : generateForm.selected_books.length > 0 && generateForm.selected_exercise_ids.length > 0
+        : generateForm.subject === 'Art'
+            ? !!generateForm.art_unit_number
+            : generateForm.selected_books.length > 0 && generateForm.selected_exercise_ids.length > 0
 
     const formatTypeName = (type) => {
         return type.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase())
@@ -786,6 +840,7 @@ function App() {
                                         >
                                             <option value="English">English</option>
                                             <option value="Mathematics">Mathematics</option>
+                                            <option value="Art">Art</option>
                                         </select>
                                     </div>
 
@@ -793,6 +848,7 @@ function App() {
                                     {generateForm.subject === 'Mathematics' ? (
                                         <>
                                             {/* Unit restriction notice for Math */}
+
                                             <div style={{
                                                 background: '#fef3c7',
                                                 border: '1px solid #f59e0b',
@@ -881,6 +937,47 @@ function App() {
                                                     </div>
                                                 </div>
                                             )}
+                                        </>
+                                    ) : generateForm.subject === 'Art' ? (
+                                        <>
+                                            {/* Unit Selection for Art */}
+                                            <div className="form-field">
+                                                <label className="form-label">Unit</label>
+                                                <select
+                                                    className="form-select"
+                                                    value={generateForm.art_unit_number || ''}
+                                                    onChange={e => setGenerateForm({ ...generateForm, art_unit_number: parseInt(e.target.value) || null })}
+                                                    required
+                                                >
+                                                    <option value="">Select a unit</option>
+                                                    {artUnits.map(unit => (
+                                                        <option key={unit.unit_number} value={unit.unit_number}>
+                                                            Unit {unit.unit_number}: {unit.unit_title}
+                                                        </option>
+                                                    ))}
+                                                </select>
+                                                {artUnits.length === 0 && (
+                                                    <p className="form-hint" style={{ color: '#f59e0b', marginTop: '4px' }}>
+                                                        No Art SOW uploaded for this grade. Please upload an Art Scheme of Work first.
+                                                    </p>
+                                                )}
+                                            </div>
+
+                                            {/* Optional Textbook Pages for Art */}
+                                            <div className="form-field">
+                                                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
+                                                    <label className="form-label" style={{ margin: 0 }}>Textbook Pages</label>
+                                                    <span style={{ fontSize: '12px', color: '#9ca3af' }}>optional</span>
+                                                </div>
+                                                <input
+                                                    type="text"
+                                                    className="form-input"
+                                                    value={generateForm.art_tb_pages}
+                                                    onChange={e => setGenerateForm({ ...generateForm, art_tb_pages: e.target.value })}
+                                                    placeholder="e.g. 21-22"
+                                                />
+                                                <p className="form-hint">Art textbook pages (if available in system)</p>
+                                            </div>
                                         </>
                                     ) : (
                                         <>
@@ -1122,7 +1219,9 @@ function App() {
                                         <p style={{ color: '#f59e0b', fontSize: '13px', marginBottom: '8px', textAlign: 'center' }}>
                                             {generateForm.subject === 'Mathematics'
                                                 ? 'Select a chapter and at least one book type to generate LP.'
-                                                : 'Select at least one book and at least one exercise to generate LP.'}
+                                                : generateForm.subject === 'Art'
+                                                    ? 'Select a unit to generate LP.'
+                                                    : 'Select at least one book and at least one exercise to generate LP.'}
                                         </p>
                                     )}
 
@@ -1207,6 +1306,11 @@ function App() {
                                                             <span>Pages: {lessonMeta.courseBookPages}{lessonMeta.workbookPages ? ` + WB: ${lessonMeta.workbookPages}` : ''}</span>
                                                         </div>
                                                     </>
+                                                ) : lessonMeta.subject === 'Art' ? (
+                                                    <div className="meta-item">
+                                                        <ClockIcon />
+                                                        <span>{lessonMeta.unitTitle}</span>
+                                                    </div>
                                                 ) : (
                                                     <div className="meta-item">
                                                         <ClockIcon />

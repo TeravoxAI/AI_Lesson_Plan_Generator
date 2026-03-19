@@ -15,7 +15,7 @@ from src.generation.book_selector import (
     LESSON_TYPE_DESCRIPTIONS
 )
 from src.db.client import db
-from src.generation.sow_matcher import get_math_units
+from src.generation.sow_matcher import get_math_units, get_art_units
 # Authorization Import
 from routers.authorization import get_current_user
 from typing import Dict, Any
@@ -138,6 +138,22 @@ async def generate_lesson_plan(
             teacher_instructions=request.teacher_instructions,
             created_by_id=user_id
         )
+    elif request.subject == Subject.ART:
+        # Art flow: requires unit_number
+        if not request.unit_number:
+            raise HTTPException(
+                status_code=400,
+                detail="Art requires unit_number to be specified"
+            )
+
+        # Generate Art lesson plan
+        response = generator.generate_art(
+            grade=request.grade,
+            unit_number=request.unit_number,
+            tb_pages=request.course_book_pages,  # reuse course_book_pages for Art TB pages
+            teacher_instructions=request.teacher_instructions,
+            created_by_id=user_id
+        )
     else:
         # English flow
         if request.page_start is None:
@@ -219,6 +235,37 @@ async def get_math_units_for_grade(grade: str):
 
     # Get units from the Math SOW
     units = get_math_units(extraction)
+
+    return UnitsResponse(
+        grade=grade,
+        subject=subject,
+        units=[
+            UnitInfo(unit_number=u["unit_number"], unit_title=u["unit_title"])
+            for u in units
+        ]
+    )
+
+
+@router.get("/art-units/{grade}", response_model=UnitsResponse)
+async def get_art_units_for_grade(grade: str):
+    """
+    Get available Art units from SOW for a given grade.
+    Used by frontend to populate the unit selector for Art.
+    """
+    subject = "Art"
+
+    sow_entries = db.get_sow_by_subject(subject, grade)
+
+    if not sow_entries:
+        return UnitsResponse(grade=grade, subject=subject, units=[])
+
+    sow_data = sow_entries[0]
+    extraction = sow_data.get("extraction", {})
+
+    if not extraction:
+        return UnitsResponse(grade=grade, subject=subject, units=[])
+
+    units = get_art_units(extraction)
 
     return UnitsResponse(
         grade=grade,
