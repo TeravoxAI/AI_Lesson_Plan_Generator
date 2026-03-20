@@ -53,6 +53,9 @@ class GenerateRequest(BaseModel):
     topic: Optional[str] = None
     # Math flow: unit_number + page numbers
     unit_number: Optional[int] = None
+    # Art flow: week_number + selected_topics
+    week_number: Optional[int] = None
+    selected_topics: Optional[List[str]] = None
     course_book_pages: Optional[str] = None  # e.g., "145" or "145-150"
     workbook_pages: Optional[str] = None  # Optional, e.g., "80" or "80-85"
     book_types: Optional[List[str]] = None  # e.g., ["CB", "AB"] - which books to include

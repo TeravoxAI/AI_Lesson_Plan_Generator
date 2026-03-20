@@ -403,18 +403,20 @@ class LessonGenerator:
     def generate_art(
         self,
         grade: str,
-        unit_number: int,
+        week_number: int,
+        selected_topics: list[str],
         tb_pages: Optional[str] = None,
         teacher_instructions: Optional[str] = None,
         created_by_id: Optional[str] = None,
         save_to_db: bool = True
     ) -> GenerateResponse:
         """
-        Generate an Art lesson plan using unit-based SOW context.
+        Generate an Art lesson plan using week/topic-based SOW context.
 
         Args:
             grade: Grade level (e.g., "Grade 2")
-            unit_number: Unit number from Art SOW
+            week_number: Week number from Art SOW
+            selected_topics: List of topic names selected by the teacher
             tb_pages: Optional Art textbook pages (e.g., "21-22")
             teacher_instructions: Optional freeform teacher notes
             created_by_id: User ID of the teacher
@@ -430,26 +432,27 @@ class LessonGenerator:
             # Retrieve Art context
             context = router.retrieve_art_context(
                 grade=grade,
-                unit_number=unit_number,
+                week_number=week_number,
+                selected_topics=selected_topics,
                 tb_pages=tb_pages
             )
 
             print(f"\n📝 [GENERATE] Building prompt for Art lesson plan...")
 
-            # Extract video resources from SOW sub-activities
+            # Extract video resources from SOW topics
             teacher_resources = []
-            unit = context.get("sow_context")
-            if unit:
-                seen_urls = set()
-                for strategy in unit.get("teaching_strategies", []):
-                    for url in strategy.get("digital_resources", []):
-                        if url and ("youtube" in url or "youtu.be" in url) and url not in seen_urls:
-                            seen_urls.add(url)
-                            teacher_resources.append({
-                                "title": "Video Resource",
-                                "type": "video",
-                                "reference": url
-                            })
+            topics = context.get("sow_context", [])
+            seen_urls = set()
+            for topic in topics:
+                strategy = topic.get("teaching_strategy", {})
+                for url in strategy.get("digital_resources", []):
+                    if url and ("youtube" in url or "youtu.be" in url) and url not in seen_urls:
+                        seen_urls.add(url)
+                        teacher_resources.append({
+                            "title": "Video Resource",
+                            "type": "video",
+                            "reference": url
+                        })
 
             if teacher_resources:
                 print(f"\n📹 [RESOURCES] Found {len(teacher_resources)} video(s)")
@@ -492,8 +495,8 @@ class LessonGenerator:
             print(f"   ⏱️  Time: {generation_time}s")
 
             # Build topic string
-            unit_title = unit.get("unit_title", "") if unit else ""
-            art_topic = f"Unit {unit_number}: {unit_title}" if unit_title else f"Unit {unit_number}"
+            topic_names = [t.get("topic", "") for t in topics]
+            art_topic = f"Week {week_number}: {', '.join(topic_names)}" if topic_names else f"Week {week_number}"
 
             # Save to database if enabled
             plan_id = None
@@ -504,7 +507,7 @@ class LessonGenerator:
                 plan_id = db.insert_lesson_plan(
                     grade_level=grade,
                     subject=subject,
-                    lesson_type=f"unit_{unit_number}",
+                    lesson_type=f"week_{week_number}",
                     page_start=0,
                     page_end=0,
                     topic=art_topic,

@@ -677,71 +677,77 @@ def format_math_unit_for_prompt(unit: Dict[str, Any]) -> str:
 
 # ============ ART SOW FUNCTIONS ============
 
-def get_art_units(sow_data: Dict[str, Any]) -> List[Dict[str, Any]]:
-    """Get list of Art units for UI display."""
+def get_art_weeks(sow_data: Dict[str, Any]) -> List[Dict[str, Any]]:
+    """Get list of Art weeks for UI week dropdown."""
     curriculum = sow_data.get("curriculum", sow_data)
-    return [
-        {
-            "unit_number": u.get("unit_number", 0),
-            "unit_title": u.get("unit_title", ""),
-            "stream": u.get("stream", False)
-        }
-        for u in curriculum.get("units", [])
-    ]
+    return [{"week": w.get("week", 0)} for w in curriculum.get("weeks", [])]
 
 
-def get_art_unit_by_number(sow_data: Dict[str, Any], unit_number: int) -> Optional[Dict[str, Any]]:
-    """Get a specific Art unit by unit_number."""
+def get_art_topics_by_week(sow_data: Dict[str, Any], week_number: int) -> List[Dict[str, Any]]:
+    """Get the topics list for a given week number."""
     curriculum = sow_data.get("curriculum", sow_data)
-    for unit in curriculum.get("units", []):
-        if unit.get("unit_number") == unit_number:
-            return unit
-    return None
+    for w in curriculum.get("weeks", []):
+        if w.get("week") == week_number:
+            return w.get("topics", [])
+    return []
 
 
-def format_art_unit_for_prompt(unit: Dict[str, Any]) -> str:
-    """Format Art SOW unit into a string for the LLM prompt."""
-    if not unit:
-        return "No Art SOW unit found. Generate based on general Art guidelines."
+def format_art_topics_for_prompt(topics: List[Dict[str, Any]], week_number: int) -> str:
+    """Format selected Art SOW topics into a string for the LLM prompt."""
+    if not topics:
+        return "No Art SOW topics found. Generate based on general Art guidelines."
+
+    # Separate primary topics from Drawing in Notebook
+    NOTEBOOK_TOPIC = "drawing in notebook"
+    primary_topics = [t for t in topics if t.get("topic", "").lower() != NOTEBOOK_TOPIC]
+    notebook_topics = [t for t in topics if t.get("topic", "").lower() == NOTEBOOK_TOPIC]
 
     parts = []
-
-    # Header
-    parts.append(f"**Unit {unit.get('unit_number', '')}: {unit.get('unit_title', '')}**")
+    parts.append(f"**Week {week_number} — Art Lesson**")
     parts.append("")
 
-    # STREAM flag
-    if unit.get("stream"):
-        parts.append("STREAM UNIT: Yes — include a STREAM Connection section in the lesson plan.")
+    if notebook_topics:
+        parts.append("NOTE: 'Drawing in Notebook' is a classwork-only activity — do NOT create a lesson section for it. It is already included in the CLASSWORK field below.")
         parts.append("")
 
-    # SLOs
-    slos = unit.get("slos", [])
-    if slos:
-        parts.append("AVAILABLE SLOs (include ALL in the lesson plan):")
-        for slo in slos:
-            parts.append(f"  • {slo}")
+    for topic in primary_topics:
+        topic_name = topic.get("topic", "")
+        stream = topic.get("stream", False)
+        strategy = topic.get("teaching_strategy", {})
+
+        # Use topic-level fields (already topic-specific in the updated JSON)
+        slos = topic.get("slos", [])
+        skills = topic.get("skills", [])
+        afl_list = topic.get("afl_strategies", [])
+        classwork = topic.get("classwork", [])
+
+        # teaching_strategy AFL is the primary (same values, but authoritative)
+        strategy_afl = strategy.get("afl_strategies", [])
+        # Use strategy AFL if available, fall back to topic-level
+        primary_afl = strategy_afl if strategy_afl else [a.get("name", "") for a in afl_list if a.get("name")]
+
+        parts.append(f'--- TOPIC: "{topic_name}" ---')
+        if stream:
+            parts.append("STREAM TOPIC: Yes — include a STREAM Connection section.")
         parts.append("")
 
-    # Skills
-    skills = unit.get("skills", [])
-    if skills:
-        parts.append("AVAILABLE SKILLS (select 2-4 most actively exercised):")
-        parts.append(f"  {', '.join(skills)}")
-        parts.append("")
+        if slos:
+            parts.append("SLOs (these are topic-specific — include ALL in the lesson plan):")
+            for slo in slos:
+                parts.append(f"  • {slo}")
+            parts.append("")
 
-    # Sub-activities
-    teaching_strategies = unit.get("teaching_strategies", [])
-    if teaching_strategies:
-        parts.append("SUB-ACTIVITIES TO COVER (each must become its own <h2> section, in this order):")
-        parts.append("")
-        for strategy in teaching_strategies:
+        if skills:
+            parts.append("SKILLS (these are topic-specific — include all listed):")
+            parts.append(f"  {', '.join(skills)}")
+            parts.append("")
+
+        if strategy:
             title = strategy.get("title", "")
             description = strategy.get("description", "")
             digital_resources = strategy.get("digital_resources", [])
-            afl = strategy.get("afl_strategies", [])
 
-            parts.append(f'  --- ACTIVITY: "{title}" ---')
+            parts.append(f'TEACHING ACTIVITY: "{title}"')
             if description:
                 for line in description.split("\n"):
                     line = line.strip()
@@ -750,25 +756,16 @@ def format_art_unit_for_prompt(unit: Dict[str, Any]) -> str:
             if digital_resources:
                 for url in digital_resources:
                     parts.append(f"  [Digital resource: {url}]")
-            if afl:
-                parts.append(f"  AFL: {', '.join(afl)}")
             parts.append("")
 
-    # Classwork
-    classwork = unit.get("classwork", [])
-    if classwork:
-        parts.append("CLASSWORK (from SOW — use verbatim for C.W section):")
-        for item in classwork:
-            parts.append(f"  • {item}")
-        parts.append("")
+        if primary_afl:
+            parts.append(f"AFL STRATEGIES (topic-specific — use these): {', '.join(primary_afl)}")
+            parts.append("")
 
-    # Unit-level AFL strategies
-    afl_strategies = unit.get("afl_strategies", [])
-    if afl_strategies:
-        afl_names = [a.get("name", "") for a in afl_strategies if a.get("name")]
-        if afl_names:
-            parts.append("UNIT AFL STRATEGIES (use these exact names in the AFL Strategies section):")
-            parts.append(f"  {', '.join(afl_names)}")
+        if classwork:
+            parts.append("CLASSWORK (use verbatim):")
+            for item in classwork:
+                parts.append(f"  • {item}")
             parts.append("")
 
     return "\n".join(parts)

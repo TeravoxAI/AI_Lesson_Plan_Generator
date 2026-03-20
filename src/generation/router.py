@@ -16,9 +16,9 @@ from src.generation.sow_matcher import (
     format_math_unit_for_prompt,
     parse_page_range,
     # Art functions
-    get_art_units,
-    get_art_unit_by_number,
-    format_art_unit_for_prompt,
+    get_art_weeks,
+    get_art_topics_by_week,
+    format_art_topics_for_prompt,
 )
 
 
@@ -568,20 +568,22 @@ class ContextRouter:
     def retrieve_art_context(
         self,
         grade: str,
-        unit_number: int,
+        week_number: int,
+        selected_topics: List[str],
         tb_pages: Optional[str] = None
     ) -> Dict[str, Any]:
         """
         Retrieve context for Art lesson generation.
 
         Flow:
-        1. Find unit in Art SOW by unit_number
+        1. Find week in Art SOW and filter to selected topics
         2. Optionally fetch textbook pages if tb_pages provided
         3. Format for LLM
 
         Args:
             grade: Grade level (e.g., "Grade 2")
-            unit_number: The unit number from Art SOW
+            week_number: The week number from Art SOW
+            selected_topics: List of topic name strings selected by the user
             tb_pages: Optional textbook pages (e.g., "21-22")
 
         Returns:
@@ -590,17 +592,19 @@ class ContextRouter:
         subject = "Art"
         db_grade = normalize_grade(grade)
 
-        print(f"\n📚 [ART CONTEXT] Retrieving content for {subject} {grade}, Unit {unit_number}")
+        print(f"\n📚 [ART CONTEXT] Retrieving content for {subject} {grade}, Week {week_number}")
+        print(f"   Selected topics: {selected_topics}")
         if tb_pages:
             print(f"   Textbook Pages: {tb_pages}")
 
         context = {
             "grade": grade,
             "subject": subject,
-            "unit_number": unit_number,
+            "week_number": week_number,
+            "selected_topics": selected_topics,
             "book_content": [],
             "sow_strategy": None,
-            "sow_context": None,
+            "sow_context": [],
             "metadata": {
                 "textbook_ids": [],
                 "sow_entry_id": None,
@@ -608,8 +612,8 @@ class ContextRouter:
             }
         }
 
-        # Step 1: Fetch Art SOW and find the unit
-        print(f"\n📋 [SOW] Finding unit {unit_number} in Art SOW...")
+        # Step 1: Fetch Art SOW
+        print(f"\n📋 [SOW] Finding Week {week_number} in Art SOW...")
         sow_entries = db.get_sow_by_subject(subject, grade)
 
         if not sow_entries:
@@ -624,23 +628,26 @@ class ContextRouter:
             print(f"   ⚠ SOW entry has no extraction data")
             return context
 
-        # Step 2: Get unit content
-        unit = get_art_unit_by_number(extraction, unit_number)
-        context["sow_context"] = unit
+        # Step 2: Get topics for the week, filtered to user selection
+        all_topics = get_art_topics_by_week(extraction, week_number)
+        if not all_topics:
+            print(f"   ⚠ No topics found for Week {week_number} in Art SOW")
+            context["sow_strategy"] = "No Art SOW topics found. Generate based on general Art guidelines."
+            return context
 
-        if not unit:
-            print(f"   ⚠ No unit {unit_number} found in Art SOW")
-            context["sow_strategy"] = "No Art SOW unit found. Generate based on general Art guidelines."
-        else:
-            print(f"   ✓ Found: Unit {unit['unit_number']}: {unit['unit_title']}")
-            context["sow_strategy"] = format_art_unit_for_prompt(unit)
+        filtered_topics = [t for t in all_topics if t.get("topic") in selected_topics]
+        if not filtered_topics:
+            filtered_topics = all_topics  # fallback: use all if filter yields nothing
+
+        context["sow_context"] = filtered_topics
+        print(f"   ✓ Found {len(filtered_topics)} topic(s): {[t.get('topic') for t in filtered_topics]}")
+        context["sow_strategy"] = format_art_topics_for_prompt(filtered_topics, week_number)
 
         # Step 3: Optionally fetch textbook pages (Art textbook = "TB" tag)
         if tb_pages:
             pages = parse_page_range(tb_pages)
             if pages:
                 print(f"\n   📖 Fetching Art Textbook pages {pages}...")
-                # Try by book_tag "TB" first, then by book_type "textbook"
                 book = db.get_textbook_by_tag(db_grade, subject, "TB")
                 if not book:
                     book = db.get_textbook(db_grade, subject, "textbook")
@@ -676,15 +683,14 @@ class ContextRouter:
                 print(f"   ⚠ Could not parse tb_pages: '{tb_pages}'")
 
         # Summary
+        total_slos = sum(len(t.get("slos", [])) for t in filtered_topics)
+        has_stream = any(t.get("stream", False) for t in filtered_topics)
         print(f"\n   📝 Context Summary:")
-        if unit:
-            print(f"      - Unit: Unit {unit['unit_number']}: {unit['unit_title']}")
-            print(f"      - SLOs: {len(unit.get('slos', []))}")
-            print(f"      - Sub-activities: {len(unit.get('teaching_strategies', []))}")
-            print(f"      - STREAM: {unit.get('stream', False)}")
+        print(f"      - Week: {week_number}, Topics: {len(filtered_topics)}")
+        print(f"      - Total SLOs: {total_slos}")
+        print(f"      - STREAM: {has_stream}")
         print(f"      - Book pages loaded: {len(context['book_content'])}")
 
-        # Print complete SOW extraction being used
         print("\n" + "="*80)
         print("📋 COMPLETE ART SOW EXTRACTION USED IN PROMPT:")
         print("="*80)

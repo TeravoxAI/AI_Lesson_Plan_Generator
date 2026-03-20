@@ -158,7 +158,8 @@ function App() {
     const [lessonPlan, setLessonPlan] = useState(null)
     const [lessonTypes, setLessonTypes] = useState({})
     const [mathUnits, setMathUnits] = useState([])
-    const [artUnits, setArtUnits] = useState([])
+    const [artWeeks, setArtWeeks] = useState([])
+    const [artTopics, setArtTopics] = useState([])
     const [lessonMeta, setLessonMeta] = useState(null)
     const [resourcesExpanded, setResourcesExpanded] = useState(true)
     const [resourceItemsExpanded, setResourceItemsExpanded] = useState({})
@@ -195,7 +196,8 @@ function App() {
         book_types: [],
         sow_pages: '',
         // Art-specific fields
-        art_unit_number: null,
+        art_week_number: null,
+        art_selected_topics: [],
         art_tb_pages: ''
     })
 
@@ -264,19 +266,31 @@ function App() {
         }
     }, [generateForm.subject, generateForm.grade])
 
-    // Fetch Art units when subject changes to Art
+    // Fetch Art weeks when subject changes to Art
     useEffect(() => {
         if (generateForm.subject === 'Art') {
-            fetchArtUnits(generateForm.grade)
+            fetchArtWeeks(generateForm.grade)
         } else {
-            setArtUnits([])
+            setArtWeeks([])
+            setArtTopics([])
             setGenerateForm(prev => ({
                 ...prev,
-                art_unit_number: null,
+                art_week_number: null,
+                art_selected_topics: [],
                 art_tb_pages: ''
             }))
         }
     }, [generateForm.subject, generateForm.grade])
+
+    // Fetch Art topics when week changes
+    useEffect(() => {
+        if (generateForm.subject === 'Art' && generateForm.art_week_number) {
+            fetchArtTopics(generateForm.grade, generateForm.art_week_number)
+        } else {
+            setArtTopics([])
+            setGenerateForm(prev => ({ ...prev, art_selected_topics: [] }))
+        }
+    }, [generateForm.art_week_number])
 
     const fetchBooks = async () => {
         try {
@@ -316,20 +330,28 @@ function App() {
         }
     }
 
-    const fetchArtUnits = async (grade) => {
+    const fetchArtWeeks = async (grade) => {
         try {
-            const res = await fetch(`${API_BASE}/generate/art-units/${encodeURIComponent(grade)}`)
+            const res = await fetch(`${API_BASE}/generate/art-weeks/${encodeURIComponent(grade)}`)
             const data = await res.json()
-            setArtUnits(data.units || [])
-            if (data.units && data.units.length > 0) {
-                setGenerateForm(prev => ({
-                    ...prev,
-                    art_unit_number: data.units[0].unit_number
-                }))
-            }
+            setArtWeeks(data.weeks || [])
         } catch (err) {
-            console.error('Failed to fetch art units:', err)
-            setArtUnits([])
+            console.error('Failed to fetch art weeks:', err)
+            setArtWeeks([])
+        }
+    }
+
+    const fetchArtTopics = async (grade, week) => {
+        try {
+            const res = await fetch(`${API_BASE}/generate/art-topics/${encodeURIComponent(grade)}/${week}`)
+            const data = await res.json()
+            const topics = data.topics || []
+            setArtTopics(topics)
+            // Auto-select all topics by default
+            setGenerateForm(prev => ({ ...prev, art_selected_topics: topics.map(t => t.topic) }))
+        } catch (err) {
+            console.error('Failed to fetch art topics:', err)
+            setArtTopics([])
         }
     }
 
@@ -455,15 +477,21 @@ function App() {
                     teacher_instructions: generateForm.teacher_instructions.trim() || null
                 }
             } else if (generateForm.subject === 'Art') {
-                if (!generateForm.art_unit_number) {
-                    setStatus({ type: 'error', message: 'Please select a unit' })
+                if (!generateForm.art_week_number) {
+                    setStatus({ type: 'error', message: 'Please select a week' })
+                    setLoading(false)
+                    return
+                }
+                if (!generateForm.art_selected_topics || generateForm.art_selected_topics.length === 0) {
+                    setStatus({ type: 'error', message: 'Please select at least one topic' })
                     setLoading(false)
                     return
                 }
                 requestBody = {
                     grade: generateForm.grade,
                     subject: generateForm.subject,
-                    unit_number: generateForm.art_unit_number,
+                    week_number: generateForm.art_week_number,
+                    selected_topics: generateForm.art_selected_topics,
                     course_book_pages: generateForm.art_tb_pages.trim() || null,
                     teacher_instructions: generateForm.teacher_instructions.trim() || null
                 }
@@ -569,9 +597,8 @@ function App() {
                     const unit = mathUnits.find(u => u.unit_number === generateForm.unit_number)
                     meta.unitTitle = unit?.unit_title || `Chapter ${generateForm.unit_number}`
                 } else if (generateForm.subject === 'Art') {
-                    meta.unitNumber = generateForm.art_unit_number
-                    const unit = artUnits.find(u => u.unit_number === generateForm.art_unit_number)
-                    meta.unitTitle = unit?.unit_title || `Unit ${generateForm.art_unit_number}`
+                    meta.weekNumber = generateForm.art_week_number
+                    meta.unitTitle = `Week ${generateForm.art_week_number}: ${generateForm.art_selected_topics.join(', ')}`
                 } else {
                     meta.lessonNumber = generateForm.lesson_number
                     meta.types = generateForm.selected_types
@@ -713,7 +740,7 @@ function App() {
     const canGenerate = generateForm.subject === 'Mathematics'
         ? !!(generateForm.unit_number && generateForm.book_types.length > 0)
         : generateForm.subject === 'Art'
-            ? !!generateForm.art_unit_number
+            ? !!(generateForm.art_week_number && generateForm.art_selected_topics.length > 0)
             : generateForm.selected_books.length > 0 && generateForm.selected_exercise_ids.length > 0
 
     const formatTypeName = (type) => {
@@ -940,28 +967,78 @@ function App() {
                                         </>
                                     ) : generateForm.subject === 'Art' ? (
                                         <>
-                                            {/* Unit Selection for Art */}
+                                            {/* Week Selection for Art */}
                                             <div className="form-field">
-                                                <label className="form-label">Unit</label>
+                                                <label className="form-label">Week</label>
                                                 <select
                                                     className="form-select"
-                                                    value={generateForm.art_unit_number || ''}
-                                                    onChange={e => setGenerateForm({ ...generateForm, art_unit_number: parseInt(e.target.value) || null })}
+                                                    value={generateForm.art_week_number || ''}
+                                                    onChange={e => setGenerateForm({ ...generateForm, art_week_number: parseInt(e.target.value) || null })}
                                                     required
                                                 >
-                                                    <option value="">Select a unit</option>
-                                                    {artUnits.map(unit => (
-                                                        <option key={unit.unit_number} value={unit.unit_number}>
-                                                            Unit {unit.unit_number}: {unit.unit_title}
+                                                    <option value="">Select a week</option>
+                                                    {artWeeks.map(w => (
+                                                        <option key={w.week} value={w.week}>
+                                                            Week {w.week}
                                                         </option>
                                                     ))}
                                                 </select>
-                                                {artUnits.length === 0 && (
+                                                {artWeeks.length === 0 && (
                                                     <p className="form-hint" style={{ color: '#f59e0b', marginTop: '4px' }}>
                                                         No Art SOW uploaded for this grade. Please upload an Art Scheme of Work first.
                                                     </p>
                                                 )}
                                             </div>
+
+                                            {/* Topic Selection for Art */}
+                                            {generateForm.art_week_number && artTopics.length > 0 && (
+                                                <div className="form-field">
+                                                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
+                                                        <label className="form-label" style={{ margin: 0 }}>Topics</label>
+                                                        <button
+                                                            type="button"
+                                                            style={{ fontSize: '12px', color: '#6366f1', background: 'none', border: 'none', cursor: 'pointer', padding: 0 }}
+                                                            onClick={() => {
+                                                                const allSelected = generateForm.art_selected_topics.length === artTopics.length
+                                                                setGenerateForm(prev => ({
+                                                                    ...prev,
+                                                                    art_selected_topics: allSelected ? [] : artTopics.map(t => t.topic)
+                                                                }))
+                                                            }}
+                                                        >
+                                                            {generateForm.art_selected_topics.length === artTopics.length ? 'Deselect All' : 'Select All'}
+                                                        </button>
+                                                    </div>
+                                                    <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                                                        {artTopics.map(t => (
+                                                            <label key={t.topic} style={{ display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer', fontSize: '14px' }}>
+                                                                <input
+                                                                    type="checkbox"
+                                                                    checked={generateForm.art_selected_topics.includes(t.topic)}
+                                                                    onChange={() => {
+                                                                        setGenerateForm(prev => {
+                                                                            const sel = prev.art_selected_topics
+                                                                            return {
+                                                                                ...prev,
+                                                                                art_selected_topics: sel.includes(t.topic)
+                                                                                    ? sel.filter(x => x !== t.topic)
+                                                                                    : [...sel, t.topic]
+                                                                            }
+                                                                        })
+                                                                    }}
+                                                                />
+                                                                <span>{t.topic}</span>
+                                                                {t.stream && (
+                                                                    <span style={{ fontSize: '11px', background: '#dbeafe', color: '#1d4ed8', padding: '1px 6px', borderRadius: '4px', fontWeight: 600 }}>STREAM</span>
+                                                                )}
+                                                            </label>
+                                                        ))}
+                                                    </div>
+                                                </div>
+                                            )}
+                                            {generateForm.art_week_number && artTopics.length === 0 && (
+                                                <p className="form-hint" style={{ color: '#9ca3af' }}>No topics found for this week.</p>
+                                            )}
 
                                             {/* Optional Textbook Pages for Art */}
                                             <div className="form-field">
