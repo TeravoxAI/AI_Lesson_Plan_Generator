@@ -16,6 +16,7 @@ from src.generation.book_selector import (
 )
 from src.db.client import db
 from src.generation.sow_matcher import get_math_units
+from src.generation.router import router as ctx_router
 # Authorization Import
 from routers.authorization import get_current_user
 from typing import Dict, Any
@@ -85,8 +86,28 @@ async def generate_lesson_plan(
             detail="Unauthorized role"
         )
 
-    # Check if this is a Math request (unit-based) or English request (lesson-type based)
-    if request.subject == Subject.MATHEMATICS:
+    # Check subject and route accordingly
+    if request.subject == Subject.COMPUTER_STUDIES:
+        # CS flow: unit_number + lesson_number, no textbook
+        if not request.cs_unit_number or not request.cs_lesson_number:
+            raise HTTPException(
+                status_code=400,
+                detail="Computer Studies requires cs_unit_number and cs_lesson_number"
+            )
+        if not request.cs_selected_sections or not request.cs_selected_sections.get("section_ids"):
+            raise HTTPException(
+                status_code=400,
+                detail="Computer Studies requires at least one teaching strategy to be selected"
+            )
+        response = generator.generate_cs(
+            grade=request.grade,
+            unit_number=request.cs_unit_number,
+            lesson_number=request.cs_lesson_number,
+            selected_sections=request.cs_selected_sections,
+            teacher_instructions=request.teacher_instructions,
+            created_by_id=user_id
+        )
+    elif request.subject == Subject.MATHEMATICS:
         # Math flow: requires unit_number and course_book_pages
         if not request.unit_number:
             raise HTTPException(
@@ -138,7 +159,22 @@ async def generate_lesson_plan(
             teacher_instructions=request.teacher_instructions,
             created_by_id=user_id
         )
-    else:
+    elif request.subject in (Subject.ISLAMIAT, Subject.NAZRA):
+        # Generalized SOW subjects: unit + lesson number required
+        if not request.gen_unit_number or not request.gen_lesson_number:
+            raise HTTPException(
+                status_code=400,
+                detail=f"{request.subject.value} requires gen_unit_number and gen_lesson_number"
+            )
+        generate_fn = generator.generate_islamiat if request.subject == Subject.ISLAMIAT else generator.generate_nazra
+        response = generate_fn(
+            grade=request.grade,
+            unit_number=request.gen_unit_number,
+            lesson_number=request.gen_lesson_number,
+            teacher_instructions=request.teacher_instructions,
+            created_by_id=user_id
+        )
+    elif request.subject == Subject.ENGLISH:
         # English flow
         if request.page_start is None:
             raise HTTPException(status_code=400, detail="English requires page_start (lesson_number) to be specified")
@@ -230,6 +266,90 @@ async def get_math_units_for_grade(grade: str):
     )
 
 
+class CSUnitInfo(BaseModel):
+    unit_number: int
+    unit_title: str
+
+class CSUnitsResponse(BaseModel):
+    grade: str
+    units: List[CSUnitInfo]
+
+class CSLessonInfo(BaseModel):
+    lesson_number: int
+    lesson_title: str
+    sub_topic: str = ""
+
+class CSLessonsResponse(BaseModel):
+    grade: str
+    unit_number: int
+    lessons: List[CSLessonInfo]
+
+
+@router.get("/cs-units/{grade}", response_model=CSUnitsResponse)
+async def get_cs_units_for_grade(grade: str):
+    """Get available Computer Studies units from SOW for a given grade."""
+    units = ctx_router.get_cs_units_for_grade(grade)
+    return CSUnitsResponse(
+        grade=grade,
+        units=[CSUnitInfo(unit_number=u["unit_number"], unit_title=u["unit_title"]) for u in units]
+    )
+
+
+@router.get("/cs-lessons/{grade}/{unit_number}", response_model=CSLessonsResponse)
+async def get_cs_lessons_for_unit(grade: str, unit_number: int):
+    """Get available Computer Studies lessons for a unit."""
+    lessons = ctx_router.get_cs_lessons_for_unit(grade, unit_number)
+    return CSLessonsResponse(
+        grade=grade,
+        unit_number=unit_number,
+        lessons=[
+            CSLessonInfo(
+                lesson_number=l["lesson_number"],
+                lesson_title=l["lesson_title"],
+                sub_topic=l.get("sub_topic", "")
+            )
+            for l in lessons
+        ]
+    )
+
+
+@router.get("/cs-lesson-sections")
+async def get_cs_lesson_sections_endpoint(
+    grade: str,
+    unit_number: int,
+    lesson_number: int,
+    current_user: Dict[str, Any] = Depends(get_current_user)
+):
+    """Return available sections for a CS lesson (strategies, warm-up, classwork etc.)"""
+    sections = ctx_router.get_cs_sections_for_lesson(grade, unit_number, lesson_number)
+    if sections is None:
+        return {"success": False, "sections": None, "message": "CS lesson not found"}
+    return {"success": True, "sections": sections}
+
+
+@router.get("/gen-units/{subject}/{grade}", response_model=UnitsResponse)
+async def get_generalized_units_for_grade(subject: str, grade: str):
+    """Get available units from a GeneralizedSOW (Islamiat, Nazra, Urdu, etc.)."""
+    units = ctx_router.get_generalized_units_for_grade(subject, grade)
+    return UnitsResponse(
+        grade=grade,
+        subject=subject,
+        units=[UnitInfo(unit_number=u["unit_number"], unit_title=u["unit_title"]) for u in units]
+    )
+
+
+@router.get("/gen-lessons/{subject}/{grade}/{unit_number}")
+async def get_generalized_lessons_for_unit(subject: str, grade: str, unit_number: int):
+    """Get available lessons for a unit from a GeneralizedSOW."""
+    lessons = ctx_router.get_generalized_lessons_for_unit(subject, grade, unit_number)
+    return {
+        "subject": subject,
+        "grade": grade,
+        "unit_number": unit_number,
+        "lessons": lessons
+    }
+
+
 @router.get("/lesson-sections")
 async def get_lesson_sections(
     grade: str,
@@ -242,7 +362,6 @@ async def get_lesson_sections(
     for a given lesson in the new-format SOW. Used by the frontend to populate checkboxes.
     """
     from src.models import Subject as SubjectEnum
-    from src.generation.router import router as ctx_router
     try:
         subject_enum = SubjectEnum(subject)
     except ValueError:

@@ -14,7 +14,19 @@ from src.generation.sow_matcher import (
     get_math_units,
     get_math_unit_by_number,
     format_math_unit_for_prompt,
-    parse_page_range
+    parse_page_range,
+    # Computer Studies functions
+    get_cs_units,
+    get_cs_lessons_for_unit,
+    get_cs_lesson,
+    get_cs_lesson_sections,
+    format_cs_lesson_for_prompt,
+    # Generalized SOW functions (Islamiat, Nazra, Urdu, etc.)
+    _is_generalized_format,
+    get_generalized_units,
+    get_generalized_lessons_for_unit,
+    get_generalized_lesson,
+    format_generalized_lesson_for_prompt,
 )
 
 
@@ -560,6 +572,250 @@ class ContextRouter:
         print("="*80 + "\n")
 
         return context
+
+    def get_cs_sections_for_lesson(self, grade: str, unit_number: int, lesson_number: int) -> Optional[Dict[str, Any]]:
+        sow_entries = self.db.get_sow_by_subject("Computer Studies", grade)
+        if not sow_entries:
+            return None
+        extraction = sow_entries[0].get("extraction", {})
+        return get_cs_lesson_sections(extraction, unit_number, lesson_number) if extraction else None
+
+    def _parse_cs_toc(self, all_pages: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
+        """
+        Scan all CS book pages for ToC-style lesson listings:
+          "- Lesson N: Title X"   or   "Lesson N: Title X  4"  (with trailing page number)
+        Returns list of {title, start_page} sorted by start_page.
+        """
+        import re as _re
+        entries = []
+        seen_titles = set()
+
+        # Format 1 (most books): "- Lesson N: Title  PageNum" on one line
+        pat_inline = _re.compile(
+            r'^[ \t]*[-*]?[ \t]*Lesson[ \t]+\d+[ \t]*:[ \t]*(.+?)[ \t]+(\d+)[ \t]*$',
+            _re.MULTILINE | _re.IGNORECASE
+        )
+        # Format 2 (some units): title on one line, page number on next "- 16"
+        pat_nextline = _re.compile(
+            r'^[ \t]*[-*]?[ \t]*Lesson[ \t]+\d+[ \t]*:[ \t]*(.+?)\s*\n[ \t]*-[ \t]+(\d+)',
+            _re.MULTILINE | _re.IGNORECASE
+        )
+
+        for page in all_pages:
+            text = page.get("content") or page.get("book_text", "")
+            for pat in (pat_inline, pat_nextline):
+                for m in pat.finditer(text):
+                    title = m.group(1).strip()
+                    pg = int(m.group(2))
+                    if title.lower() not in seen_titles:
+                        seen_titles.add(title.lower())
+                        entries.append({"title": title, "start_page": pg})
+
+        entries.sort(key=lambda e: e["start_page"])
+        return entries
+
+    def _find_cs_lesson_pages(self, grade: str, lesson_title: str) -> List[Dict[str, Any]]:
+        """
+        Find CS textbook pages for a lesson using the ToC page range.
+        Returns pages from the lesson's start page up to (not including) the next entry's start page.
+        """
+        book = self.db.get_textbook(grade, "Computer Studies", "textbook")
+        if not book:
+            print(f"   ⚠ No CS textbook found in DB for {grade}")
+            return []
+
+        all_pages = self.db.get_all_textbook_pages(book["id"])
+        if not all_pages:
+            return []
+
+        all_pages.sort(key=lambda p: p.get("book_page_no", p.get("page_no", 0)))
+
+        # Parse ToC to get {title → (start_page, end_page)}
+        toc_entries = self._parse_cs_toc(all_pages)
+
+        import re as _re2
+
+        _stop_words = {"a", "an", "the", "and", "or", "in", "of", "to", "with", "for", "about", "how"}
+
+        def _keywords(s: str) -> set:
+            words = _re2.sub(r'[^\w\s]', '', s.lower()).split()
+            return {w for w in words if w not in _stop_words and len(w) > 2}
+
+        lesson_kw = _keywords(lesson_title)
+        matched = None
+        best_score = 0
+        for i, entry in enumerate(toc_entries):
+            entry_kw = _keywords(entry["title"])
+            if not entry_kw:
+                continue
+            overlap = len(lesson_kw & entry_kw)
+            score = overlap / max(len(lesson_kw | entry_kw), 1)
+            if score > best_score and score >= 0.5:
+                best_score = score
+                end_page = toc_entries[i + 1]["start_page"] - 1 if i + 1 < len(toc_entries) else 9999
+                matched = (entry["start_page"], end_page)
+
+        if not matched:
+            print(f"   ⚠ Lesson '{lesson_title}' not found in CS ToC")
+            return []
+
+        start_pg, end_pg = matched
+        # Cap at 6 pages
+        end_pg = min(end_pg, start_pg + 5)
+
+        result_pages = []
+        for page in all_pages:
+            pg_no = page.get("book_page_no", page.get("page_no", 0))
+            if start_pg <= pg_no <= end_pg:
+                content = page.get("content") or page.get("book_text", "")
+                result_pages.append({
+                    "book_type": "textbook",
+                    "book_type_short": "CB",
+                    "title": book.get("title", "CS Textbook"),
+                    "page_no": pg_no,
+                    "content": content,
+                    "book_id": book["id"],
+                })
+
+        result_pages.sort(key=lambda p: p["page_no"])
+        print(f"   ✓ CS textbook: found {len(result_pages)} pages (book pp. {start_pg}–{end_pg}) for '{lesson_title}'")
+        return result_pages
+
+    def retrieve_cs_context(
+        self,
+        grade: str,
+        unit_number: int,
+        lesson_number: int,
+        selected_sections: Optional[Dict] = None,
+    ) -> Dict[str, Any]:
+        """Retrieve Computer Studies lesson context from SOW + textbook."""
+        print(f"\n📚 [CS CONTEXT] Retrieving {grade} Unit {unit_number} Lesson {lesson_number}")
+
+        context = {
+            "grade": grade,
+            "subject": "Computer Studies",
+            "unit_number": unit_number,
+            "lesson_number": lesson_number,
+            "book_content": [],
+            "sow_strategy": None,
+            "sow_context": None,
+            "metadata": {"textbook_ids": [], "sow_entry_id": None, "books_fetched": []}
+        }
+
+        sow_entries = db.get_sow_by_subject("Computer Studies", grade)
+        if not sow_entries:
+            print(f"   ⚠ No SOW found for Computer Studies {grade}")
+            return context
+
+        sow_data = sow_entries[0]
+        context["metadata"]["sow_entry_id"] = sow_data.get("id")
+        extraction = sow_data.get("extraction", {})
+        if not extraction:
+            print(f"   ⚠ SOW entry has no extraction data")
+            return context
+
+        lesson = get_cs_lesson(extraction, unit_number, lesson_number)
+        context["sow_context"] = lesson
+
+        if not lesson:
+            print(f"   ⚠ Unit {unit_number} Lesson {lesson_number} not found in CS SOW")
+            context["sow_strategy"] = "No lesson found. Generate based on general Computer Studies guidelines."
+            return context
+
+        print(f"   ✓ Found: Unit {unit_number} Lesson {lesson_number}: {lesson.get('lesson_title')}")
+        context["sow_strategy"] = format_cs_lesson_for_prompt(lesson, selected_sections)
+
+        # Fetch matching CS textbook pages
+        lesson_title = lesson.get("lesson_title", "")
+        if lesson_title:
+            textbook_pages = self._find_cs_lesson_pages(grade, lesson_title)
+            if textbook_pages:
+                context["book_content"] = textbook_pages
+                context["metadata"]["textbook_ids"] = [textbook_pages[0]["book_id"]]
+
+        print("\n" + "="*80)
+        print("📋 CS SOW EXTRACTION USED IN PROMPT:")
+        print("="*80)
+        print(context["sow_strategy"])
+        print("="*80 + "\n")
+
+        return context
+
+    def get_cs_units_for_grade(self, grade: str) -> List[Dict[str, Any]]:
+        sow_entries = self.db.get_sow_by_subject("Computer Studies", grade)
+        if not sow_entries:
+            return []
+        extraction = sow_entries[0].get("extraction", {})
+        return get_cs_units(extraction) if extraction else []
+
+    def get_cs_lessons_for_unit(self, grade: str, unit_number: int) -> List[Dict[str, Any]]:
+        sow_entries = self.db.get_sow_by_subject("Computer Studies", grade)
+        if not sow_entries:
+            return []
+        extraction = sow_entries[0].get("extraction", {})
+        return get_cs_lessons_for_unit(extraction, unit_number) if extraction else []
+
+    def retrieve_generalized_context(
+        self,
+        subject: str,
+        grade: str,
+        unit_number: int,
+        lesson_number: int,
+    ) -> Dict[str, Any]:
+        """Retrieve lesson context from a GeneralizedSOW (Islamiat, Nazra, Urdu, etc.)."""
+        print(f"\n📚 [GENERALIZED CONTEXT] {subject} {grade} Unit {unit_number} Lesson {lesson_number}")
+
+        context = {
+            "grade": grade,
+            "subject": subject,
+            "unit_number": unit_number,
+            "lesson_number": lesson_number,
+            "sow_strategy": None,
+            "sow_context": None,
+            "metadata": {"sow_entry_id": None}
+        }
+
+        sow_entries = db.get_sow_by_subject(subject, grade)
+        if not sow_entries:
+            print(f"   ⚠ No SOW found for {subject} {grade}")
+            return context
+
+        sow_data = sow_entries[0]
+        context["metadata"]["sow_entry_id"] = sow_data.get("id")
+        extraction = sow_data.get("extraction", {})
+        if not extraction:
+            print(f"   ⚠ SOW entry has no extraction data")
+            return context
+
+        if not _is_generalized_format(extraction):
+            print(f"   ⚠ SOW data is not in GeneralizedSOW format")
+            return context
+
+        lesson = get_generalized_lesson(extraction, unit_number, lesson_number)
+        context["sow_context"] = lesson
+
+        if not lesson:
+            print(f"   ⚠ Unit {unit_number} Lesson {lesson_number} not found in {subject} SOW")
+            context["sow_strategy"] = f"No lesson found. Generate based on general {subject} guidelines."
+            return context
+
+        print(f"   ✓ Found: {lesson.get('lesson_title')}")
+        context["sow_strategy"] = format_generalized_lesson_for_prompt(lesson, subject)
+        return context
+
+    def get_generalized_units_for_grade(self, subject: str, grade: str) -> List[Dict[str, Any]]:
+        sow_entries = db.get_sow_by_subject(subject, grade)
+        if not sow_entries:
+            return []
+        extraction = sow_entries[0].get("extraction", {})
+        return get_generalized_units(extraction) if extraction else []
+
+    def get_generalized_lessons_for_unit(self, subject: str, grade: str, unit_number: int) -> List[Dict[str, Any]]:
+        sow_entries = db.get_sow_by_subject(subject, grade)
+        if not sow_entries:
+            return []
+        extraction = sow_entries[0].get("extraction", {})
+        return get_generalized_lessons_for_unit(extraction, unit_number) if extraction else []
 
     def format_book_content(self, book_content: List[Dict[str, Any]]) -> str:
         """Format book content into a readable string for the prompt"""

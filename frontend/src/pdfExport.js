@@ -25,10 +25,12 @@ function toRoman(n) {
     return result
 }
 
-/** Convert "Grade 2" → "Grade II", leaves other strings unchanged */
+/** Convert "Grade 2" → "II" (strips "Grade " prefix, converts number to Roman) */
 function gradeToRoman(grade) {
     if (!grade) return grade
-    return grade.replace(/(\d+)/, (_, num) => toRoman(parseInt(num, 10)))
+    const match = grade.match(/(\d+)/)
+    if (!match) return grade
+    return toRoman(parseInt(match[1], 10))
 }
 
 // ─── Phase label stripper ─────────────────────────────────────────────────────
@@ -293,11 +295,14 @@ function buildPDF(htmlContent, meta) {
     y += 6
     doc.setFont(FONT, 'normal')
     doc.setFontSize(SZ)
-    doc.text('Week: ___________', marginL, y)
-    doc.text('Developed by: ___________', pageW - marginR, y, { align: 'right' })
+    const weekLabel = meta?.weekNumber ? `Week: ${meta.weekNumber}` : 'Week: ___________'
+    const devByLabel = meta?.developedBy ? `Developed by: ${meta.developedBy}` : 'Developed by: ___________'
+    doc.text(weekLabel, marginL, y)
+    doc.text(devByLabel, pageW - marginR, y, { align: 'right' })
 
     y += 5
-    doc.text('Date: ___________', marginL, y)
+    const today = new Date().toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' })
+    doc.text(`Date: ${today}`, marginL, y)
     doc.text('Taught by: ___________', pageW - marginR, y, { align: 'right' })
 
     y += 4
@@ -324,8 +329,9 @@ function buildPDF(htmlContent, meta) {
         { content: `Subject: ${subject}`,  styles: { halign: 'left' } }
     ])
     // Row 2: Period | Topic (lesson name)
+    const periodLabel = meta?.periodNumber ? `Period: ${meta.periodNumber}` : 'Period: ___'
     tableRows.push([
-        { content: 'Period: 1',          styles: { halign: 'left' } },
+        { content: periodLabel,          styles: { halign: 'left' } },
         { content: `Topic: ${topicStr}`, styles: { halign: 'left' } }
     ])
 

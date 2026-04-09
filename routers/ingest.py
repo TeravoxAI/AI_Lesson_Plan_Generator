@@ -154,6 +154,86 @@ async def ingest_sow(
         shutil.rmtree(temp_dir, ignore_errors=True)
 
 
+GENERALIZED_SOW_SUBJECTS = {"islamiat", "nazra", "urdu"}
+
+
+@router.post("/generalized-sow", response_model=IngestResponse)
+async def ingest_generalized_sow(
+    file: UploadFile = File(...),
+    grade: str = Form(default="Grade 2"),
+    subject: str = Form(...),
+    term: str = Form(default=None),
+    skip_pages: int = Form(default=-1),   # -1 = use subject default
+):
+    """
+    Upload and process a GeneralizedSOW PDF (Islamiat, Nazra, Urdu, etc.)
+    using Mistral OCR + mistral-large-latest extraction.
+    """
+    subject_lower = subject.lower().replace(" ", "_")
+    if subject_lower not in GENERALIZED_SOW_SUBJECTS and subject_lower not in {"computer_studies", "english", "mathematics"}:
+        raise HTTPException(status_code=400, detail=f"Unsupported subject for generalized ingestion: {subject}")
+
+    filename = file.filename.lower()
+    if not filename.endswith(".pdf"):
+        raise HTTPException(status_code=400, detail="Only PDF files are accepted for GeneralizedSOW ingestion")
+
+    temp_dir = tempfile.mkdtemp()
+    temp_path = os.path.join(temp_dir, file.filename)
+
+    try:
+        with open(temp_path, "wb") as f:
+            shutil.copyfileobj(file.file, f)
+
+        # Import universal extractor functions
+        import sys as _sys
+        _repo_root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+        if _repo_root not in _sys.path:
+            _sys.path.insert(0, _repo_root)
+        from utils.universal_sow_extractor import run_ocr, extract_sow, DEFAULT_SKIP_PAGES
+
+        # Resolve skip_pages
+        resolved_skip = skip_pages if skip_pages >= 0 else DEFAULT_SKIP_PAGES.get(subject_lower, 0)
+
+        # Step 1: OCR
+        ocr_text = run_ocr(
+            pdf_path=temp_path,
+            skip_pages=resolved_skip,
+            max_pages=None,
+            ocr_cache=None,  # no cache for API ingestion
+        )
+
+        # Step 2: Extract GeneralizedSOW JSON
+        extraction = extract_sow(ocr_text, subject=subject_lower, grade=grade, term=term or None)
+
+        # Step 3: Save to database
+        sow_id = db.insert_sow_entry(
+            grade_level=grade,
+            subject=subject,
+            term=term or "Term 1",
+            title=file.filename,
+            extraction=extraction
+        )
+
+        if sow_id:
+            units = extraction.get("curriculum", {}).get("units", [])
+            total_lessons = sum(len(u.get("lessons", [])) for u in units)
+            return IngestResponse(
+                success=True,
+                message=f"Successfully extracted {subject} SOW: {len(units)} units, {total_lessons} lessons",
+                entries_extracted=total_lessons,
+                sow_id=sow_id
+            )
+        else:
+            return IngestResponse(success=False, message="Failed to save SOW to database", error="Database insert failed")
+
+    except Exception as e:
+        import traceback
+        traceback.print_exc()
+        return IngestResponse(success=False, message="Failed to process GeneralizedSOW", error=str(e))
+    finally:
+        shutil.rmtree(temp_dir, ignore_errors=True)
+
+
 @router.get("/books")
 async def list_books():
     """List all ingested textbooks"""

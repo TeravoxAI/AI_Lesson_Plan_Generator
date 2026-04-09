@@ -675,6 +675,342 @@ def format_math_unit_for_prompt(unit: Dict[str, Any]) -> str:
     return "\n".join(parts)
 
 
+# ============ COMPUTER STUDIES SOW FUNCTIONS ============
+
+def get_cs_units(sow_data: Dict[str, Any]) -> List[Dict[str, Any]]:
+    curriculum = sow_data.get("curriculum", sow_data)
+    return [
+        {"unit_number": u.get("unit_number", 0), "unit_title": u.get("unit_title", "")}
+        for u in curriculum.get("units", [])
+    ]
+
+
+def get_cs_lessons_for_unit(sow_data: Dict[str, Any], unit_number: int) -> List[Dict[str, Any]]:
+    curriculum = sow_data.get("curriculum", sow_data)
+    for unit in curriculum.get("units", []):
+        if unit.get("unit_number") == unit_number:
+            return [
+                {
+                    "lesson_number": l.get("lesson_number", 0),
+                    "lesson_title": l.get("lesson_title", ""),
+                    "sub_topic": l.get("sub_topic", "")
+                }
+                for l in unit.get("lessons", [])
+            ]
+    return []
+
+
+def get_cs_lesson(sow_data: Dict[str, Any], unit_number: int, lesson_number: int) -> Optional[Dict[str, Any]]:
+    curriculum = sow_data.get("curriculum", sow_data)
+    for unit in curriculum.get("units", []):
+        if unit.get("unit_number") == unit_number:
+            for lesson in unit.get("lessons", []):
+                if lesson.get("lesson_number") == lesson_number:
+                    return {
+                        "unit_number": unit.get("unit_number"),
+                        "unit_title": unit.get("unit_title", ""),
+                        "lesson_number": lesson.get("lesson_number"),
+                        "lesson_title": lesson.get("lesson_title", ""),
+                        "sub_topic": lesson.get("sub_topic", ""),
+                        "slos": lesson.get("slos", []),
+                        "skills": lesson.get("skills", []),
+                        "introduction": lesson.get("introduction", ""),
+                        "warm_up": lesson.get("warm_up"),
+                        "teaching_strategies": lesson.get("teaching_strategies", []),
+                        "digital_resources": lesson.get("digital_resources"),
+                        "classwork": lesson.get("classwork", []),
+                        "online_assignment": lesson.get("online_assignment", ""),
+                        "afl_strategies": lesson.get("afl_strategies", []),
+                    }
+    return None
+
+
+def get_cs_lesson_sections(sow_data: Dict[str, Any], unit_number: int, lesson_number: int) -> Optional[Dict[str, Any]]:
+    """
+    Return available sections for a CS lesson as a flat ordered list for checkboxes.
+    Each item uses its actual title from the SOW.
+    """
+    lesson = get_cs_lesson(sow_data, unit_number, lesson_number)
+    if not lesson:
+        return None
+
+    sections = []
+    sid = 0
+
+    # Introduction (if present) — use generic label since it's raw text, not titled
+    if lesson.get("introduction"):
+        sections.append({"section_id": str(sid), "title": "Introduction", "kind": "introduction"})
+        sid += 1
+
+    # Warm-up activities — use actual activity titles
+    warm_up = lesson.get("warm_up")
+    if warm_up:
+        for act in warm_up.get("activities", []):
+            sections.append({
+                "section_id": str(sid),
+                "title": act.get("title", "Warm-up Activity"),
+                "kind": "warm_up"
+            })
+            sid += 1
+
+    # Teaching strategies — use their actual titles from SOW
+    for ts in lesson.get("teaching_strategies", []):
+        sections.append({
+            "section_id": str(sid),
+            "title": ts.get("title", f"Strategy {sid}"),
+            "kind": "strategy"
+        })
+        sid += 1
+
+    return {
+        "unit_number": unit_number,
+        "lesson_number": lesson_number,
+        "lesson_title": lesson.get("lesson_title", ""),
+        "sub_topic": lesson.get("sub_topic", ""),
+        "sections": sections,
+        "classwork": {"available": bool(lesson.get("classwork"))},
+        "online_assignment": {"available": bool(lesson.get("online_assignment"))},
+    }
+
+
+def format_cs_lesson_for_prompt(lesson: Dict[str, Any], selected_sections: Optional[Dict] = None) -> str:
+    if not lesson:
+        return "No Computer Studies SOW lesson found."
+
+    ss = selected_sections or {}
+    no_filter = not ss
+    selected_section_ids = set(str(i) for i in ss.get("section_ids", []))
+
+    # Build the flat ordered section list (same logic as get_cs_lesson_sections)
+    ordered = []
+    sid = 0
+    if lesson.get("introduction"):
+        ordered.append({"section_id": str(sid), "kind": "introduction", "data": lesson["introduction"]})
+        sid += 1
+    warm_up = lesson.get("warm_up")
+    if warm_up:
+        for act in warm_up.get("activities", []):
+            ordered.append({"section_id": str(sid), "kind": "warm_up", "data": act})
+            sid += 1
+    for ts in lesson.get("teaching_strategies", []):
+        ordered.append({"section_id": str(sid), "kind": "strategy", "data": ts})
+        sid += 1
+
+    parts = []
+    parts.append(f"**Unit {lesson['unit_number']}: {lesson['unit_title']}**")
+    parts.append(f"Lesson {lesson['lesson_number']}: {lesson['lesson_title']}")
+    if lesson.get("sub_topic"):
+        parts.append(f"Sub-Topic: {lesson['sub_topic']}")
+    parts.append("")
+
+    if lesson.get("slos"):
+        parts.append("**SLOs (Students will be able to):**")
+        for s in lesson["slos"]:
+            parts.append(f"  • {s}")
+        parts.append("")
+
+    if lesson.get("skills"):
+        parts.append(f"**Skills:** {', '.join(lesson['skills'])}")
+        parts.append("")
+
+    if not no_filter:
+        selected_titles = [
+            s["data"].get("title", s["data"]) if s["kind"] != "introduction" else "Introduction"
+            for s in ordered if s["section_id"] in selected_section_ids
+        ]
+        parts.append("TEACHER SELECTIONS: " + (", ".join(selected_titles) if selected_titles else "none"))
+        parts.append("✓ Classwork" if ss.get("classwork") else "✗ Classwork (do NOT include C.W section)")
+        parts.append("✓ Online Assignment" if ss.get("online_assignment") else "✗ Online Assignment")
+        parts.append("")
+
+    parts.append("**Selected Activities (each MUST become its own <h2> section in LP, in this order):**")
+    for item in ordered:
+        if not no_filter and item["section_id"] not in selected_section_ids:
+            continue
+        kind = item["kind"]
+        data = item["data"]
+        if kind == "introduction":
+            parts.append(f"\n  **Introduction:**")
+            parts.append(f"  {data}")
+        elif kind == "warm_up":
+            parts.append(f"\n  **{data.get('title', 'Warm-up Activity')}:**")
+            parts.append(f"  {data.get('description', '')}")
+            if data.get("afl_strategies"):
+                parts.append(f"  AFL: {', '.join(data['afl_strategies'])}")
+        elif kind == "strategy":
+            parts.append(f"\n  **{data.get('title', '')}:**")
+            parts.append(f"  {data.get('description', '')}")
+            if data.get("afl_strategies"):
+                parts.append(f"  AFL: {', '.join(data['afl_strategies'])}")
+    parts.append("")
+
+    digital = lesson.get("digital_resources")
+    if digital and digital.get("urls"):
+        parts.append("**Digital Resources:**")
+        for url in digital["urls"]:
+            parts.append(f"  • {url}")
+        parts.append("")
+
+    if (no_filter or ss.get("classwork")) and lesson.get("classwork"):
+        parts.append("**Classwork:**")
+        for item in lesson["classwork"]:
+            parts.append(f"  • {item}")
+        parts.append("")
+
+    if (no_filter or ss.get("online_assignment")) and lesson.get("online_assignment"):
+        parts.append(f"**Online Assignment:** {lesson['online_assignment']}")
+        parts.append("")
+
+    if lesson.get("afl_strategies"):
+        parts.append("**AFL Strategies:**")
+        for afl in lesson["afl_strategies"]:
+            parts.append(f"  • {afl.get('name', '')}: {afl.get('description', '')}")
+        parts.append("")
+
+    return "\n".join(parts)
+
+
+# ============ GENERALIZED SOW FUNCTIONS (Islamiat, Nazra, Urdu, etc.) ============
+
+def _is_generalized_format(sow_data: Dict[str, Any]) -> bool:
+    """Detect if sow_data uses the GeneralizedSOW format (has metadata.subject key)."""
+    return "metadata" in sow_data and "subject" in sow_data.get("metadata", {})
+
+
+def get_generalized_units(sow_data: Dict[str, Any]) -> List[Dict[str, Any]]:
+    curriculum = sow_data.get("curriculum", {})
+    return [
+        {"unit_number": u.get("unit_number", 0), "unit_title": u.get("unit_title", "")}
+        for u in curriculum.get("units", [])
+    ]
+
+
+def get_generalized_lessons_for_unit(sow_data: Dict[str, Any], unit_number: int) -> List[Dict[str, Any]]:
+    curriculum = sow_data.get("curriculum", {})
+    for unit in curriculum.get("units", []):
+        if unit.get("unit_number") == unit_number:
+            return [
+                {
+                    "lesson_number": l.get("lesson_number", 0),
+                    "lesson_title": l.get("lesson_title", ""),
+                }
+                for l in unit.get("lessons", [])
+            ]
+    return []
+
+
+def get_generalized_lesson(sow_data: Dict[str, Any], unit_number: int, lesson_number: int) -> Optional[Dict[str, Any]]:
+    """Fetch a single lesson from a generalized SOW by unit and lesson number."""
+    curriculum = sow_data.get("curriculum", {})
+    for unit in curriculum.get("units", []):
+        if unit.get("unit_number") == unit_number:
+            for lesson in unit.get("lessons", []):
+                if lesson.get("lesson_number") == lesson_number:
+                    return {
+                        "unit_number": unit.get("unit_number"),
+                        "unit_title": unit.get("unit_title", ""),
+                        "lesson_number": lesson.get("lesson_number"),
+                        "lesson_title": lesson.get("lesson_title", ""),
+                        "slos": lesson.get("slos", []),
+                        "skills": lesson.get("skills", []),
+                        "teaching_strategies": lesson.get("teaching_strategies", []),
+                        "afl_strategies": lesson.get("afl_strategies", []),
+                        "classwork": lesson.get("classwork", []),
+                        "homework": lesson.get("homework", []),
+                        "differentiated_instruction": lesson.get("differentiated_instruction"),
+                        "extension_activity": lesson.get("extension_activity"),
+                        "digital_resources": lesson.get("digital_resources"),
+                        "recitation": lesson.get("recitation"),  # Nazra only
+                    }
+    return None
+
+
+def format_generalized_lesson_for_prompt(lesson: Dict[str, Any], subject: str) -> str:
+    """Format a generalized SOW lesson into a string for the LLM prompt."""
+    if not lesson:
+        return f"No {subject} SOW lesson found. Generate based on topic context only."
+
+    parts = []
+    parts.append(f"**Unit {lesson['unit_number']}: {lesson['unit_title']}**")
+    parts.append(f"Lesson {lesson['lesson_number']}: {lesson['lesson_title']}")
+    parts.append("")
+
+    if lesson.get("slos"):
+        parts.append("**SLOs (Students will be able to):**")
+        for s in lesson["slos"]:
+            parts.append(f"  • {s}")
+        parts.append("")
+
+    if lesson.get("skills"):
+        parts.append(f"**Skills:** {', '.join(lesson['skills'])}")
+        parts.append("")
+
+    # Recitation block (Nazra only)
+    rec = lesson.get("recitation")
+    if rec:
+        parts.append("**Recitation:**")
+        if rec.get("surah_name"):
+            parts.append(f"  Surah: {rec['surah_name']}")
+        if rec.get("verse_range"):
+            parts.append(f"  Verses: {rec['verse_range']}")
+        if rec.get("tajweed_rules"):
+            parts.append(f"  Tajweed Rules: {', '.join(rec['tajweed_rules'])}")
+        parts.append("")
+
+    if lesson.get("teaching_strategies"):
+        parts.append("**Teaching Strategies:**")
+        for ts in lesson["teaching_strategies"]:
+            parts.append(f"\n  **{ts.get('title', ts.get('type', ''))}** [{ts.get('type', '')}]")
+            if ts.get("description"):
+                parts.append(f"  {ts['description']}")
+            if ts.get("afl_strategies"):
+                parts.append(f"  AFL: {', '.join(ts['afl_strategies'])}")
+            if ts.get("digital_resources"):
+                for url in ts["digital_resources"]:
+                    parts.append(f"  Resource: {url}")
+        parts.append("")
+
+    if lesson.get("afl_strategies"):
+        parts.append("**AFL Strategies:**")
+        for afl in lesson["afl_strategies"]:
+            name = afl.get("name", afl) if isinstance(afl, dict) else str(afl)
+            desc = afl.get("description", "") if isinstance(afl, dict) else ""
+            parts.append(f"  • {name}" + (f": {desc}" if desc else ""))
+        parts.append("")
+
+    digital = lesson.get("digital_resources")
+    if digital and digital.get("urls"):
+        parts.append("**Digital Resources:**")
+        for url in digital["urls"]:
+            parts.append(f"  • {url}")
+        parts.append("")
+
+    di = lesson.get("differentiated_instruction")
+    if di and di.get("struggling"):
+        parts.append("**Differentiated Instruction (Struggling):**")
+        parts.append(f"  {di['struggling']}")
+        parts.append("")
+
+    if lesson.get("extension_activity"):
+        parts.append("**Extension Activity:**")
+        parts.append(f"  {lesson['extension_activity']}")
+        parts.append("")
+
+    if lesson.get("classwork"):
+        parts.append("**Classwork:**")
+        for item in lesson["classwork"]:
+            parts.append(f"  • {item}")
+        parts.append("")
+
+    if lesson.get("homework"):
+        parts.append("**Homework:**")
+        for item in lesson["homework"]:
+            parts.append(f"  • {item}")
+        parts.append("")
+
+    return "\n".join(parts)
+
+
 # ============ LEGACY SUPPORT ============
 
 def filter_teaching_sequence_by_pages(steps: list, pages: list) -> list:
