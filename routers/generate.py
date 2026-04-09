@@ -159,6 +159,21 @@ async def generate_lesson_plan(
             teacher_instructions=request.teacher_instructions,
             created_by_id=user_id
         )
+    elif request.subject in (Subject.ISLAMIAT, Subject.NAZRA):
+        # Generalized SOW subjects: unit + lesson number required
+        if not request.gen_unit_number or not request.gen_lesson_number:
+            raise HTTPException(
+                status_code=400,
+                detail=f"{request.subject.value} requires gen_unit_number and gen_lesson_number"
+            )
+        generate_fn = generator.generate_islamiat if request.subject == Subject.ISLAMIAT else generator.generate_nazra
+        response = generate_fn(
+            grade=request.grade,
+            unit_number=request.gen_unit_number,
+            lesson_number=request.gen_lesson_number,
+            teacher_instructions=request.teacher_instructions,
+            created_by_id=user_id
+        )
     elif request.subject == Subject.ENGLISH:
         # English flow
         if request.page_start is None:
@@ -310,6 +325,29 @@ async def get_cs_lesson_sections_endpoint(
     if sections is None:
         return {"success": False, "sections": None, "message": "CS lesson not found"}
     return {"success": True, "sections": sections}
+
+
+@router.get("/gen-units/{subject}/{grade}", response_model=UnitsResponse)
+async def get_generalized_units_for_grade(subject: str, grade: str):
+    """Get available units from a GeneralizedSOW (Islamiat, Nazra, Urdu, etc.)."""
+    units = ctx_router.get_generalized_units_for_grade(subject, grade)
+    return UnitsResponse(
+        grade=grade,
+        subject=subject,
+        units=[UnitInfo(unit_number=u["unit_number"], unit_title=u["unit_title"]) for u in units]
+    )
+
+
+@router.get("/gen-lessons/{subject}/{grade}/{unit_number}")
+async def get_generalized_lessons_for_unit(subject: str, grade: str, unit_number: int):
+    """Get available lessons for a unit from a GeneralizedSOW."""
+    lessons = ctx_router.get_generalized_lessons_for_unit(subject, grade, unit_number)
+    return {
+        "subject": subject,
+        "grade": grade,
+        "unit_number": unit_number,
+        "lessons": lessons
+    }
 
 
 @router.get("/lesson-sections")

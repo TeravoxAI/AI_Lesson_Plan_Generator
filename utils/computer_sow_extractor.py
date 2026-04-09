@@ -78,9 +78,34 @@ Map each bold heading in Column 2 to a section type as follows:
   online_assignment     → "Online Assignment:" — extract as online_assignment string
   digital_resources     → "Digital Resource:", "Digital Resources:" — extract as digital_resources object
 
-Within a section, sub-headings (bold but not the primary section heading) are
-captured inside the description string verbatim — do NOT split them into separate
-teaching_strategies entries.
+CRITICAL SPLITTING RULE:
+Every bold heading in Column 2 that matches ANY type in the mapping above MUST become
+its own separate teaching_strategies entry — even if it appears mid-paragraph after
+another strategy. Do NOT embed one named activity inside another's description.
+
+Example: If Column 2 contains:
+  "Explanation: ... [text] ... Think-Pair-Share Activity: ... [text] ... Whole-Class Activity: ..."
+This MUST produce THREE separate teaching_strategies entries:
+  { "type": "explanation", "title": "Explanation", "description": "[text]" }
+  { "type": "think_pair_share", "title": "Think-Pair-Share Activity", "description": "[text]" }
+  { "type": "whole_class_activity", "title": "Whole-Class Activity", "description": "[text]" }
+
+Only truly unlabelled continuation text (no bold heading of its own) belongs inside
+the description of the preceding strategy.
+
+⚠️ ANOTHER CRITICAL CASE: A bold heading INSIDE another strategy's text STILL becomes its own entry.
+If the cell reads:
+  "Explanation: ... [explanation text] ...
+   Think-Pair-Share Activity: Writing Simple Commands
+   Think: ...
+   Pair: ...
+   Share: ..."
+
+Then STOP the Explanation entry at the line before "Think-Pair-Share Activity:" and create:
+  { "type": "think_pair_share", "title": "Think-Pair-Share Activity: Writing Simple Commands", "description": "Think: ...\nPair: ...\nShare: ..." }
+
+Similarly if "Whole-Class Activity: Fix the Mistake" appears after "Whole Class Activity: Program the Robot" text,
+they are TWO separate entries, not one.
 
 ═══════════════════════════════════════════════════════
 3. OUTPUT FORMAT (STRICT — FOLLOW EXACTLY)
@@ -294,16 +319,19 @@ class SOWExtractionAgent:
     # ── Call model ─────────────────────────────────────────────────────────
     def _call_model(self, content: list[dict]) -> str:
         print(f"🤖 Sending to {self.model}...")
-        response = self.client.chat.completions.create(
+        is_anthropic = self.model.startswith("anthropic/")
+        kwargs = dict(
             model=self.model,
             messages=[
                 {"role": "system", "content": SYSTEM_PROMPT},
                 {"role": "user",   "content": content}
             ],
-            response_format={"type": "json_object"},
             temperature=0,
             max_tokens=100000
         )
+        if not is_anthropic:
+            kwargs["response_format"] = {"type": "json_object"}
+        response = self.client.chat.completions.create(**kwargs)
         msg = response.choices[0].message.content
         if not msg:
             raise ValueError("Empty response from model")
@@ -424,8 +452,14 @@ class SOWExtractionAgent:
         content  = self._build_content(images)
         raw_json = self._call_model(content)
 
+        # Strip markdown code fences if present (some models wrap JSON in ```json ... ```)
+        stripped = raw_json.strip()
+        if stripped.startswith("```"):
+            stripped = stripped.split("\n", 1)[-1]
+            if stripped.endswith("```"):
+                stripped = stripped.rsplit("```", 1)[0].strip()
         try:
-            parsed = json.loads(raw_json)
+            parsed = json.loads(stripped)
         except json.JSONDecodeError as e:
             raise ValueError("Model returned invalid JSON") from e
 

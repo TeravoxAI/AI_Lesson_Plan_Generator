@@ -166,6 +166,16 @@ class DatabaseClient:
             p for p in pages
             if p.get("page_no") in page_set or p.get("book_page_no") in page_set
         ]
+    def get_all_textbook_pages(self, book_id: int) -> List[Dict[str, Any]]:
+        """Get all pages from a textbook."""
+        book = self.get_textbook_by_id(book_id)
+        if not book or not book.get("content_text"):
+            return []
+        pages = book["content_text"]
+        if isinstance(pages, str):
+            pages = json.loads(pages)
+        return pages
+
     def get_textbook_by_id(self, book_id: int) -> Optional[Dict[str, Any]]:
         """Get textbook by ID"""
         if not self.client:

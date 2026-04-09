@@ -716,6 +716,39 @@ textarea.form-input {
   font-weight: 600;
 }
 
+/* Urdu Nastaleeq — applied to Islamiat, Nazra, and Urdu lesson plans */
+.lesson-plan .urdu-content,
+.lesson-plan.urdu-content {
+  font-family: 'Noto Nastaliq Urdu', serif;
+  direction: rtl;
+  text-align: right;
+  line-height: 2.4;
+  font-size: 16px;
+}
+
+.lesson-plan .urdu-content h2,
+.lesson-plan.urdu-content h2 {
+  font-family: 'Noto Nastaliq Urdu', serif;
+  font-size: 20px;
+  line-height: 2.2;
+}
+
+.lesson-plan .urdu-content h3,
+.lesson-plan.urdu-content h3 {
+  font-family: 'Noto Nastaliq Urdu', serif;
+  font-size: 18px;
+  line-height: 2.2;
+}
+
+.lesson-plan .urdu-content ul,
+.lesson-plan .urdu-content ol,
+.lesson-plan.urdu-content ul,
+.lesson-plan.urdu-content ol {
+  margin-left: 0;
+  margin-right: 24px;
+  padding-right: 0;
+}
+
 /* Teacher Resources Section - Collapsible Card */
 .teacher-resources-card {
   background: var(--background-light);

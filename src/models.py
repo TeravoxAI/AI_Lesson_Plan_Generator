@@ -38,6 +38,9 @@ class Subject(str, Enum):
     ENGLISH = "English"
     MATHEMATICS = "Mathematics"
     COMPUTER_STUDIES = "Computer Studies"
+    ISLAMIAT = "Islamiat"
+    NAZRA = "Nazra"
+    URDU = "Urdu"
 
 
 # ============= Request Models =============
@@ -68,6 +71,9 @@ class GenerateRequest(BaseModel):
     cs_unit_number: Optional[int] = None
     cs_lesson_number: Optional[int] = None
     cs_selected_sections: Optional[Dict[str, Any]] = None
+    # Generalized SOW subjects (Islamiat, Nazra, Urdu): unit + lesson number
+    gen_unit_number: Optional[int] = None
+    gen_lesson_number: Optional[int] = None
     # cs_selected_sections structure:
     # {
     #   "section_ids": List[str],   # flat ordered IDs e.g. ["0", "2", "3"]
@@ -257,4 +263,77 @@ class MathSOWCurriculum(BaseModel):
 class MathSOWDocument(BaseModel):
     """Complete Math SOW document structure"""
     curriculum: MathSOWCurriculum = Field(..., description="The Math curriculum data")
+
+
+# ============= Generalized SOW Models (All Subjects) =============
+
+class GeneralizedSOWMetadata(BaseModel):
+    """Metadata for a generalized SOW document"""
+    subject: str
+    grade: str
+    term: Optional[str] = None
+    language: str = "english"  # "english" or "urdu"
+    sow_version: str = "2.0"
+
+
+class GeneralizedTeachingStrategy(BaseModel):
+    """A single teaching strategy/activity in a lesson"""
+    type: str = Field(default="other", description="Activity type: think_pair_share, vocabulary_activity, whole_class_activity, collaborative_learning, hands_on, discussion, reading, explanation, other")
+    title: str = Field(default="", description="Exact heading from SOW")
+    description: str = Field(default="", description="Verbatim activity description")
+    afl_strategies: List[str] = Field(default_factory=list, description="AFL strategy names aligned with this activity")
+    digital_resources: List[str] = Field(default_factory=list, description="URLs associated with this activity")
+
+
+class GeneralizedRecitation(BaseModel):
+    """Recitation block — used for Nazra lessons only"""
+    surah_name: Optional[str] = None
+    verse_range: Optional[str] = None
+    tajweed_rules: List[str] = Field(default_factory=list)
+
+
+class GeneralizedDifferentiatedInstruction(BaseModel):
+    """Differentiated instruction block"""
+    struggling: Optional[str] = None
+    on_level: Optional[str] = None
+    advanced: Optional[str] = None
+
+
+class GeneralizedDigitalResources(BaseModel):
+    """Digital resources for a lesson"""
+    urls: List[str] = Field(default_factory=list)
+
+
+class GeneralizedSOWLesson(BaseModel):
+    """A lesson in the generalized SOW format (works for all subjects)"""
+    lesson_number: int
+    lesson_title: str
+    slos: List[str] = Field(default_factory=list, description="Student learning objectives")
+    skills: List[str] = Field(default_factory=list)
+    teaching_strategies: List[GeneralizedTeachingStrategy] = Field(default_factory=list)
+    afl_strategies: List[Dict[str, Any]] = Field(default_factory=list, description="Assessment for learning strategies: [{name, description}]")
+    classwork: List[str] = Field(default_factory=list)
+    homework: List[str] = Field(default_factory=list)
+    differentiated_instruction: Optional[GeneralizedDifferentiatedInstruction] = None
+    extension_activity: Optional[str] = None
+    digital_resources: Optional[GeneralizedDigitalResources] = None
+    recitation: Optional[GeneralizedRecitation] = None  # Nazra only
+
+
+class GeneralizedSOWUnit(BaseModel):
+    """A unit in the generalized SOW format"""
+    unit_number: int
+    unit_title: str
+    lessons: List[GeneralizedSOWLesson] = Field(default_factory=list)
+
+
+class GeneralizedSOWCurriculum(BaseModel):
+    """Curriculum structure for generalized SOW"""
+    units: List[GeneralizedSOWUnit] = Field(default_factory=list)
+
+
+class GeneralizedSOWDocument(BaseModel):
+    """Complete generalized SOW document — works for CS, Islamiat, Nazra, Urdu, English, Math"""
+    metadata: GeneralizedSOWMetadata
+    curriculum: GeneralizedSOWCurriculum
 
