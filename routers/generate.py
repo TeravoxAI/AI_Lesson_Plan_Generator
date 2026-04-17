@@ -15,7 +15,7 @@ from src.generation.book_selector import (
     LESSON_TYPE_DESCRIPTIONS
 )
 from src.db.client import db
-from src.generation.sow_matcher import get_math_units
+from src.generation.sow_matcher import get_math_units, get_art_weeks, get_art_topics_by_week
 from src.generation.router import router as ctx_router
 # Authorization Import
 from routers.authorization import get_current_user
@@ -159,6 +159,20 @@ async def generate_lesson_plan(
             teacher_instructions=request.teacher_instructions,
             created_by_id=user_id
         )
+    elif request.subject == Subject.ART:
+        # Art flow: week_number + selected_topics
+        if not request.week_number:
+            raise HTTPException(status_code=400, detail="Art requires week_number to be specified")
+        if not request.selected_topics:
+            raise HTTPException(status_code=400, detail="Art requires at least one topic to be selected")
+        response = generator.generate_art(
+            grade=request.grade,
+            week_number=request.week_number,
+            selected_topics=request.selected_topics,
+            tb_pages=request.course_book_pages,
+            teacher_instructions=request.teacher_instructions,
+            created_by_id=user_id
+        )
     elif request.subject in (Subject.ISLAMIAT, Subject.NAZRA):
         # Generalized SOW subjects: unit + lesson number required
         if not request.gen_unit_number or not request.gen_lesson_number:
@@ -263,6 +277,56 @@ async def get_math_units_for_grade(grade: str):
             UnitInfo(unit_number=u["unit_number"], unit_title=u["unit_title"])
             for u in units
         ]
+    )
+
+
+class WeekInfo(BaseModel):
+    week: int
+
+class WeeksResponse(BaseModel):
+    grade: str
+    subject: str
+    weeks: List[WeekInfo]
+
+class TopicInfo(BaseModel):
+    topic: str
+    stream: bool
+
+class TopicsResponse(BaseModel):
+    grade: str
+    subject: str
+    week: int
+    topics: List[TopicInfo]
+
+
+@router.get("/art-weeks/{grade}", response_model=WeeksResponse)
+async def get_art_weeks_for_grade(grade: str):
+    """Get available Art weeks from SOW for a given grade."""
+    subject = "Art"
+    sow_entries = db.get_sow_by_subject(subject, grade)
+    if not sow_entries:
+        return WeeksResponse(grade=grade, subject=subject, weeks=[])
+    extraction = sow_entries[0].get("extraction", {})
+    if not extraction:
+        return WeeksResponse(grade=grade, subject=subject, weeks=[])
+    weeks = get_art_weeks(extraction)
+    return WeeksResponse(grade=grade, subject=subject, weeks=[WeekInfo(week=w["week"]) for w in weeks])
+
+
+@router.get("/art-topics/{grade}/{week}", response_model=TopicsResponse)
+async def get_art_topics_for_week(grade: str, week: int):
+    """Get available Art topics for a given week."""
+    subject = "Art"
+    sow_entries = db.get_sow_by_subject(subject, grade)
+    if not sow_entries:
+        return TopicsResponse(grade=grade, subject=subject, week=week, topics=[])
+    extraction = sow_entries[0].get("extraction", {})
+    if not extraction:
+        return TopicsResponse(grade=grade, subject=subject, week=week, topics=[])
+    topics = get_art_topics_by_week(extraction, week)
+    return TopicsResponse(
+        grade=grade, subject=subject, week=week,
+        topics=[TopicInfo(topic=t["topic"], stream=t.get("stream", False)) for t in topics]
     )
 
 

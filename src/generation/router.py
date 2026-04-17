@@ -15,6 +15,9 @@ from src.generation.sow_matcher import (
     get_math_unit_by_number,
     format_math_unit_for_prompt,
     parse_page_range,
+    # Art functions
+    get_art_topics_by_week,
+    format_art_topics_for_prompt,
     # Computer Studies functions
     get_cs_units,
     get_cs_lessons_for_unit,
@@ -569,6 +572,84 @@ class ContextRouter:
         print("="*80)
         formatted_book_content = self.format_book_content(all_content)
         print(formatted_book_content)
+        print("="*80 + "\n")
+
+        return context
+
+    def retrieve_art_context(
+        self,
+        grade: str,
+        week_number: int,
+        selected_topics: List[str],
+        tb_pages: Optional[str] = None
+    ) -> Dict[str, Any]:
+        """Retrieve context for Art lesson generation (week + topic based)."""
+        subject = "Art"
+        db_grade = normalize_grade(grade)
+
+        print(f"\n📚 [ART CONTEXT] Retrieving content for {subject} {grade}, Week {week_number}")
+        print(f"   Selected topics: {selected_topics}")
+
+        context = {
+            "grade": grade,
+            "subject": subject,
+            "week_number": week_number,
+            "selected_topics": selected_topics,
+            "book_content": [],
+            "sow_strategy": None,
+            "sow_context": [],
+            "metadata": {"textbook_ids": [], "sow_entry_id": None, "books_fetched": []}
+        }
+
+        sow_entries = db.get_sow_by_subject(subject, grade)
+        if not sow_entries:
+            print(f"   ⚠ No SOW entries found for {subject} {grade}")
+            return context
+
+        sow_data = sow_entries[0]
+        context["metadata"]["sow_entry_id"] = sow_data.get("id")
+
+        extraction = sow_data.get("extraction", {})
+        if not extraction:
+            print(f"   ⚠ SOW entry has no extraction data")
+            return context
+
+        all_topics = get_art_topics_by_week(extraction, week_number)
+        if not all_topics:
+            print(f"   ⚠ No topics found for Week {week_number} in Art SOW")
+            context["sow_strategy"] = "No Art SOW topics found. Generate based on general Art guidelines."
+            return context
+
+        filtered = [t for t in all_topics if t.get("topic") in selected_topics] or all_topics
+        context["sow_context"] = filtered
+        print(f"   ✓ Found {len(filtered)} topic(s): {[t.get('topic') for t in filtered]}")
+        context["sow_strategy"] = format_art_topics_for_prompt(filtered, week_number)
+
+        if tb_pages:
+            pages = parse_page_range(tb_pages)
+            if pages:
+                book = db.get_textbook_by_tag(db_grade, subject, "TB")
+                if not book:
+                    book = db.get_textbook(db_grade, subject, "textbook")
+                if book:
+                    fetched = db.get_pages_by_numbers(book["id"], pages)
+                    if fetched:
+                        context["metadata"]["textbook_ids"].append(book["id"])
+                        for page in fetched:
+                            context["book_content"].append({
+                                "book_type": "textbook",
+                                "book_type_short": "TB",
+                                "title": book.get("title", ""),
+                                "page_no": page.get("page_no") or page.get("book_page_no"),
+                                "content": page.get("book_text") or page.get("content", ""),
+                                "book_id": book["id"]
+                            })
+                        print(f"   ✓ Fetched {len(fetched)} Art Textbook pages")
+
+        print("\n" + "="*80)
+        print("📋 COMPLETE ART SOW EXTRACTION USED IN PROMPT:")
+        print("="*80)
+        print(context["sow_strategy"])
         print("="*80 + "\n")
 
         return context

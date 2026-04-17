@@ -37,6 +37,7 @@ class Subject(str, Enum):
     """Available subjects"""
     ENGLISH = "English"
     MATHEMATICS = "Mathematics"
+    ART = "Art"
     COMPUTER_STUDIES = "Computer Studies"
     ISLAMIAT = "Islamiat"
     NAZRA = "Nazra"
@@ -71,6 +72,9 @@ class GenerateRequest(BaseModel):
     cs_unit_number: Optional[int] = None
     cs_lesson_number: Optional[int] = None
     cs_selected_sections: Optional[Dict[str, Any]] = None
+    # Art flow: week_number + selected_topics
+    week_number: Optional[int] = None
+    selected_topics: Optional[List[str]] = None
     # Generalized SOW subjects (Islamiat, Nazra, Urdu): unit + lesson number
     gen_unit_number: Optional[int] = None
     gen_lesson_number: Optional[int] = None
