@@ -1074,8 +1074,9 @@ function App() {
                                         </select>
                                     </div>
 
-                                    {/* Week Number & Period */}
+                                    {/* Week Number & Period — Week Number hidden for Art */}
                                     <div style={{ display: 'flex', gap: '12px' }}>
+                                        {generateForm.subject !== 'Art' && (
                                         <div className="form-field" style={{ flex: 1 }}>
                                             <label className="form-label">Week Number</label>
                                             <input
@@ -1087,6 +1088,7 @@ function App() {
                                                 onChange={e => setGenerateForm({ ...generateForm, week_number: e.target.value })}
                                             />
                                         </div>
+                                        )}
                                         <div className="form-field" style={{ flex: 1 }}>
                                             <label className="form-label">Period</label>
                                             <input
