@@ -645,14 +645,17 @@ BRAINSTORMING — STRICT RULES
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 TEACHING ACTIVITY SECTION — STRICT RULES
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-- Use the TEACHING ACTIVITY title from the SOW as the <h2> heading.
-- Structure the body in this exact order:
-  1. "Introduce the topic and share the SLOs with the students." — appears EXACTLY ONCE, NEVER repeated
-  2. Main activity steps from the SOW description (2-3 concise bullets, max 12 words each)
-  3. Assessment/wrap step if present in the description
-- Do NOT invent steps not present in the SOW description.
+- The topic name is NOT used as a heading. Instead, use exactly these three fixed <h2> headings in order:
+    Demonstration | Independent Work | Peer Assessment
+- Distribute 3-4 bullets from the SOW teaching description across these three headings:
+    Demonstration   — teacher-led steps (include "Introduce the topic and share the SLOs with the students."
+                      as the first bullet here, EXACTLY ONCE in the entire plan). 1-2 bullets max.
+    Independent Work — student-led hands-on activity steps from the SOW. 1-2 bullets max.
+    Peer Assessment  — peer/self review step from the SOW (or create one if absent). 1 bullet.
+- Every bullet: max 12 words, direct instruction tone.
+- Do NOT invent steps beyond what the SOW description supports, except the Peer Assessment bullet if absent.
 - Do NOT add a brainstorming step here — brainstorming has its own dedicated section above.
-- CRITICAL: "Introduce the topic and share the SLOs with the students." must appear EXACTLY ONCE in the entire lesson plan.
+- CRITICAL: "Introduce the topic and share the SLOs with the students." appears EXACTLY ONCE, always as the first bullet under Demonstration.
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 STREAM CONNECTION
@@ -695,7 +698,9 @@ STYLE — STRICT LENGTH LIMITS (must fit on ONE A4 page)
   Resources             — 1 line
   Methodology           — 1 line, comma-separated
   Brainstorming         — max 3 bullets, max 15 words each (section total: under 60 words)
-  Teaching Activity     — max 3 bullets total, max 12 words each
+  Demonstration         — max 2 bullets, max 12 words each
+  Independent Work      — max 2 bullets, max 12 words each
+  Peer Assessment       — 1 bullet, max 12 words
   STREAM Connection     — max 2 sentences
   Success Criteria      — max 3 bullets, max 12 words each
   AFL Strategies        — 1 line, names only
@@ -738,11 +743,21 @@ OUTPUT FORMAT — return HTML only, no markdown blocks
     <li>[Optional: second question or activity related to the topic]</li>
   </ul>
 
-  <h2>[Teaching Activity Title from SOW]:</h2>
+  <h2>Demonstration:</h2>
   <ul>
     <li>Introduce the topic and share the SLOs with the students.</li>
-    <li>[Main activity step from SOW description]</li>
-    <li>[Assessment/closing step from SOW description if present]</li>
+    <li>[Teacher-led demonstration step from SOW description — max 12 words]</li>
+  </ul>
+
+  <h2>Independent Work:</h2>
+  <ul>
+    <li>[Student hands-on activity step from SOW description — max 12 words]</li>
+    <li>[Optional: second independent step from SOW — max 12 words]</li>
+  </ul>
+
+  <h2>Peer Assessment:</h2>
+  <ul>
+    <li>[Peer or self-review step from SOW, or generated if absent — max 12 words]</li>
   </ul>
 
   <!-- Include ONLY if STREAM topic -->
@@ -774,7 +789,8 @@ OUTPUT FORMAT — return HTML only, no markdown blocks
 
 MANDATORY: Return ONLY HTML. No markdown.
 MANDATORY: Total output must be under 450 words. The plan must fit on one A4 page.
-MANDATORY: "Introduce the topic and share the SLOs with the students." appears EXACTLY ONCE — inside Teaching Activity only, NEVER inside Brainstorming.
+MANDATORY: Teaching activity uses exactly three headings — Demonstration, Independent Work, Peer Assessment — never the topic name as a heading.
+MANDATORY: "Introduce the topic and share the SLOs with the students." appears EXACTLY ONCE — as the first bullet under Demonstration, NEVER inside Brainstorming.
 MANDATORY: Brainstorming section must always be present and contain at least one question or activity relevant to the topic and grade."""
 
 
