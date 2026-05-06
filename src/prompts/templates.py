@@ -589,14 +589,15 @@ LP SECTION ORDER — follow EXACTLY, no reordering
  2. Skills Focused On         — ALWAYS
  3. Resources                 — ALWAYS
  4. Methodology               — ALWAYS
- 5. Teaching Activity         — ALWAYS (one <h2> per topic in SOW order)
- 6. STREAM Connection         — ONLY if SOW marks topic as STREAM
- 7. Success Criteria          — ALWAYS
- 8. AFL Strategies            — ALWAYS
- 9. Classwork (C.W)           — ALWAYS
-10. Homework (H.W)            — ALWAYS ("None")
-11. Online Assignment         — ALWAYS ("None")
-12. Wrap Up                   — ALWAYS — ONE sentence only
+ 5. Brainstorming             — ALWAYS
+ 6. Teaching Activity         — ALWAYS (one <h2> per topic in SOW order)
+ 7. STREAM Connection         — ONLY if SOW marks topic as STREAM
+ 8. Success Criteria          — ALWAYS
+ 9. AFL Strategies            — ALWAYS
+10. Classwork (C.W)           — ALWAYS
+11. Homework (H.W)            — ALWAYS ("None")
+12. Online Assignment         — ALWAYS ("None")
+13. Wrap Up                   — ALWAYS — ONE sentence only
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 SLOs — STRICT RULES
@@ -632,21 +633,26 @@ METHODOLOGY — STRICT RULES
 - Format: comma-separated list of method names only.
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+BRAINSTORMING — STRICT RULES
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+- Include ALWAYS as a standalone section placed BEFORE the Teaching Activity.
+- Generate 1-3 questions or short activities that activate prior knowledge about the topic.
+- Each question/activity MUST be directly tied to the topic title, SLOs, and the grade level.
+- Questions must be age-appropriate: simple, visual, and relatable for the grade (e.g. Grade 2 = everyday objects, Grade 5 = broader concepts).
+- You MAY draw on the SOW teaching description for inspiration, but do NOT copy activity steps verbatim — this section is a warm-up to activate thinking, not a teaching step.
+- Max 3 bullets, max 15 words each. Total section: under 60 words.
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 TEACHING ACTIVITY SECTION — STRICT RULES
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 - Use the TEACHING ACTIVITY title from the SOW as the <h2> heading.
 - Structure the body in this exact order:
-  1. Brainstorming step (see rule below)
-  2. "Introduce the topic and share the SLOs with the students." — appears EXACTLY ONCE, NEVER repeated
-  3. Main activity steps from the SOW description (2-3 concise bullets, max 12 words each)
-  4. Assessment/wrap step if present in the description
+  1. "Introduce the topic and share the SLOs with the students." — appears EXACTLY ONCE, NEVER repeated
+  2. Main activity steps from the SOW description (2-3 concise bullets, max 12 words each)
+  3. Assessment/wrap step if present in the description
 - Do NOT invent steps not present in the SOW description.
+- Do NOT add a brainstorming step here — brainstorming has its own dedicated section above.
 - CRITICAL: "Introduce the topic and share the SLOs with the students." must appear EXACTLY ONCE in the entire lesson plan.
-
-BRAINSTORMING STEP RULE:
-- If "Brainstorming" appears in the AFL STRATEGIES list, ensure a brainstorming step is present in the teaching activity.
-- If the SOW description already contains an explicit brainstorming step, use it exactly.
-- If "Brainstorming" is in AFL but the description has NO explicit brainstorming step, PREPEND a contextually appropriate brainstorming opener based on the topic title and SLOs.
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 STREAM CONNECTION
@@ -688,7 +694,8 @@ STYLE — STRICT LENGTH LIMITS (must fit on ONE A4 page)
   Skills Focused On     — 1 line, comma-separated
   Resources             — 1 line
   Methodology           — 1 line, comma-separated
-  Teaching Activity     — max 4 bullets total, max 12 words each
+  Brainstorming         — max 3 bullets, max 15 words each (section total: under 60 words)
+  Teaching Activity     — max 3 bullets total, max 12 words each
   STREAM Connection     — max 2 sentences
   Success Criteria      — max 3 bullets, max 12 words each
   AFL Strategies        — 1 line, names only
@@ -697,7 +704,7 @@ STYLE — STRICT LENGTH LIMITS (must fit on ONE A4 page)
   Online Assignment     — 1 line ("None")
   Wrap Up               — 1 sentence
 
-- Total output: under 400 words
+- Total output: under 450 words
 - No time durations in section headers
 - NEVER assign art projects as homework
 
@@ -725,9 +732,14 @@ OUTPUT FORMAT — return HTML only, no markdown blocks
   <h2>Methodology:</h2>
   <p>[Methods extracted from description — e.g. Brainstorming, Demonstration, Independent Work, Peer/ Self-Assessment]</p>
 
+  <h2>Brainstorming:</h2>
+  <ul>
+    <li>[Question or short activity tied to the topic — age-appropriate for the grade]</li>
+    <li>[Optional: second question or activity related to the topic]</li>
+  </ul>
+
   <h2>[Teaching Activity Title from SOW]:</h2>
   <ul>
-    <li>[Brainstorming step — from description or generated]</li>
     <li>Introduce the topic and share the SLOs with the students.</li>
     <li>[Main activity step from SOW description]</li>
     <li>[Assessment/closing step from SOW description if present]</li>
@@ -761,8 +773,9 @@ OUTPUT FORMAT — return HTML only, no markdown blocks
 </html>
 
 MANDATORY: Return ONLY HTML. No markdown.
-MANDATORY: Total output must be under 400 words. The plan must fit on one A4 page.
-MANDATORY: "Introduce the topic and share the SLOs with the students." appears EXACTLY ONCE."""
+MANDATORY: Total output must be under 450 words. The plan must fit on one A4 page.
+MANDATORY: "Introduce the topic and share the SLOs with the students." appears EXACTLY ONCE — inside Teaching Activity only, NEVER inside Brainstorming.
+MANDATORY: Brainstorming section must always be present and contain at least one question or activity relevant to the topic and grade."""
 
 
 # ============= Islamiat System Prompt =============
