@@ -675,6 +675,96 @@ def format_math_unit_for_prompt(unit: Dict[str, Any]) -> str:
     return "\n".join(parts)
 
 
+# ============ ART SOW FUNCTIONS ============
+
+def get_art_weeks(sow_data: Dict[str, Any]) -> List[Dict[str, Any]]:
+    """Get list of Art weeks for UI week dropdown."""
+    curriculum = sow_data.get("curriculum", sow_data)
+    return [{"week": w.get("week", 0)} for w in curriculum.get("weeks", [])]
+
+
+def get_art_topics_by_week(sow_data: Dict[str, Any], week_number: int) -> List[Dict[str, Any]]:
+    """Get the topics list for a given week number."""
+    curriculum = sow_data.get("curriculum", sow_data)
+    for w in curriculum.get("weeks", []):
+        if w.get("week") == week_number:
+            return w.get("topics", [])
+    return []
+
+
+def format_art_topics_for_prompt(topics: List[Dict[str, Any]], week_number: int) -> str:
+    """Format selected Art SOW topics into a string for the LLM prompt."""
+    if not topics:
+        return "No Art SOW topics found. Generate based on general Art guidelines."
+
+    NOTEBOOK_TOPIC = "drawing in notebook"
+    primary_topics = [t for t in topics if t.get("topic", "").lower() != NOTEBOOK_TOPIC]
+    notebook_topics = [t for t in topics if t.get("topic", "").lower() == NOTEBOOK_TOPIC]
+
+    parts = []
+    parts.append(f"**Week {week_number} — Art Lesson**")
+    parts.append("")
+
+    if notebook_topics:
+        parts.append("NOTE: 'Drawing in Notebook' is a classwork-only activity — do NOT create a lesson section for it. It is already included in the CLASSWORK field below.")
+        parts.append("")
+
+    for topic in primary_topics:
+        topic_name = topic.get("topic", "")
+        stream = topic.get("stream", False)
+        strategy = topic.get("teaching_strategy", {})
+        slos = topic.get("slos", [])
+        skills = topic.get("skills", [])
+        afl_list = topic.get("afl_strategies", [])
+        classwork = topic.get("classwork", [])
+
+        strategy_afl = strategy.get("afl_strategies", [])
+        primary_afl = strategy_afl if strategy_afl else [a.get("name", "") for a in afl_list if a.get("name")]
+
+        parts.append(f'--- TOPIC: "{topic_name}" ---')
+        if stream:
+            parts.append("STREAM TOPIC: Yes — include a STREAM Connection section.")
+        parts.append("")
+
+        if slos:
+            parts.append("SLOs (topic-specific — include ALL):")
+            for slo in slos:
+                parts.append(f"  • {slo}")
+            parts.append("")
+
+        if skills:
+            parts.append("SKILLS (topic-specific — include all listed):")
+            parts.append(f"  {', '.join(skills)}")
+            parts.append("")
+
+        if strategy:
+            title = strategy.get("title", "")
+            description = strategy.get("description", "")
+            digital_resources = strategy.get("digital_resources", [])
+            parts.append(f'TEACHING ACTIVITY: "{title}"')
+            if description:
+                for line in description.split("\n"):
+                    line = line.strip()
+                    if line:
+                        parts.append(f"  {line}")
+            if digital_resources:
+                for url in digital_resources:
+                    parts.append(f"  [Digital resource: {url}]")
+            parts.append("")
+
+        if primary_afl:
+            parts.append(f"AFL STRATEGIES (topic-specific): {', '.join(primary_afl)}")
+            parts.append("")
+
+        if classwork:
+            parts.append("CLASSWORK (use verbatim):")
+            for item in classwork:
+                parts.append(f"  • {item}")
+            parts.append("")
+
+    return "\n".join(parts)
+
+
 # ============ COMPUTER STUDIES SOW FUNCTIONS ============
 
 def get_cs_units(sow_data: Dict[str, Any]) -> List[Dict[str, Any]]:

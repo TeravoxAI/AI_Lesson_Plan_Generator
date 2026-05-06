@@ -7,12 +7,13 @@ import time
 from typing import Dict, Any, Optional, Tuple
 import httpx
 
-from src.models import LessonType, GenerateResponse, LessonPlan
+from src.models import LessonType, GenerateResponse, LessonPlan, TeacherResource
 from src.prompts.templates import (
     LESSON_ARCHITECT_PROMPT,
     LESSON_TYPE_PROMPTS,
     ENG_SYSTEM_PROMPT,
     MATHS_SYSTEM_PROMPT,
+    ART_SYSTEM_PROMPT,
     CS_SYSTEM_PROMPT,
     ISLAMIAT_SYSTEM_PROMPT,
     NAZRA_SYSTEM_PROMPT,
@@ -147,6 +148,8 @@ class LessonGenerator:
         s = subject.lower()
         if s == "mathematics":
             return MATHS_SYSTEM_PROMPT
+        elif s == "art":
+            return ART_SYSTEM_PROMPT
         elif s == "computer studies":
             return CS_SYSTEM_PROMPT
         elif s == "islamiat":
@@ -406,6 +409,111 @@ class LessonGenerator:
                 success=False,
                 error=str(e)
             )
+
+    def generate_art(
+        self,
+        grade: str,
+        week_number: int,
+        selected_topics: list,
+        tb_pages: Optional[str] = None,
+        teacher_instructions: Optional[str] = None,
+        created_by_id: Optional[str] = None,
+        save_to_db: bool = True
+    ) -> GenerateResponse:
+        """Generate an Art lesson plan using week/topic-based SOW context."""
+        subject = "Art"
+        start_time = time.time()
+
+        try:
+            context = router.retrieve_art_context(
+                grade=grade,
+                week_number=week_number,
+                selected_topics=selected_topics,
+                tb_pages=tb_pages
+            )
+
+            print(f"\n📝 [GENERATE] Building prompt for Art lesson plan...")
+
+            # Extract video resources from SOW topics
+            teacher_resources = []
+            topics = context.get("sow_context", [])
+            seen_urls = set()
+            for topic in topics:
+                strategy = topic.get("teaching_strategy", {})
+                for url in strategy.get("digital_resources", []):
+                    if url and ("youtube" in url or "youtu.be" in url) and url not in seen_urls:
+                        seen_urls.add(url)
+                        teacher_resources.append({"title": "Video Resource", "type": "video", "reference": url})
+
+            book_content_str = router.format_book_content(context["book_content"])
+            sow_strategy_str = context.get("sow_strategy", "")
+
+            prompt = self._build_prompt(
+                grade=grade,
+                subject=subject,
+                lesson_type="general",
+                book_content=book_content_str,
+                sow_strategy=sow_strategy_str,
+                page_start=0,
+                page_end=0,
+                period_time="35 minutes",
+                club_period_note="",
+                teacher_instructions=teacher_instructions
+            )
+
+            html_content, usage_data = self._call_llm(prompt, subject)
+            html_content = html_content.strip()
+            if html_content.startswith("```"):
+                html_content = "\n".join(html_content.split("\n")[1:-1])
+
+            end_time = time.time()
+            generation_time = round(end_time - start_time, 2)
+            print(f"   ✓ Art lesson plan generated! ({generation_time}s, {len(html_content)} chars)")
+
+            topic_names = [t.get("topic", "") for t in topics]
+            art_topic = f"Week {week_number}: {', '.join(topic_names)}" if topic_names else f"Week {week_number}"
+
+            plan_id = None
+            if save_to_db:
+                textbook_ids = context["metadata"].get("textbook_ids", [])
+                plan_id = db.insert_lesson_plan(
+                    grade_level=grade,
+                    subject=subject,
+                    lesson_type=f"week_{week_number}",
+                    page_start=0,
+                    page_end=0,
+                    topic=art_topic,
+                    lesson_plan={"html_content": html_content},
+                    textbook_id=textbook_ids[0] if textbook_ids else None,
+                    sow_entry_id=context["metadata"].get("sow_entry_id"),
+                    created_by_id=created_by_id,
+                    generation_time=generation_time,
+                    cost=usage_data["cost"],
+                    input_tokens=usage_data["input_tokens"],
+                    output_tokens=usage_data["output_tokens"],
+                    total_tokens=usage_data["total_tokens"]
+                )
+
+            return GenerateResponse(
+                success=True,
+                html_content=html_content,
+                plan_id=plan_id,
+                topic=art_topic,
+                teacher_resources=[
+                    TeacherResource(title=r["title"], type=r["type"], reference=r["reference"])
+                    for r in teacher_resources
+                ],
+                generation_time=generation_time,
+                cost=usage_data["cost"],
+                input_tokens=usage_data["input_tokens"],
+                output_tokens=usage_data["output_tokens"],
+                total_tokens=usage_data["total_tokens"]
+            )
+
+        except Exception as e:
+            import traceback
+            traceback.print_exc()
+            return GenerateResponse(success=False, error=str(e))
 
     def generate(
         self,

@@ -34,7 +34,8 @@ async def get_current_user(credentials: HTTPAuthorizationCredentials = Depends(s
 
         return profile
 
+    except HTTPException:
+        raise
     except Exception as e:
-        # Check if it is a specific Supabase error regarding token
         print(f"Auth error: {e}")
         raise HTTPException(status_code=401, detail="Invalid or expired authentication token")
