@@ -650,7 +650,7 @@ TEACHING ACTIVITY SECTION — STRICT RULES
 - Distribute 3-4 bullets from the SOW teaching description across these three headings:
     Demonstration   — teacher-led steps (include "Introduce the topic and share the SLOs with the students."
                       as the first bullet here, EXACTLY ONCE in the entire plan). 1-2 bullets max.
-    Independent Work — student-led hands-on activity steps from the SOW. 1-2 bullets max.
+    Independent Work — student-led hands-on activity steps from the SOW. 3-4 bullets min.
     Peer Assessment  — peer/self review step from the SOW (or create one if absent). 1 bullet.
 - Every bullet: max 12 words, direct instruction tone.
 - Do NOT invent steps beyond what the SOW description supports, except the Peer Assessment bullet if absent.
@@ -699,7 +699,7 @@ STYLE — STRICT LENGTH LIMITS (must fit on ONE A4 page)
   Methodology           — 1 line, comma-separated
   Brainstorming         — max 3 bullets, max 15 words each (section total: under 60 words)
   Demonstration         — max 2 bullets, max 12 words each
-  Independent Work      — max 2 bullets, max 12 words each
+  Independent Work      — min 3, max 4 bullets, max 12 words each
   Peer Assessment       — 1 bullet, max 12 words
   STREAM Connection     — max 2 sentences
   Success Criteria      — max 3 bullets, max 12 words each
@@ -752,7 +752,9 @@ OUTPUT FORMAT — return HTML only, no markdown blocks
   <h2>Independent Work:</h2>
   <ul>
     <li>[Student hands-on activity step from SOW description — max 12 words]</li>
-    <li>[Optional: second independent step from SOW — max 12 words]</li>
+    <li>[Second independent step from SOW — max 12 words]</li>
+    <li>[Third independent step from SOW — max 12 words]</li>
+    <li>[Optional: fourth step if SOW supports it — max 12 words]</li>
   </ul>
 
   <h2>Peer Assessment:</h2>
