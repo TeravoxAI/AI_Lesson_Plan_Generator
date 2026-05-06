@@ -645,15 +645,39 @@ BRAINSTORMING — STRICT RULES
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 TEACHING ACTIVITY SECTION — STRICT RULES
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-- The topic name is NOT used as a heading. Instead, use exactly these three fixed <h2> headings in order:
+- The topic name is NOT used as a heading. Use exactly these three fixed <h2> headings in order:
     Demonstration | Independent Work | Peer Assessment
-- Distribute 3-4 bullets from the SOW teaching description across these three headings:
-    Demonstration   — teacher-led steps (include "Introduce the topic and share the SLOs with the students."
-                      as the first bullet here, EXACTLY ONCE in the entire plan). 1-2 bullets max.
-    Independent Work — student-led hands-on activity steps from the SOW. 3-4 bullets min.
-    Peer Assessment  — peer/self review step from the SOW (or create one if absent). 1 bullet.
+
+- CLASSIFICATION — read each SOW description line and place it under the correct heading:
+
+  DEMONSTRATION (teacher-led setup and modelling):
+    → "Starter Activity (...)" lines — always Demonstration
+    → Lines beginning with: "Demonstrate", "Show", "Discuss", "Guide students to draw/fold/demonstrate"
+    → Lines where the teacher writes on the board, explains a concept, or shows a digital resource
+    → "Ask students to look at / read / observe / notice..." — introductory class-wide questions
+    → "Share information about...", "Discuss that...", "Discuss about..."
+    → Always place "Introduce the topic and share the SLOs with the students." here as the FIRST bullet
+
+  INDEPENDENT WORK (student hands-on execution):
+    → Lines beginning with: "Students to colour / paste / tear / fold / draw / complete / follow the steps"
+    → Lines beginning with: "Guide students to follow the steps..." (student executing, not teacher showing)
+    → Lines beginning with: "Ask students to complete / draw / write / navigate / colour..."
+    → "Let students colour/draw..."
+    → "Instruct students to spread paper / apply glue..."
+    → Any step where students physically produce the art piece
+    → Must have at least 3 bullets — expand concise SOW steps into clear sub-steps if needed
+
+  PEER ASSESSMENT (review, comparison, observation):
+    → "Pair Work: After completing the task, students to match..."
+    → "Observe and facilitate students when they are doing the activity"
+    → "Monitor / Observe and encourage students..."
+    → "After completing the task, students to match / compare..."
+    → "Group Activity" review steps
+    → If "Peer Assessment" appears in the AFL STRATEGIES list and no matching step is in the description,
+      GENERATE one appropriate peer-review step (e.g. "Students compare finished work with a partner.")
+    → Always exactly 1 bullet
+
 - Every bullet: max 12 words, direct instruction tone.
-- Do NOT invent steps beyond what the SOW description supports, except the Peer Assessment bullet if absent.
 - Do NOT add a brainstorming step here — brainstorming has its own dedicated section above.
 - CRITICAL: "Introduce the topic and share the SLOs with the students." appears EXACTLY ONCE, always as the first bullet under Demonstration.
 
@@ -744,22 +768,25 @@ OUTPUT FORMAT — return HTML only, no markdown blocks
   </ul>
 
   <h2>Demonstration:</h2>
+  <!-- Starter Activity lines, teacher shows/explains/discusses, digital resource steps -->
   <ul>
     <li>Introduce the topic and share the SLOs with the students.</li>
-    <li>[Teacher-led demonstration step from SOW description — max 12 words]</li>
+    <li>[Starter/teacher-led step from SOW — max 12 words]</li>
   </ul>
 
   <h2>Independent Work:</h2>
+  <!-- "Students to colour/paste/fold/draw/complete", "Guide students to follow steps", student execution steps -->
   <ul>
-    <li>[Student hands-on activity step from SOW description — max 12 words]</li>
-    <li>[Second independent step from SOW — max 12 words]</li>
-    <li>[Third independent step from SOW — max 12 words]</li>
+    <li>[Student hands-on step from SOW — max 12 words]</li>
+    <li>[Second student step from SOW — max 12 words]</li>
+    <li>[Third student step from SOW — max 12 words]</li>
     <li>[Optional: fourth step if SOW supports it — max 12 words]</li>
   </ul>
 
   <h2>Peer Assessment:</h2>
+  <!-- "Pair Work / Observe and facilitate / Monitor / compare with classmates" — or generate if AFL has Peer Assessment -->
   <ul>
-    <li>[Peer or self-review step from SOW, or generated if absent — max 12 words]</li>
+    <li>[Peer/self-review step from SOW or generated — max 12 words]</li>
   </ul>
 
   <!-- Include ONLY if STREAM topic -->
